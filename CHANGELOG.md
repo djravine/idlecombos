@@ -6,6 +6,18 @@ To all the Idle Dragoneers who inspired and assisted me!
 
 ------
 
+## 3.79
+
+* Add USER_MANUAL.md — comprehensive user guide with feature reference, settings, hotkeys, and troubleshooting
+* Add CODE_DEPLOY.md — release pipeline documentation (CI → tag → draft → publish)
+* Add Documentation section to README.md linking all project markdown docs
+* Add USER_MANUAL.md to release archives (release.yml)
+* Fix release packaging: include Lib/ScrollBox.ahk in archives (app failed to launch without it)
+* Fix CI: pin AutoHotkey Chocolatey version to 1.1.37.1 (1.1.37.02 was delisted)
+* Fix CI: exclude vendored Lib/Yunit/ from markdownlint (14 false-positive errors)
+* Fix CI: change trigger from push+PR to PR-only
+* Fix CODE_DEPLOY.md markdownlint errors (MD004 dash→asterisk, MD029 ordered list prefix)
+
 ## 3.78
 
 * Fix Web Codes feature (site layout changed, old method broken)
@@ -94,10 +106,6 @@ To all the Idle Dragoneers who inspired and assisted me!
 * Cache UserDetails between sessions (loads cached data on startup, 1-hour TTL)
 * Non-blocking: Sleep calls in batch loops allow GUI message pump processing
 * SettingsCheckValue bumped to 24 (new: autorefreshminutes)
-* Add USER_MANUAL.md — comprehensive user guide with feature reference, settings, hotkeys, and troubleshooting
-* Add CODE_DEPLOY.md — release pipeline documentation (CI → tag → draft → publish)
-* Add Documentation section to README.md linking all project docs
-* Add USER_MANUAL.md to release archives (release.yml)
 
 ## 3.77
 

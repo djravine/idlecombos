@@ -7,7 +7,7 @@
 #include Lib\ScrollBox.ahk
 
 ;Versions
-global VersionNumber := "3.78"
+global VersionNumber := "3.79"
 global CurrentDictionary := "2.41"
 
 ;Local File globals
