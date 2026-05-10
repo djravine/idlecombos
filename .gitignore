@@ -11,13 +11,25 @@ eos_loader_log.txt
 blacksmithlog.json
 bountylog.json
 chestopenlog.json
-journal.json
 redeemcodelog.json
 redeemcodelist.json
 
 # RUNTIME DATA
 campaign.json
+advdefs.json
 formationimages/
 
 # TEST OUTPUT
 tests/junit.xml
+
+# EXPORTS
+idlecombos_export_*.csv
+
+# DEFENSIVE (prevent accidental secret commits)
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+*.crt
+webRequestLog.txt

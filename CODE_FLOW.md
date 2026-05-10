@@ -1,6 +1,6 @@
 # Application Startup Flow
 
-> IdleCombos v3.78 — AutoHotkey v1.1 startup sequence
+> IdleCombos v3.80 — AutoHotkey v1.1 startup sequence
 
 ## Flow Diagram
 
@@ -12,65 +12,65 @@
                            │
                            ▼
 ┌──────────────────────────────────────────────────────────────┐
-│  PHASE 1: AUTO-EXECUTE SECTION (L1-313)                      │
+│  PHASE 1: AUTO-EXECUTE SECTION (L1-331)                      │
 │                                                              │
 │  1. Script directives                          [instant]     │
 │     #NoEnv, #Persistent, #SingleInstance Force               │
 │     #include json.ahk, IdleCombosLib.ahk                     │
 │                                                              │
-│  2. Global variable declarations (L8-231)      [instant]     │
+│  2. Global variable declarations (L9-238)      [instant]     │
 │     ~225 variables across 10 categories:                     │
 │     Files, Settings, Server, User, Inventory,                │
 │     Patron, Event, Web Tools, GUI, Style                     │
 │                                                              │
-│  3. Style system enumeration (L232-242)        [<100ms]      │
+│  3. Style system enumeration (L239-255)        [<100ms]      │
 │     Scan styles/*.msstyles → build StyleList                 │
 │                                                              │
-│  4. RunWith(32) (L243, def L1001)              [instant*]    │
+│  4. RunWith(32) (L256)                         [instant*]    │
 │     Check if running 32-bit; if 64-bit:                      │
 │     → relaunch as AutoHotkeyU32.exe → ExitApp                │
 │     (*adds ~500ms if relaunch required)                      │
 │                                                              │
-│  5. Game install detection (L246-250)          [<50ms]       │
+│  5. Game install detection (L259-262)          [<50ms]       │
 │     Cascade: Epic → Steam → Standalone                       │
-│     setGameInstallEpic() (L2476)                             │
+│     setGameInstallEpic() (L3001)                             │
 │       └─ reads LauncherInstalled.dat, parses JSON            │
-│     setGameInstallSteam() (L2509)                            │
+│     setGameInstallSteam() (L3022)                            │
 │       └─ checks default Steam path                           │
-│     setGameInstallStandalone() (L2535)                       │
+│     setGameInstallStandalone() (L3043)                       │
 │       └─ checks default standalone path                      │
 │                                                              │
-│  6. SetIcon() (L252)                           [instant]     │
+│  6. SetIcon() (L2935)                          [instant]     │
 │     Set tray icon from IdleCombos.ico                        │
 │                                                              │
-│  7. OnMessage(0x0200) (L254)                   [instant]     │
+│  7. OnMessage(0x0200) (L267)                   [instant]     │
 │     Register WM_MOUSEMOVE → tooltip handler                  │
 │                                                              │
-│  8. oMyGUI := new MyGui() (L308)               [PHASE 2+3]   │
+│  8. oMyGUI := new MyGui() (L326)               [PHASE 2+3]   │
 │     ──── triggers __New() and Load() ────                    │
 │                                                              │
-│  9. OnExit("ExitFunc") (L310)                  [instant]     │
+│  9. OnExit("ExitFunc") (L328)                  [instant]     │
 │     Register cleanup (USkin.dll unload)                      │
 │                                                              │
-│  10. return (L313)                             [instant]     │
+│  10. return (L331)                             [instant]     │
 │      End auto-execute → app enters event loop                │
 └──────────────────────────────────────────────────────────────┘
                            │
                            ▼ (triggered by step 8)
 ┌──────────────────────────────────────────────────────────────┐
-│  PHASE 2: GUI CONSTRUCTION — MyGui.__New() (L320-609)        │
+│  PHASE 2: GUI CONSTRUCTION — MyGui.__New() (L338-528)        │
 │                                                              │
-│  1. Create window (L322-324)                   [instant]     │
+│  1. Create window (L340-342)                   [instant]     │
 │     Gui, MyWindow:New +Resize -MaximizeBox +MinSize          │
 │                                                              │
-│  2. Build menu system (L329-414)               [<50ms]       │
+│  2. Build menu system (L343-426)               [<50ms]       │
 │     File menu:                                               │
 │       IC Settings (View, Framerate, Particles, UI Scale)     │
 │       Launch Game, Update UserDetails                        │
 │       Detect Game (Epic/Steam/Standalone/Console)            │
 │       Reload, Exit                                           │
 │     Tools menu:                                              │
-│       Chests (Buy/Open Silver/Gold/Event, Pity Timers)       │
+│       Chests (Buy/Open Silver/Gold/Event)                    │
 │       Blacksmith (Tiny→Huge contracts, Gear Report, Feats)   │
 │       Bounty (Tiny→Large contracts) [Alpha]                  │
 │       Redeem Codes, Adventure Manager                        │
@@ -80,62 +80,63 @@
 │       List User Details/Champ IDs/Chest IDs/Hotkeys          │
 │       About, Github, Discord, Support Ticket                 │
 │                                                              │
-│  3. Build GUI controls (L416-605)              [<100ms]      │
+│  3. Build GUI controls (L429-527)              [<100ms]      │
 │     StatusBar (bottom)                                       │
 │     Sidebar: Reload/Exit buttons, Crash Protect toggle,      │
 │              Data Timestamp, Update button                   │
-│     Tab Control (8 tabs):                                    │
-│       Summary  │ Adventures │ Inventory │ Patrons            │
-│       Champions│ Event      │ Settings  │ Log                │
+│     Tab Control (11 tabs):                                   │
+│       Summary   │ Adventures │ Inventory   │ Patrons         │
+│       Champions │ Pity Timers│ Item Levels │ Variants        │
+│       Event     │ Settings   │ Log                           │
 │     Settings tab:                                            │
 │       ServerName edit, Tab/Style dropdowns                   │
 │       12 checkboxes (logging, auto-detect, save prefs, etc.) │
 │                                                              │
-│  4. this.Load() (L608)                         [PHASE 3]     │
+│  4. this.Load() (L530)                         [PHASE 3]     │
 │     ──── triggers settings loading ────                      │
 └──────────────────────────────────────────────────────────────┘
                            │
                            ▼ (triggered by step 4)
 ┌──────────────────────────────────────────────────────────────┐
-│  PHASE 3: SETTINGS & CREDENTIAL LOADING — Load() (L611-715)  │
+│  PHASE 3: SETTINGS & CREDENTIAL LOADING — Load() (L530-711)  │
 │                                                              │
-│  ┌─ Settings file check (L614-618) ──────────  [<10ms]       │
+│  ┌─ Settings file check (L533-538) ──────────  [<10ms]       │
 │  │  If idlecombosettings.json missing:                       │
 │  │    → create from NewSettings defaults                     │
 │  │    → update GUI                                           │
 │  └───────────────────────────────────────────                │
 │                                                              │
-│  ┌─ Parse settings (L619-620) ───────────────  [<10ms]       │
+│  ┌─ Parse settings (L538-540) ───────────────  [<10ms]       │
 │  │  FileRead + JSON.parse(rawsettings)                       │
 │  └───────────────────────────────────────────                │
 │                                                              │
-│  ┌─ Settings migration (L623-634) ───────────  [<10ms]       │
+│  ┌─ Settings migration (L547-558) ───────────  [<10ms]       │
 │  │  If key count != SettingsCheckValue (23):                 │
 │  │    → merge missing keys from defaults                     │
 │  │    → PersistSettings() (atomic JSON write)                │
 │  │    → notify user: "settings updated"                      │
 │  └───────────────────────────────────────────                │
 │                                                              │
-│  ┌─ WRL file at script dir? (L637-646) ──────  [<10ms]       │
+│  ┌─ WRL file at script dir? (L561-568) ──────  [<10ms]       │
 │  │  If webRequestLog.txt exists locally:                     │
 │  │    → prompt: "WRL File detected. Use file?"               │
 │  │    → if Yes: set WRLFile, call FirstRun()                 │
 │  └───────────────────────────────────────────                │
 │                                                              │
-│  ┌─ First run? (L647-649) ───────────────────  [BLOCKING*]   │
+│  ┌─ First run? (L571-573) ───────────────────  [BLOCKING*]   │
 │  │  If CurrentSettings.firstrun == 0:                        │
 │  │    → FirstRun() wizard (user interaction required)        │
 │  │    (*blocks until user provides credentials)              │
 │  └───────────────────────────────────────────                │
 │                           │                                  │
 │                           ▼                                  │
-│        ┌──── FirstRun() (L2608-2655) ────────────┐           │
+│        ┌──── FirstRun() (L3124-3210) ────────────┐           │
 │        │  Console user?                          │           │
 │        │    → InputBox: user_id                  │           │
 │        │    → InputBox: hash                     │           │
 │        │  Desktop user?                          │           │
 │        │    → MsgBox: "Get from WRL?"            │           │
-│        │      Yes → GetIDFromWRL() (L2675)       │           │
+│        │      Yes → GetIDFromWRL() (L3254)       │           │
 │        │             parse WRL for user_id/hash  │           │
 │        │             GetPlayServerFromWRL()      │           │
 │        │      No  → "Choose dir manually?"       │           │
@@ -144,7 +145,7 @@
 │        │  → PersistSettings()                    │           │
 │        └─────────────────────────────────────────┘           │
 │                                                              │
-│  ┌─ Load credentials (L650-659) ─────────────  [instant]     │
+│  ┌─ Load credentials (L574-607) ─────────────  [instant]     │
 │  │  If user_id & hash in settings:                           │
 │  │    → set UserID, UserHash, InstanceID globals             │
 │  │    → StatusBar: "✅ User ID & Hash Ready"                 │
@@ -152,19 +153,19 @@
 │  │    → StatusBar: "❌ User ID & Hash not found!"            │
 │  └───────────────────────────────────────────                │
 │                                                              │
-│  ┌─ Load preferences (L662-683) ─────────────  [instant]     │
+│  ┌─ Load preferences (L609-638) ─────────────  [instant]     │
 │  │  ServerName, GetDetailsonStart, LaunchGameonStart,        │
 │  │  AlwaysSave*, LogEnabled, LoadGameClient, StyleSelection, │
 │  │  DisableTooltips, RedeemCodeHistorySkip, etc.             │
 │  │                                                           │
-│  │  SetStyle(StyleSelection) (L679)            [<100ms]      │
+│  │  SetStyle(StyleSelection) (L634)            [<100ms]      │
 │  │    → SkinForm(USkin.dll, Apply, *.msstyles)               │
 │  │    → set BgColour based on theme                          │
 │  │                                                           │
-│  │  Set active tab (L681-683)                                │
+│  │  Set active tab (L635-638)                                │
 │  └───────────────────────────────────────────                │
 │                                                              │
-│  ┌─ Show GUI (L685-686) ─────────────────────  [<50ms]       │
+│  ┌─ Show GUI (L640-641) ─────────────────────  [<50ms]       │
 │  │  this.Update() → populate all GUI controls                │
 │  │  this.Show()   → Gui, Show, w600 h275                     │
 │  │  ═══════════════════════════════════════════              │
@@ -175,22 +176,22 @@
                            │
                            ▼
 ┌──────────────────────────────────────────────────────────────┐
-│  PHASE 4: POST-SHOW INITIALIZATION (L689-715)                │
+│  PHASE 4: POST-SHOW INITIALIZATION (L644-710)                │
 │                                                              │
-│  ┌─ Re-detect game install (L690-697) ───────  [<50ms]       │
+│  ┌─ Re-detect game install (L645-652) ───────  [<50ms]       │
 │  │  Based on saved LoadGameClient setting:                   │
 │  │    1=Epic, 2=Steam, 3=Standalone                          │
 │  │    → setGameInstall*() for chosen platform                │
 │  └───────────────────────────────────────────                │
 │                                                              │
-│  ┌─ Log startup (L699-700) ──────────────────  [instant]     │
-│  │  "IdleCombos v3.78 started."                              │
+│  ┌─ Log startup (L654-655) ──────────────────  [instant]     │
+│  │  "IdleCombos v3.80 started."                              │
 │  │  "Settings File: ... - Loaded"                            │
 │  └───────────────────────────────────────────                │
 │                                                              │
-│  ┌─ Server detection (L702-704) ─────────────  [<500ms]      │
+│  ┌─ Server detection (L657-659) ─────────────  [<500ms]      │
 │  │  If not console platform:                                 │
-│  │    GetPlayServerFromWRL() (L2716)                         │
+│  │    GetPlayServerFromWRL() (L3280)                         │
 │  │      → read WRL file                                      │
 │  │      → check for connection errors                        │
 │  │      → if ServerDetection enabled:                        │
@@ -199,21 +200,21 @@
 │  │          → SaveSettings()                                 │
 │  └───────────────────────────────────────────                │
 │                                                              │
-│  ┌─ Auto-fetch user details? (L705-707) ─────  [NETWORK*]    │
+│  ┌─ Auto-fetch user details? (L695-705) ─────  [NETWORK*]    │
 │  │  If GetDetailsonStart == "1":                             │
 │  │    → GetUserDetails()          [PHASE 5]                  │
 │  │    (*1-5 seconds depending on API response)               │
 │  └───────────────────────────────────────────                │
 │                                                              │
-│  ┌─ Auto-launch game? (L708-710) ────────────  [BLOCKING*]   │
+│  ┌─ Auto-launch game? (L698-699) ────────────  [BLOCKING*]   │
 │  │  If LaunchGameonStart == "1":                             │
-│  │    → LaunchGame() (L3481)                                 │
+│  │    → LaunchGame() (L3775)                                 │
 │  │      Run game executable                                  │
 │  │      WinWait for "Idle Champions" window                  │
 │  │    (*blocks until game window appears)                    │
 │  └───────────────────────────────────────────                │
 │                                                              │
-│  ┌─ Final update (L712-714) ─────────────────  [<50ms]       │
+│  ┌─ Final update (L708) ─────────────────────  [<50ms]       │
 │  │  this.Update() → refresh all GUI controls                 │
 │  │  Scroll log to bottom                                     │
 │  └───────────────────────────────────────────                │
@@ -227,11 +228,11 @@
          ▼ (only if GetDetailsonStart enabled)
 
 ┌──────────────────────────────────────────────────────────────┐
-│  PHASE 5: API DATA FETCH — GetUserDetails() (L2762-2809)     │
+│  PHASE 5: API DATA FETCH — GetUserDetails() (L3322-3370)     │
 │                                                              │
 │  StatusBar: "⌛ Loading Data... Please wait..."              │
 │                                                              │
-│  ┌─ API call (L2771-2772) ───────────────────  [1-5 sec]     │
+│  ┌─ API call (L3332-3333) ───────────────────  [1-5 sec]     │
 │  │  ServerCall("getuserdetails", params)                     │
 │  │    → HTTPS POST to                                        │
 │  │      {server}.idlechampions.com/~idledragons/post.php     │
@@ -244,61 +245,61 @@
 │  │      (single hop, no loop)                                │
 │  └───────────────────────────────────────────                │
 │                                                              │
-│  ┌─ Error handling (L2774-2786) ─────────────                │
+│  ┌─ Error handling (L3335-3346) ─────────────                │
 │  │  Server error? → StatusBar: "❌ API Error..."             │
 │  │  JSON parse error? → MsgBox + return                      │
 │  └───────────────────────────────────────────                │
 │                                                              │
-│  ┌─ Cache response (L2778-2779) ─────────────  [<10ms]       │
+│  ┌─ Cache response (L3339-3340) ─────────────  [<10ms]       │
 │  │  Write raw JSON → userdetails.json                        │
 │  └───────────────────────────────────────────                │
 │                                                              │
-│  ┌─ Parse cascade (L2793-2802) ──────────────  [<500ms]      │
+│  ┌─ Parse cascade (L3353-3365) ──────────────  [<500ms]      │
 │  │                                                           │
 │  │  StatusBar: "⌛ Parsing user data..."                     │
 │  │                                                           │
-│  │  ParseChampData()         (L3216)                         │
+│  │  ParseChampData()         (L3505)                         │
 │  │    → champion count, familiars, costumes, epic gear       │
 │  │    → Briv slot 4 / zone detection                         │
 │  │                                                           │
-│  │  ParseAdventureData()     (L2811)                         │
+│  │  ParseAdventureData()     (L3374)                         │
 │  │    → current/background adventures (up to 4 instances)    │
 │  │    → modron core levels and XP                            │
 │  │                                                           │
-│  │  ParseTimestamps()        (L2884)                         │
+│  │  ParseTimestamps()        (L3429)                         │
 │  │    → convert unix epoch → local time                      │
 │  │    → LastUpdated display string                           │
 │  │    → NextTGPDrop (time gate piece)                        │
 │  │                                                           │
-│  │  ParseInventoryData()     (L2918)                         │
+│  │  ParseInventoryData()     (L3440)                         │
 │  │    → gems, chests, time gate pieces                       │
 │  │    → bounty contracts (tiny/small/medium/large)           │
 │  │    → blacksmith contracts (tiny→huge)                     │
 │  │    → event tokens, patron currencies                      │
 │  │                                                           │
-│  │  ParsePatronData()        (L2981)                         │
+│  │  ParsePatronData()        (L3467)                         │
 │  │    → per-patron: variants, FP currency, challenges        │
 │  │    → Mirt, Vajra, Strahd, Zariel, Elminster               │
 │  │                                                           │
-│  │  ParseLootData()          (L3168)                         │
+│  │  ParseLootData()          (L3493)                         │
 │  │    → available chest counts by type                       │
 │  │    → blacksmith level tracking                            │
 │  │                                                           │
-│  │  CheckAchievements()      (L3284)                         │
+│  │  CheckAchievements()      (L3535)                         │
 │  │    → summary stats for Summary tab                        │
 │  │                                                           │
-│  │  CheckBlessings()         (L3340)                         │
+│  │  CheckBlessings()         (L3613)                         │
 │  │    → blessing counts per campaign                         │
 │  │                                                           │
-│  │  CheckPatronProgress()    (L3261)                         │
+│  │  CheckPatronProgress()    (L3513)                         │
 │  │    → patron variant completion, costs, requirements       │
 │  │    → color-coding (red/green) for patron display          │
 │  │                                                           │
-│  │  CheckEvents()            (L3385)                         │
+│  │  CheckEvents()            (L3620)                         │
 │  │    → active event name, tokens, hero IDs, chest IDs       │
 │  └───────────────────────────────────────────                │
 │                                                              │
-│  ┌─ Final GUI update (L2803-2806) ───────────  [<100ms]      │
+│  ┌─ Final GUI update (L3364-3368) ───────────  [<100ms]      │
 │  │  StatusBar: "⌛ Populating UI tabs..."                    │
 │  │  oMyGUI.Update() → push all parsed data to controls       │
 │  │  StatusBar: "✅ Loaded and Ready 😎"                     │
@@ -326,7 +327,7 @@
 
 * **GUI shows before API call** — the window is visible during Phase 3, before the potentially slow Phase 5 network call. The status bar shows progress ("Loading Data...").
 * **Synchronous API calls** — `ServerCall()` blocks the UI thread. During the 1-5 second API call, the window is unresponsive.
-* **Cascading game detection** — tries Epic, then Steam, then Standalone. Runs twice: once in auto-execute (L246) and again in `Load()` (L690) using the saved platform preference.
+* **Cascading game detection** — tries Epic, then Steam, then Standalone. Runs twice: once in auto-execute (L259) and again in `Load()` (L645) using the saved platform preference.
 * **FirstRun() is modal** — blocks the entire startup flow with `MsgBox`/`InputBox` dialogs until the user provides credentials or cancels.
 * **No async** — all operations are synchronous on the main thread. Long operations (API calls, file reads, game launch wait) freeze the GUI.
 
@@ -358,7 +359,7 @@ ServerCall(callname, params, server)
 
 ## Hotkey Registration
 
-Hotkeys are active after the auto-execute `return` (L313):
+Hotkeys are active after the auto-execute `return` (L331):
 
 | Hotkey | Action | Function |
 |--------|--------|----------|
@@ -380,7 +381,7 @@ Hotkeys are active after the auto-execute `return` (L313):
 
 ## Crash Protection (Optional)
 
-When enabled via the GUI toggle, `CrashProtect()` (L978) runs a polling loop:
+When enabled via the GUI toggle, crash protection runs a polling loop:
 
 ```text
 CrashProtect()

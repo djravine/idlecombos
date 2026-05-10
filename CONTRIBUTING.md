@@ -18,6 +18,7 @@
 * `IdleCombosLib.ahk` — Extracted pure/testable functions
 * `idledict.json` — Champion/chest/campaign ID-to-name data
 * `json.ahk` — Bundled JSON parser (do not modify)
+* `Lib/ScrollBox.ahk` — Vendored scrollable text display helper
 * See `AGENTS.md` for detailed code map and conventions
 
 ## Code Style
@@ -43,6 +44,8 @@ When releasing, update version in all three locations:
 * `README.md` line 5
 * `CHANGELOG.md` (new section at top)
 
+If adding new settings keys, also update `SETTINGS_SCHEMA.md` — see [Settings Schema](SETTINGS_SCHEMA.md) for the bump procedure.
+
 ## Dictionary Updates
 
 To add new champions or chests, edit `idledict.json`:
@@ -50,6 +53,8 @@ To add new champions or chests, edit `idledict.json`:
 * Add entries to the `champions` or `chests` objects
 * Update `MaxChampID` / `MaxChestID` values at the top of the file
 * Lookups are handled by `IdleCombosLib.ahk` functions
+
+Alternatively, use **Help → Sync Dictionary from API** to fetch live definitions from the game API. This diffs against the local dictionary, previews changes, and merges with backup.
 
 ## Security Notes
 

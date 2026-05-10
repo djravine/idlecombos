@@ -1,20 +1,31 @@
 # Security
 
-> Threat model and security considerations for IdleCombos v3.78
+> Threat model and security considerations for IdleCombos v3.80
 
 ## Credential Storage
 
-IdleCombos stores the following credentials locally in `idlecombosettings.json` (plaintext JSON):
+IdleCombos stores the following credentials locally in `idlecombosettings.json`:
 
-* `user_id` — Idle Champions account identifier
-* `hash` — API authentication token (grants full account access)
-* `instance_id` — game session identifier
-* `user_id_epic` — Epic Games account ID (if applicable)
-* `user_id_steam` — Steam account ID (if applicable)
+* `user_id` — Idle Champions account identifier (plaintext)
+* `hash` — API authentication token, **encrypted at rest with Windows DPAPI**
+* `instance_id` — game session identifier (plaintext)
+* `user_id_epic` — Epic Games account ID (plaintext, if applicable)
+* `user_id_steam` — Steam account ID (plaintext, if applicable)
 
-### Why plaintext?
+### DPAPI encryption (v3.80+)
 
-AutoHotkey v1.1 lacks native bindings to Windows Credential Manager or DPAPI. Implementing encrypted storage would require COM interop with `CryptProtectData` or an external helper binary, adding complexity and a new attack surface for minimal gain — the threat model assumes the local machine is trusted.
+The `hash` field is encrypted using Windows Data Protection API (`CryptProtectData`) before being written to `idlecombosettings.json`. The encrypted value is stored as a hex string with a `DPAPI:` prefix. Only the same Windows user account on the same machine can decrypt it.
+
+* **Automatic migration**: Existing users with plaintext hashes are migrated transparently on first load — the plaintext is decrypted as-is, then re-encrypted and saved.
+* **Portability**: If settings are copied to a different machine or Windows user, DPAPI decryption will fail. The hash is cleared and the user is prompted to re-enter it via Help → Run Setup.
+* **In-memory**: The hash is decrypted into memory (`UserHash` global) at load time and used in plaintext for API calls. It is never written to disk in plaintext after migration.
+
+### Why not full encryption?
+
+* `user_id` is not secret — it's visible in the game client and community tools.
+* `instance_id` rotates per session and has no standalone value.
+* Platform IDs (`user_id_epic`, `user_id_steam`) are public identifiers.
+* Only `hash` grants API access and warrants encryption.
 
 ### Risk
 
@@ -37,8 +48,7 @@ AutoHotkey v1.1 lacks native bindings to Windows Credential Manager or DPAPI. Im
 
 ### Future hardening (not planned)
 
-* Windows Credential Manager via COM (`CredWrite`/`CredRead`) — would require `DllCall` to `advapi32.dll`.
-* File-level encryption via DPAPI (`CryptProtectData`) — same COM complexity.
+* Windows Credential Manager via COM (`CredWrite`/`CredRead`) — would eliminate file-based storage entirely.
 * Prompt for credentials on each launch instead of persisting — poor UX for a desktop companion tool.
 
 ## Network Security
@@ -77,23 +87,35 @@ WinHTTP relies on the Windows certificate trust store. No certificate pinning is
 | Asset | Source | License | Integrity |
 |-------|--------|---------|-----------|
 | `json.ahk` | [Chunjee/json.ahk](https://github.com/Chunjee/json.ahk) | MIT | No version pin or SHA in file |
-| `USkin.dll` (708 KB) | Unknown Windows theming library | Unknown | No provenance or hash documented |
+| `USkin.dll` (708 KB) | Unknown Windows theming library | Unknown | SHA-256 verified before `LoadLibrary` |
 | `Lib/Yunit/` | [Uberi/Yunit](https://github.com/Uberi/Yunit) | AGPL-3.0 | Vendored from master branch |
-| ScrollBox (inline) | AHK forum — Fanatic Guru, 2018 | Unknown | Embedded in `IdleCombos.ahk:4176+` |
+| `Lib/ScrollBox.ahk` | AHK forum — Fanatic Guru, 2018 | Unknown | Vendored at `Lib/ScrollBox.ahk` |
 | 30 `.msstyles` themes | Various Windows theme authors | Unknown | No provenance documented |
 
 ### USkin.dll
 
-This is the highest supply-chain risk. The binary is loaded at runtime via `DllCall("LoadLibrary")` and `DllCall(USkin.dll\USkinInit)`. No hash verification is performed before loading. The source, author, and version are undocumented.
+This is the highest supply-chain risk. The binary is loaded at runtime via `DllCall("LoadLibrary")` and `DllCall(USkin.dll\USkinInit)`. The app verifies the SHA-256 hash before loading — if the hash cannot be computed or does not match, the DLL is **not** loaded (fail-closed). The source, author, and version are documented in `THIRD_PARTY.md`.
 
 ### Dictionary auto-update
 
-`Update_Dictionary()` downloads `idledict.json` from GitHub raw URL (`https://raw.githubusercontent.com/djravine/idlecombos/master/idledict.json`). The download includes basic integrity verification but does not pin to a specific commit SHA or release tag.
+`Update_Dictionary()` downloads `idledict.json` from GitHub raw URL (`https://raw.githubusercontent.com/djravine/idlecombos/master/idledict.json`). The download is fetched from the mutable `master` branch (not a pinned commit or signed release tag).
+
+**Current integrity checks:**
+
+* Downloaded file must be valid JSON (parse-back verification)
+* Required keys must be present (`version`, `champions`)
+* Version downgrades are rejected (`downloaded.version >= current.version`)
+
+**Not verified:**
+
+* No cryptographic signature or checksum from a separate trust anchor
+* No commit SHA pinning — relies on GitHub account security (TOFU model)
+
+**Risk assessment (LOW):** The dictionary contains only display-name mappings (champion, chest, campaign, patron, feat names). A tampered dictionary cannot steal credentials, execute code, or modify application behaviour — it can only cause incorrect display names in the UI. The HTTPS transport and structural validation provide reasonable protection for this threat level.
 
 ## CI/CD Security
 
-* Release and publish workflow actions are SHA-pinned (immutable references).
-* CI workflow actions use floating major version tags (`@v4`, `@v19`) — lower risk but not immutable.
+* CI workflow actions are SHA-pinned (immutable references) in all three workflows.
 * Secrets are accessed via `${{ secrets.* }}` — no hardcoded tokens.
 * Release archives do not include `Lib/Yunit/` (AGPL-3.0 test framework excluded from distribution).
 * No code signing on release artifacts.

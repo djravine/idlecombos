@@ -6,6 +6,126 @@ To all the Idle Dragoneers who inspired and assisted me!
 
 ------
 
+## 3.80
+
+* Fix RunDisableTooltips reading wrong hwnd variable (`hcbx11` → `hcb11`) — tooltip toggle was broken
+* Fix Variants tab using undefined `patronChoice` — add GuiControlGet to read `VariantPatronChoice` DDL
+* Fix CrashProtect timer checking wrong status string (`Crash Protect\nDisabled` → `Crash Protect: Disabled`) — disable was not stopping the loop
+* Fix DPAPI silent plaintext fallback — warn user via log and status bar when DPAPI is unavailable
+* Add UrlEncode() helper (RFC 3986) and apply to redeem code path — replaces partial `&`/`#`-only encoding
+* Fix CHANGELOG.md markdownlint MD037 errors — wrap glob patterns in backticks
+* Add WriteJsonAtomic() parse-back validation — comment claimed it, now implementation matches
+* Fix TestMode global declaration — explicit `global TestMode` before conditional set (removes fragile ordering)
+* Deduplicate error parsing in GetPlayServerFromWRL — reuse CheckServerCallError() instead of inline copy
+* Refactor UpdateICSetting to use WriteJsonAtomic() — removes inline temp-write/replace duplicate
+* Add BuildAuthParams() helper — consolidates 12 repeated auth query string constructions
+* Consolidate 5 web opener functions into thin wrappers calling shared OpenWebTool()
+* Fix champion stats (Black Viper, Torogar, D'hani, Zorbu) missing magnitude suffixes — use FormatMagnitude()
+* Update USER_MANUAL.md — move Pity Timers/Item Levels/Incomplete Variants from menu to tab section; fix dictionary menu label
+* Fix CODE_DEPLOY.md — CI trigger description now mentions push (not just PRs)
+* Fix bug-report.md issue template — replace Browser field with AHK Version and IdleCombos Version
+* Fix publish.yml — curl now fails on non-2xx Discord webhook responses
+* Add ci.yml least-privilege permissions block (`contents: read`)
+* Add lint, syntax check, and version validation to release.yml (was tests-only)
+* Fix Log tab not scrolling to bottom — `Edit2` ClassNN was stale after AutoRefresh edit added; use hwnd + DllCall(EM_SETSEL/EM_SCROLLCARET) instead
+* Update CODE_FLOW.md — 61 stale line references updated to match current source; remove Pity Timers from Chests menu (now a tab); version v3.78 → v3.80
+* Fix DPAPI graceful fallback — probe round-trip at startup, skip encryption when unavailable (hash stored as plaintext instead of being wiped)
+* Fix DPAPI decryption failure clearing UserID and auto-clearing stale encrypted hash from settings
+* Fix CheckAchievements showing misleading Todo items when data is empty/loading (guard on highest_level_gear)
+* Fix cached data loading overwriting DPAPI failure warning in status bar (skip cache when UserID = 0)
+* Fix FirstRun now asks which platform (Epic/Steam/Standalone/Console) before detecting game install
+* Fix FirstRun auto-fetches user details from API after successful credential setup
+* Fix ByRef not working on object properties in ParseInventoryDataFromDetails — inline DefaultToZero check
+* Fix RequireKey() calling LogFile() (app-only function) from IdleCombosLib.ahk — broke test loading
+* Fix test_GrandTour assertion updated to match API-synced campaign name "A Grand Tour of the Sword Coast"
+* Fix test_Extract_NumericCoercion using local variable for id+0 coercion pattern
+* Add DPAPI test environment guards — skip encrypt/round-trip tests when CryptProtectData unavailable
+* Add ServerName allowlist validation in ServerCall() — reject names not matching `^(master|ps[0-9]+)$`
+* Add SHA-256 checksums (SHA256SUMS.txt) to release workflow artifacts
+* Add defensive .gitignore patterns for `.env`, `*.pem`, `*.key`, `*.pfx`, `*.crt`, `webRequestLog.txt`
+* Add DictGet() helper for numeric-coerced dictionary lookups
+* Add OpenChestIfGameClosed() shared guard for silver/gold/event chest opening
+* Add EnsureCredentials() helper — replaces 6 repeated "Need User ID & Hash" blocks
+* Add BlacksmithContractsUsed() helper — deduplicates contract calculation in error/success paths
+* Replace deprecated Discord webhook actions (node20 deprecation) with curl-based notification
+* Add CI push trigger for master/develop branches
+* Remove unused journal.json placeholder from .gitignore and AGENTS.md
+* Document dictionary update TOFU risk assessment in SECURITY.md
+* Refactor repeated credential checks into shared EnsureCredentials() helper and deduplicate open-chest guard logic
+* Add DictGet() helper for numeric-coerced dictionary lookups and simplify blacksmith contract usage calculation
+* Add CI push trigger for master/develop and remove unused journal.json placeholder from ignored/runtime docs
+* Add Pity Timers tab — champions grouped by chests-until-epic (was menu-only dialog)
+* Add Item Levels tab — gear iLvl report with core/event averages, highest/lowest, shinies (was menu-only dialog)
+* Add Incomplete Variants tab — patron-filterable adventure completion tracker with in-tab refresh (was menu-only dialog)
+* Add "Sync Dictionary from API" — fetches live champion, chest, campaign, patron, and feat definitions from the game API, diffs against local dictionary, previews changes, and merges with backup (Help menu)
+* Tab count: 8 → 11
+* Display "Map" instead of "-1" for adventure ID when on the world map
+* Add "Show API Messages in Status Bar" setting to toggle verbose parsing/API progress messages
+* Improve save dialogs: show what's being saved and target filename (was vague "Save to File?")
+* Add numeric input validation to all chest/blacksmith/bounty count prompts (reject non-integer, zero, negative)
+* SettingsCheckValue bumped to 25 (new: showapimessages)
+* Add USkin.dll SHA-256 hash verification before DllCall("LoadLibrary") — blocks tampered binaries
+* Add try/catch + atomic write (temp file → rename) to ViewICSettings/UpdateICSetting
+* Add dictionary update downgrade rejection — downloaded version must be >= current
+* Mask user hash fully as `****` in List User Details (was showing first/last 4 chars)
+* Add WRL file path validation — reject paths outside game/script directory
+* Extract 6 Parse*Data() functions to IdleCombosLib.ahk as testable pure versions
+* Add tests/test_parsing.ahk with 51 new tests covering all extracted parsing functions
+* Refactor game detection: shared tryDetectPlatform() with platform descriptor table replaces 4 near-identical functions
+* Untrack advdefs.json — add to .gitignore (was creating dirty working trees)
+* Fix release packaging: include Lib/ScrollBox.ahk in archives (app failed to launch without it)
+* Make release.yml run tests before packaging (new test job with needs: dependency)
+* Fix CI: pin AutoHotkey Chocolatey version to 1.1.37.1 (1.1.37.02 was delisted)
+* Fix CI: exclude vendored Lib/Yunit/ from markdownlint (14 false-positive errors)
+* Fix CI: change trigger from push+PR to PR-only
+* Add retention-days: 30 to CI JUnit artifact upload
+* Add USER_MANUAL.md — comprehensive user guide with feature reference, settings, hotkeys, and troubleshooting
+* Add CODE_DEPLOY.md — release pipeline documentation
+* Add Documentation section to README.md linking all project markdown docs
+* Self-host README screenshots (Summary, Adventures, Inventory, Settings) — was single external Imgur link
+* Add shared PromptCount() helper for InputBox validation across all batch operations
+* Add BeginBusyOp()/EndBusyOp() guard wrapper — fixes bug where cancelling InputBox permanently locked IsBusy
+* Remove dead code: ShowPityTimers(), GearReport(), IncompleteVariants/Base/Patron() replaced by tabs (~196 lines)
+* Remove redundant menu items moved to tabs (Pity Timers, Item Level Report, Incomplete Variants)
+* Remove 15 commented-out debug MsgBox/ScrollBox lines and stale code blocks
+* Add live ticking timestamp in sidebar — shows elapsed time (Xs, Xm Xs, Xh Xm, Xd Xh) updated every second
+* Fix "Map" adventure display breaking LoadAdventure/EndAdventure checks (still compared against "-1")
+* Fix cached user details not setting ActiveInstance/InstanceID before parsing (adventures showed in wrong slots)
+* Fix sidebar relative time using local time instead of UTC (showed timezone offset as elapsed time)
+* Expand THIRD_PARTY.md: USkin.dll provenance, AGPL/MIT Yunit boundary, ScrollBox location
+* Add USER_MANUAL.md to release archives
+* Add AGENTS.md convention: always update CHANGELOG.md after making changes
+* Rename Help menu "Update Dictionary" to "Update Dictionary from Git" for clarity
+* Use full patron display names from dictionary (e.g. "Mirt the Moneylender") in Patrons tab, dropdown, CSV export
+* Derive patron dropdown, patronMap, and ListView from dictionary via BuildPatronDropdownList()/BuildPatronDisplayMap() — no more hardcoded patron name lists
+* Add PatronShortNames/PatronIDs shared constants in IdleCombosLib.ahk — single source of truth for adding new patrons
+* Bump dictionary version to 2.42
+* Add tests/test_dictionary_sync.ahk with 42 unit tests covering definition extraction, diffing, preview, merge, and feat formatting
+* Fix USkin.dll hash verification fail-open — now blocks DLL load when hash cannot be parsed (was silently loading unverified binary)
+* Fix SETTINGS_SCHEMA.md stale: updated from 23 to 25 keys, added autorefreshminutes and showapimessages rows
+* Fix CODE_FLOW.md version drift: v3.78 → v3.80
+* Fix THIRD_PARTY.md version drift: v3.79 → v3.80
+* Fix CODE_DEPLOY.md: CI trigger description corrected from push+PR to PR-only
+* Add Lib/ScrollBox.ahk to README.md Includes section and CONTRIBUTING.md Project Structure
+* Add SETTINGS_SCHEMA.md cross-link to CONTRIBUTING.md Version Bumping section
+* Add export CSV pattern to .gitignore (idlecombos_export_*.csv)
+* Refactor: use EndBusyOp() consistently in Buy_Chests/Open_Chests/UseBlacksmith (was manually setting IsBusy := false, missing cleanup on early returns)
+* Refactor: bg1/bg2/bg3 instance assignment from 3 identical 8-field blocks to single loop with dynamic slot key
+* Refactor: blacksmith contract switch to data-driven metadata object (buff_id → name/variable mapping)
+* Refactor: extract FormatMagnitude() helper in IdleCombosLib.ahk — replaces 10 inline SubStr+Format+log+MagList expressions across champion stats, adventure core XP, and patron influence/coins
+* Refactor: extract WriteJsonAtomic(filePath, obj) shared helper — used by PersistSettings() and WriteDictionaryJson()
+* Add idledict.json JSON validity check to CI (validate job) — catches malformed dictionary before merge
+* Add comment headers to all functions in IdleCombosLib.ahk — improved descriptions for all lookup, parsing, and sync functions
+* Refactor: patron unlock requirements from 5 near-identical case branches to table-driven descriptor (unlockReqs map)
+* Refactor: bounty/blacksmith contract metadata into shared BountyContracts/BlacksmithContracts constants in IdleCombosLib.ahk — single source of truth for names, buff IDs, and multipliers used by inventory parsing, GUI display, CSV export
+* Add SafeGet(obj, keys*) and RequireKey(obj, keys*) helpers for safe nested object traversal — fail-fast on missing API paths with LogFile warning
+* Encrypt API hash at rest using Windows DPAPI (CryptProtectData) — hash in idlecombosettings.json is now stored as hex ciphertext with "DPAPI:" prefix instead of plaintext
+* Auto-migrate existing users: plaintext hashes are detected on load, used as-is, then encrypted and re-saved transparently with zero user action
+* Add DPAPIEncrypt/DPAPIDecrypt/IsEncryptedHash helpers to IdleCombosLib.ahk with 18 unit tests (round-trip, passthrough, migration, edge cases)
+* Update SECURITY.md: document DPAPI encryption, migration flow, and per-field encryption rationale
+* Add comment headers to all functions and label handlers in IdleCombos.ahk (~100 functions documented)
+* Update all markdown docs to reflect v3.80 codebase: AGENTS.md, SECURITY.md, CODE_DEPLOY.md, CODE_FLOW.md, THIRD_PARTY.md, USER_MANUAL.md, README.md, CONTRIBUTING.md, SETTINGS_SCHEMA.md
+
 ## 3.79
 
 * Add USER_MANUAL.md — comprehensive user guide with feature reference, settings, hotkeys, and troubleshooting

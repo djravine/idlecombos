@@ -1,6 +1,6 @@
 # Third-Party Dependencies
 
-> Vendored assets shipped with IdleCombos v3.78
+> Vendored assets shipped with IdleCombos v3.80
 
 All dependencies are vendored (copied into the repository). There is no package manager.
 
@@ -16,24 +16,26 @@ All dependencies are vendored (copied into the repository). There is no package 
 
 ### USkin.dll — Windows Theming
 
-* **Source**: Unknown (USkin Windows skinning library)
-* **License**: Unknown
-* **Version**: Unknown
+* **Source**: USkin skinning library by SkinSoft ([skinsoft.com](http://www.skinsoft.com/), no longer active). Redistributed across AHK community forums. Original author/distributor unverifiable.
+* **License**: Proprietary/Unknown — no license file accompanies the binary
+* **Version**: Unknown (no version resource in DLL)
 * **Size**: 708,608 bytes
 * **SHA-256**: `9CCF45F05DC84F343D63EBCD96D2C2452257C2582EBE05C2FE317A16D62A3347`
-* **Notes**: Optional binary loaded at runtime via `DllCall("LoadLibrary")` for `.msstyles` theme support. Only loaded if `styles/` directory exists.
+* **Risk**: Opaque closed-source binary loaded at runtime via `DllCall("LoadLibrary")`. Cannot be audited. The app verifies the SHA-256 hash before loading to detect tampering.
+* **Mitigation**: Theming is optional. If the `styles/` directory is absent (e.g. "no-themes" release), the DLL is never loaded and the app runs with default Windows styling.
 
 ### .msstyles Themes (30 files)
 
-* **Source**: Various Windows theme authors
-* **License**: Unknown (community themes)
+* **Source**: Various Windows theme authors (community themes)
+* **License**: Unknown (community themes, no license files included)
 * **Notes**: Optional UI themes in `styles/`. App functions without them (falls back to default Windows style).
 
 ### ScrollBox — Scrollable Text Display
 
 * **Source**: [AHK Forum — Fanatic Guru (2018)](https://www.autohotkey.com/boards/viewtopic.php?t=46516)
 * **License**: Unknown (forum post, public domain assumed)
-* **Location**: Inline in `IdleCombos.ahk:4176+`
+* **Version**: 1.21 (2018-06-09)
+* **Location**: `Lib/ScrollBox.ahk`
 * **Notes**: Helper function for displaying scrollable text in message boxes.
 
 ## Test-Only Dependencies
@@ -44,7 +46,17 @@ All dependencies are vendored (copied into the repository). There is no package 
 * **License**: **AGPL-3.0** (see `Lib/Yunit/LICENSE.txt`)
 * **Version**: Master branch snapshot (~2022)
 * **Location**: `Lib/Yunit/`
-* **Notes**: Used only for running unit tests. **Not included in release archives** — verified in `release.yml` (only root `*.ahk` files are copied; `Lib/` is excluded).
+* **Notes**: Used only for running unit tests. **Not included in release archives** — verified in `release.yml` (only root `*.ahk` + `Lib/ScrollBox.ahk` are copied; `Lib/Yunit/` is excluded).
+
+#### AGPL-3.0 / MIT Boundary
+
+The root project is MIT-licensed. Yunit is AGPL-3.0. These coexist safely because:
+
+1. **Not distributed together** — release archives exclude `Lib/Yunit/` entirely. End users never receive AGPL-licensed code.
+2. **Not linked at runtime** — Yunit is only `#Include`d by test runner scripts (`tests/run_tests*.ahk`), never by the main application (`IdleCombos.ahk`).
+3. **Test-only dependency** — AGPL's copyleft provisions apply to "conveying" (distributing) the work. Since Yunit is never conveyed to users, no AGPL obligations attach to the MIT-licensed project.
+
+Developers who clone the repo receive Yunit under its own AGPL-3.0 terms for test execution purposes only.
 
 ## Data Files
 

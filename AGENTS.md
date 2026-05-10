@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2025-05-10
+**Generated:** 2026-05-10
 **Branch:** develop
 
 ## OVERVIEW
@@ -20,7 +20,7 @@ idlecombos/
 ├── Lib/
 │   ├── ScrollBox.ahk    # LIB: Vendored scrollable text display (Fanatic Guru)
 │   └── Yunit/           # TEST: Yunit test framework (vendored, AGPL-3.0)
-├── tests/               # TEST: Unit test suites (93 tests)
+├── tests/               # TEST: Unit test suites
 ├── .github/workflows/   # CI: lint, syntax check, tests, release packaging
 ├── SECURITY.md          # Threat model and security considerations
 ├── THIRD_PARTY.md       # Vendored asset inventory with SHA-256 hashes
@@ -38,6 +38,8 @@ idlecombos/
 | API calls | `IdleCombos.ahk` ServerCall() | Single variant, HTTPS, WinHttp POST |
 | Parse API response | `IdleCombos.ahk` Parse*Data() | Called from GetUserDetails() |
 | Add champion/chest | `idledict.json` | Add entry to `champions` or `chests` object |
+| Sync dictionary from API | `IdleCombos.ahk` Sync_Dictionary_From_API() | Help menu; fetches live definitions, diffs, previews, merges |
+| Add new patron | `IdleCombosLib.ahk` PatronShortNames + PatronIDs | Also add globals + switch case in ParsePatronDataFromDetails |
 | Settings persistence | `IdleCombos.ahk` SaveSettings() → `IdleCombosLib.ahk` PersistSettings() | Atomic JSON write |
 | Add new setting key | `IdleCombosLib.ahk` NewSettings + SettingsCheckValue | See SETTINGS_SCHEMA.md |
 | Add testable logic | `IdleCombosLib.ahk` | Pure functions shared between app and tests |
@@ -65,6 +67,16 @@ idlecombos/
 | Update_Dictionary() | IdleCombos.ahk | Auto-update idledict.json from GitHub (with integrity check) |
 | applyGameInstall() | IdleCombos.ahk | Shared state assignment for game platform detection |
 | SimulateBriv() | IdleCombos.ahk | GUI wrapper for Briv stack calculator |
+| Sync_Dictionary_From_API() | IdleCombos.ahk | Fetch live definitions from game API, diff, preview, merge into idledict.json |
+| FetchDefinitionsForSync() | IdleCombos.ahk | Two-step API call: resolve defs server, then getDefinitions (no auth) |
+| WriteDictionaryJson() | IdleCombos.ahk | Atomic write of dict with .bak backup and parse-back validation |
+| ExtractDefinitionMap() | IdleCombosLib.ahk | Convert API defines array [{id,name},...] to {id: name} map |
+| ExtractFeatDefinitionMap() | IdleCombosLib.ahk | Feat-specific extractor: combines hero_id + name into "ChampName (FeatName)" |
+| DiffDefinitionSection() | IdleCombosLib.ahk | Compare local vs API maps; classify NEW and CHANGED entries |
+| BuildSyncPreviewTextMulti() | IdleCombosLib.ahk | Build multi-section human-readable diff preview for ScrollBox |
+| ApplySyncSectionToDict() | IdleCombosLib.ahk | Generic merge: apply new + changed entries to any dict section |
+| BuildPatronDisplayMap() | IdleCombosLib.ahk | Build reverse lookup: display name → patron ID (from dict) |
+| BuildPatronDropdownList() | IdleCombosLib.ahk | Build pipe-delimited patron DDL string from dict names |
 | getChestCodes() | IdleCombosLib.ahk | Regex extraction of redeem codes from clipboard |
 | CheckServerCallError() | IdleCombosLib.ahk | Detect API connection errors in response |
 | ParsePlayServerName() | IdleCombosLib.ahk | Extract server name from API redirect response |
@@ -76,6 +88,12 @@ idlecombos/
 | RotateLogFile() | IdleCombosLib.ahk | Truncate log files exceeding max size |
 | SetMockServerCall() | IdleCombosLib.ahk | Enable mock mode for testing API calls |
 | ClearMockServerCall() | IdleCombosLib.ahk | Disable mock mode |
+| DPAPIEncrypt() | IdleCombosLib.ahk | Encrypt string using Windows DPAPI (CryptProtectData) |
+| DPAPIDecrypt() | IdleCombosLib.ahk | Decrypt DPAPI-encrypted value back to plaintext |
+| FormatMagnitude() | IdleCombosLib.ahk | Format large numbers with K/M/B/t suffix |
+| WriteJsonAtomic() | IdleCombosLib.ahk | Atomic JSON write via temp file with validation |
+| SafeGet() | IdleCombosLib.ahk | Safely navigate nested object paths without crashing |
+| RequireKey() | IdleCombosLib.ahk | Fail-fast check for required nested API paths with LogFile warning |
 
 ## CONVENTIONS
 
@@ -94,15 +112,18 @@ idlecombos/
 * **API pattern**: `ServerCall(callname, parameters)` → HTTPS to `{server}.idlechampions.com/~idledragons/post.php`. Handles `switch_play_server` redirect (single hop, no loop).
 * **API constraints**: All parameters (including `user_id` and `hash`) MUST be sent as URL query string parameters. The POST body is empty. The game API (`post.php`) only reads from query string (`$_GET`). This is confirmed across all known community implementations (IdleCombos, Leyline77/idleChampions-ahk). Do NOT move parameters to the POST body — it will break all API calls. See `SECURITY.md` for the security implications of credentials in query strings.
 * **Data format**: JSON for all persistence (settings, logs, API responses). `JSON.parse()`/`JSON.stringify()` via json.ahk.
-* **GUI**: Single window, tab-based (8 tabs). `Gui, MyWindow:Add` pattern.
+* **GUI**: Single window, tab-based (11 tabs). `Gui, MyWindow:Add` pattern.
 * **Theming**: USkin.dll loaded at runtime for msstyles application. `SkinForm()`.
 * **32-bit forced**: `RunWith(32)` at startup - required for COM/WinHttp.
 * **File encoding**: IdleCombos.ahk MUST have UTF-8 BOM (`EF BB BF`) — required for emoji in GUI. Use `:=` (expression) not `=` (legacy) for string assignments in library functions.
 * **Testable code**: Pure functions go in `IdleCombosLib.ahk` (included by both app and tests). Functions that call `ServerCall()` must stay in `IdleCombos.ahk` (not available in test context).
 * **TestMode**: `IdleCombosLib.ahk` checks `TestMode` global. Test runners set `TestMode := true` before including the lib to suppress MsgBox/ExitApp.
-* **IsBusy guard**: Long-running operations (Buy_Chests, Open_Chests, UseBlacksmith) set `IsBusy := true` at entry, `false` at exit. Prevents hotkey reentrancy.
-* **Security**: Never log `UserHash` — use `[REDACTED]`. Hash masked in UI display. See `SECURITY.md`.
+* **IsBusy guard**: Long-running operations (Buy_Chests, Open_Chests, UseBlacksmith) use `BeginBusyOp()`/`EndBusyOp()` for entry/exit. Prevents hotkey reentrancy.
+* **Security**: Never log `UserHash` — use `[REDACTED]`. Hash encrypted at rest via DPAPI (`DPAPIEncrypt`/`DPAPIDecrypt`). Hash masked in UI display. See `SECURITY.md`.
 * **JSON keys**: `JSON.parse()` stores numeric-looking keys as numbers. Dictionary lookups must use `id + 0` to coerce to numeric for map access.
+* **Patron names**: Two forms exist — short names (`Mirt`, `Vajra`) used as AHK variable prefixes (e.g. `MirtVariants`), and full display names (`Mirt the Moneylender`, `Vajra Safahr`) from the dictionary via `PatronFromID()`. All UI display, exports, and dropdowns use the dict names. Short names are internal identifiers only, stored in `PatronShortNames` constant. To add a new patron: add to `PatronShortNames`, `PatronIDs`, add global variables, add switch case in `ParsePatronDataFromDetails`, and add the dict entry.
+* **Dictionary sync**: `Sync_Dictionary_From_API()` fetches live champion, chest, campaign, patron, and feat definitions from the game API's `getDefinitions` endpoint (no authentication needed). Uses two-step server discovery (`getPlayServerForDefinitions` → `getDefinitions`). Diffs against local dict, shows preview via ScrollBox, merges with `.bak` backup. Does NOT bump `idledict.json` version (preserves GitHub update flow). Preserves curated local overrides (e.g. chest 205 "DO NOT USE"). Pure diff/merge logic in `IdleCombosLib.ahk`, API calls in `IdleCombos.ahk`.
+* **Changelog**: Always add entries to `CHANGELOG.md` under the current version section after making changes. Every user-visible fix, feature, or refactor gets a bullet point. This is the primary record of what changed and when.
 * **Markdown (GitHub-flavoured)**:
   * No trailing spaces for line breaks; use blank lines between blocks.
   * ATX headings (`##`) with blank line before/after.
@@ -117,7 +138,7 @@ idlecombos/
 ## ANTI-PATTERNS (THIS PROJECT)
 
 * `UseBounty()` is alpha-quality: requires 1280x720 resolution, mouse automation, prone to failure.
-* `idledict.ahk:779` has "DO NOT USE" chest entry (Gold Mithral Hall) - broken game item.
+* `idledict.ahk` chest 205 has "DO NOT USE" entry (Gold Mithral Hall) — broken game item. Dictionary sync preserves this via `preserveChestKeys`.
 * Variables prefixed `todo` (L3450-3709) are NOT TODO markers - they're display strings for achievement info.
 * `SettingsCheckValue` and `NewSettings` are defined in `IdleCombosLib.ahk` (shared by app and tests). Increment `SettingsCheckValue` when adding new settings keys.
 * Do NOT put functions that call `ServerCall()` in `IdleCombosLib.ahk` — tests include the lib without the main app, so ServerCall is unavailable. `BatchAPICall()` lives in `IdleCombos.ahk` for this reason.
@@ -135,27 +156,27 @@ idlecombos/
 # "C:\Program Files\AutoHotkey\AutoHotkey.exe" tests\run_tests_ci.ahk
 
 # Release (tag-triggered CI)
-git tag v3.78 && git push origin v3.78
+git tag v3.80 && git push origin v3.80
 # Creates draft release with themed/unthemed archives
 # Publishing draft triggers Discord webhook notification
 
 # Update dictionary from upstream
-# Built-in: Tools menu → Update Dictionary (fetches from GitHub master)
+# Built-in: Help menu → Update Dictionary from Git (fetches from GitHub master)
+# Or: Help menu → Sync Dictionary from API (fetches live definitions from game API)
 ```
 
 ## DATA LOAD (Runtime Files)
 
 | File | Loaded By | Purpose | Tracked |
 |------|-----------|---------|---------|
-| `idlecombosettings.json` | MyGui.Load() | User prefs, credentials (user_id, hash, instance_id) | No (gitignored) |
+| `idlecombosettings.json` | MyGui.Load() | User prefs, credentials (user_id, DPAPI-encrypted hash, instance_id) | No (gitignored) |
 | `userdetails.json` | GetUserDetails() | Cached API response (account state) | No (gitignored) |
-| `advdefs.json` | IncompleteVariants() | Adventure definitions (auto-generated from API) | Yes (tracked) |
+| `advdefs.json` | IncompleteVariants() | Adventure definitions (auto-generated from API) | No (gitignored) |
 | `redeemcodelist.json` | getChestCodes() | Community redeem codes list | No (gitignored) |
 | `redeemcodelog.json` | Redeem history check | Previously redeemed codes (skip dupes) | No (gitignored) |
 | `chestopenlog.json` | Open_Chests() | Chest open results history (rotated) | No (gitignored) |
 | `blacksmithlog.json` | UseBlacksmith() | Blacksmith contract results (rotated) | No (gitignored) |
 | `bountylog.json` | UseBounty() | Bounty contract results (rotated) | No (gitignored) |
-| `journal.json` | (unused/reserved) | Placeholder for future journaling | No (gitignored) |
 | `campaign.json` | IncompleteBase() | Campaign details cache | No (gitignored) |
 | `idlecombolog.txt` | LogFile() | General app activity log | No (gitignored) |
 | `webRequestLog.txt` | GetIDFromWRL() → ParseWRLCredentials() | Game's WRL file (user_id/hash auto-detect) | External (game dir) |
@@ -166,7 +187,7 @@ Also checked at script dir as fallback (L640). Server name extracted from last `
 
 ## NOTES
 
-* 93 unit tests via Yunit framework. CI runs markdownlint + AHK syntax check + tests + version check on push/PR.
+* Unit tests via Yunit framework. CI runs markdownlint + AHK syntax check + tests + version check on push/PR.
 * `ServerName` defaults to "master" but auto-detects play server from game's WRL file.
 * Crash protection: monitors game process, can relaunch on crash (Steam only).
 * Dictionary auto-update pulls from `djravine/idlecombos` master branch raw GitHub (JSON format, with integrity verification).
