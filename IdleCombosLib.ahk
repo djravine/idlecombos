@@ -1104,6 +1104,45 @@ ExtractDefinitionMap(definesArray) {
 }
 
 ;-----------------------------------------------------------------------------
+; ExtractChampNamesFromDefines(upgradeDefines, lootDefines)
+; Extracts champion names from getuserdetails defines as a supplement when
+; getDefinitions champion_defines is outdated. Parses possessive patterns
+; ("ChampName's") from upgrade tip_text and loot effect descriptions.
+; Returns: object mapping hero_id → champion name
+;-----------------------------------------------------------------------------
+ExtractChampNamesFromDefines(upgradeDefines, lootDefines) {
+	result := {}
+	; Primary: upgrade_defines tip_text ("Grimm's attacks", "Vlithryn's main buff")
+	if (IsObject(upgradeDefines)) {
+		for _, u in upgradeDefines {
+			hid := u.hero_id + 0
+			if (hid <= 0 || result.HasKey(hid))
+				continue
+			tip := u.tip_text
+			if (tip != "" && RegExMatch(tip, "(\w+)'s ", m))
+				result[hid] := m1
+		}
+	}
+	; Supplement: loot_defines effect descriptions ("of Laurana's Battle Plan")
+	if (IsObject(lootDefines)) {
+		for _, item in lootDefines {
+			hid := item.hero_id + 0
+			if (hid <= 0 || result.HasKey(hid))
+				continue
+			if (IsObject(item.effects)) {
+				for _, eff in item.effects {
+					if (eff.description != "" && RegExMatch(eff.description, "of (.*?)'s ", m)) {
+						result[hid] := m1
+						break
+					}
+				}
+			}
+		}
+	}
+	return result
+}
+
+;-----------------------------------------------------------------------------
 ; DiffDefinitionSection(currentMap, apiMap, preserveKeys) - Diff local vs API
 ; preserveKeys is an object of {id: true} entries that should keep local values
 ; Returns object with .new (array), .changed (array), .newCount, .changedCount

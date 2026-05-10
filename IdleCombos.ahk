@@ -4163,6 +4163,19 @@ Sync_Dictionary_From_API() {
 	campaignResult := hasCampaigns ? ExtractDefinitionMap(defsObj.campaign_defines) : {"items": {}, "skipped": 0, "maxId": 0}
 	patronResult := hasPatrons ? ExtractDefinitionMap(defsObj.patron_defines) : {"items": {}, "skipped": 0, "maxId": 0}
 
+	; Supplement champion names from getuserdetails defines (loot/upgrade descriptions)
+	; Fills gaps where getDefinitions champion_defines is outdated for newer heroes
+	if (IsObject(UserDetails) && IsObject(UserDetails.defines)) {
+		supplementChamps := ExtractChampNamesFromDefines(UserDetails.defines.upgrade_defines, UserDetails.defines.loot_defines)
+		for hid, name in supplementChamps {
+			if (!champResult.items.HasKey(hid)) {
+				champResult.items[hid] := name
+				if (hid > champResult.maxId)
+					champResult.maxId := hid
+			}
+		}
+	}
+
 	; Feats need special handling: API returns hero_id + name, local dict stores "ChampName (FeatName)"
 	; Build a champion ID→name lookup from the API response for feat formatting
 	featResult := hasFeats ? ExtractFeatDefinitionMap(defsObj.feat_defines, champResult.items, _dict.champions) : {"items": {}, "skipped": 0, "maxId": 0}
