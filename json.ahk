@@ -1,3 +1,10 @@
+;=============================================================================
+; json.ahk - JSON parser for AutoHotkey
+; Source: https://github.com/Chunjee/json.ahk
+; License: MIT
+; Vendored snapshot (no version tag in upstream)
+; SHA-256: 656204C6FA2A8FC8D3F43BCE73FA1610035CDF9EEE0F27F9BF4E4EA21C67C893
+;=============================================================================
 class JSON
 {
 	/**

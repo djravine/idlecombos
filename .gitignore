@@ -15,5 +15,9 @@ journal.json
 redeemcodelog.json
 redeemcodelist.json
 
+# RUNTIME DATA
+campaign.json
+formationimages/
+
 # TEST OUTPUT
 tests/junit.xml

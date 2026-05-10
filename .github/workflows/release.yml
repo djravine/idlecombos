@@ -18,7 +18,7 @@ jobs:
     - name: Make Release Folder
       run: mkdir "$ARCHIVE_NAME"
     - name: Copy files
-      run: cp -r *.ahk *.md "$ARCHIVE_NAME"
+      run: cp -r *.ahk idledict.json *.ico README.md CHANGELOG.md CONTRIBUTING.md LICENSE "$ARCHIVE_NAME"
     - name: Make Image Folder
       run: mkdir "$ARCHIVE_NAME/images"
     - name: Copy Images

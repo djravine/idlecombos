@@ -1,19 +1,22 @@
 Yunit
 =====
+
 Super simple unit testing framework for [AutoHotkey](http://www.autohotkey.com/).
 
 Usage
 -----
+
 See [doc/Main.md](doc/Main.md)
 
 Branch Description
 ------------------
-- Branch *master* covers usage of YUnit in AutoHotkey from 1.1.x up to 2.0.a77
-- Branch *v2* covers usage of Yunit in AutoHotkey from v2.0-beta.1 (where incompatible 
+* Branch *master* covers usage of YUnit in AutoHotkey from 1.1.x up to 2.0.a77
+* Branch *v2* covers usage of Yunit in AutoHotkey from v2.0-beta.1 (where incompatible
 changes in GUI-interface where introduced)  
 
 License
 -------
+
 Copyright 2012 Anthony Zhang (Uberi) and Joe Taber (infogulch).
 
 This file is part of Yunit. Source code is available at <https://github.com/Uberi/Yunit>.

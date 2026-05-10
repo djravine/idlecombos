@@ -13,9 +13,12 @@
   "MD025": true,
   "MD031": true,
   "MD032": true,
+  "MD033": false,
   "MD034": true,
+  "MD036": false,
   "MD040": true,
   "MD047": true,
   "MD049": { "style": "asterisk" },
-  "MD050": { "style": "asterisk" }
+  "MD050": { "style": "asterisk" },
+  "MD060": false
 }

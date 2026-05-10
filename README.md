@@ -31,15 +31,16 @@ Companion App for Idle Champions, written in [AHK](https://www.autohotkey.com/).
 
 ## Requirements
 
-* Steam install _or_
-* Epic Games install _or_
-* Standalone install _or_
+* Steam install *or*
+* Epic Games install *or*
+* Standalone install *or*
 * Able to enter your `user_id` & `hash` if on another platform.
 
 ## Includes
 
 * `IdleCombos.ahk` — Main application
-* `idledict.ahk` — ID definitions file
+* `IdleCombosLib.ahk` — Shared library functions
+* `idledict.json` — Champion/chest/campaign ID definitions
 * [`json.ahk`](https://github.com/Chunjee/json.ahk) — JSON parsing library
 * `README.md` — This file
 

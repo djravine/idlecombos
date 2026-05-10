@@ -1,5 +1,6 @@
 Yunit
 =====
+
 Super simple testing framework for AutoHotkey.
 
 Yunit is designed to aid in the following tasks:
@@ -11,6 +12,7 @@ Yunit is designed to aid in the following tasks:
 
 Example
 -------
+
 See [doc/Example.ahk](Example.ahk) for a working example script that demonstrates Yunit being used for testing.
 
 A basic test setup looks like the following:
@@ -27,6 +29,7 @@ A basic test setup looks like the following:
 
 Installation
 ------------
+
 Installation is simply a matter of adding the Yunit folder to the library path of your project.
 
 An example directory structure is shown below:
@@ -51,6 +54,7 @@ In AutoHotkey v1.1, library locations are checked as follows:
 
 Importing
 ---------
+
 Yunit and its modules must be imported to be used:
 
     #Include <Yunit\Yunit> ;import the basic test routines (mandatory)
@@ -63,6 +67,7 @@ Output modules only need to be imported if they are going to be used.
 
 Usage
 -----
+
 Yunit is implemented as a class, conveniently named `Yunit`.
 This class is static, which basically means you do not need to make a new instance of `Yunit` it to use it.
 
@@ -93,6 +98,7 @@ Instead of using the two lines above, it may be preferable to simply chain them 
 
 Modules
 -------
+
 Multiple output modules are available:
 
 ### YunitStdout
@@ -107,10 +113,10 @@ The results are formatted one per line, each entry being in the following form:
 
     Result: Category.TestName Data
 
-* _Result_ - result of the test ("PASS" or "FAIL").
-* _Category_ - category or categories that the test is located under, with subcategories separated by dots (Category.Subcategory.OtherCategory).
-* _TestName_ - name of the test being run.
-* _Data_ - data given by the test, such as specific error messages or benchmark numbers.
+* *Result* - result of the test ("PASS" or "FAIL").
+* *Category* - category or categories that the test is located under, with subcategories separated by dots (Category.Subcategory.OtherCategory).
+* *TestName* - name of the test being run.
+* *Data* - data given by the test, such as specific error messages or benchmark numbers.
 
 ### YunitOutputDebug
 
@@ -122,18 +128,18 @@ The results are formatted one per line, each entry being in the following form:
 
     (Counter) Result: Category.TestName Data
 
-* _Counter_ - Number of the performed test
-* _Result_ - result of the test ("PASS" or "FAIL").
-* _Category_ - category or categories that the test is located under, with subcategories separated by dots (Category.Subcategory.OtherCategory).
-* _TestName_ - name of the test being run.
-* _Data_ - data given by the test, such as specific error messages or benchmark numbers.
+* *Counter* - Number of the performed test
+* *Result* - result of the test ("PASS" or "FAIL").
+* *Category* - category or categories that the test is located under, with subcategories separated by dots (Category.Subcategory.OtherCategory).
+* *TestName* - name of the test being run.
+* *Data* - data given by the test, such as specific error messages or benchmark numbers.
 
 ### YunitJUnit
 
     Tester := Yunit.Use(YunitJUnit)
 
-This module writes the test results  JUnit compatible XML-Output. The XML-File is generated in the _directory where the Test-script_ resides and
-has the name _junit.xml_.
+This module writes the test results  JUnit compatible XML-Output. The XML-File is generated in the *directory where the Test-script* resides and
+has the name *junit.xml*.
 
 The JUnit format is commonly used on Continuous-Integration servers (like [jenkins](https://jenkins.io/))
 
@@ -149,14 +155,15 @@ The results are shown in the form of a tree control, with each test suite having
 
 Beside each node is an icon:
 
-* _Green up arrow_ - test passed successfully.
-* _Yellow triangle with exclamation mark_ - test failed.
-* _Two papers_ - test result/description.
+* *Green up arrow* - test passed successfully.
+* *Yellow triangle with exclamation mark* - test failed.
+* *Two papers* - test result/description.
 
 Tests that result in data will have an additional child node that can be expanded to show it.
 
 Test Suites and Categories
 --------------------------
+
 Test suites are written as classes. Class methods are considered tests; nested classes are considered categories.
 Classes nested within these nested classes are considered subcategories, and so on:
 
@@ -195,9 +202,10 @@ The order in which tests are called is arbitrary.
 
 Writing Tests
 -------------
+
 A test is a class method that takes no arguments and has no return value.
-For a test to fail it must throw an exception. 
-Any test that returns normally is considered a success. 
+For a test to fail it must throw an exception.
+Any test that returns normally is considered a success.
 The method `Yunit.Assert(Value, Message)` conveniently throws an exception when `Value` evaluates to false, with an optional `Message` which is displayed if it fails. If the Assert() fails however, no subsequent code within the test function will execute. So, it should always be the last line within the function.
 
     This_Is_A_Test()
@@ -211,7 +219,7 @@ The method `Yunit.Assert(Value, Message)` conveniently throws an exception when 
         MsgBox, hello world   ;this never runs since the test above failed
     }
 
-The special test methods `Begin()` and `End()`, if present, will be called on the instance of the class before and after _each test_, respectively.
+The special test methods `Begin()` and `End()`, if present, will be called on the instance of the class before and after *each test*, respectively.
 Use this to do setup on the `this` object for each test in a category.
 
 In addition, the special class methods `__New()` and `__Delete()` are called before testing starts on a category and after it finishes, respectively.

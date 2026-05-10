@@ -14,8 +14,9 @@
 
 ## Project Structure
 
-* `IdleCombos.ahk` — Main application (all logic)
-* `idledict.ahk` — Champion/chest/campaign ID-to-name dictionary
+* `IdleCombos.ahk` — Main application (GUI + business logic)
+* `IdleCombosLib.ahk` — Extracted pure/testable functions
+* `idledict.json` — Champion/chest/campaign ID-to-name data
 * `json.ahk` — Bundled JSON parser (do not modify)
 * See `AGENTS.md` for detailed code map and conventions
 
@@ -44,11 +45,11 @@ When releasing, update version in all three locations:
 
 ## Dictionary Updates
 
-To add new champions or chests, edit `idledict.ahk`:
+To add new champions or chests, edit `idledict.json`:
 
-* `ChampFromID()` — add new champion case
-* `ChestFromID()` — add new chest case
-* Update `MaxChampID` / `MaxChestID` globals at top
+* Add entries to the `champions` or `chests` objects
+* Update `MaxChampID` / `MaxChestID` values at the top of the file
+* Lookups are handled by `IdleCombosLib.ahk` functions
 
 ## Security Notes
 
