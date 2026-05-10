@@ -581,13 +581,17 @@ class MyGui {
 			; Plaintext values (pre-encryption users) pass through unchanged
 			UserHash := DPAPIDecrypt(CurrentSettings.hash)
 			if (UserHash = "" && CurrentSettings.hash != "" && CurrentSettings.hash != "0") {
-				; Decryption failed — likely settings from a different machine/user
+				; Decryption failed — likely settings from a different machine/user or DPAPI unavailable
 				LogFile("WARNING: Hash decryption failed — credentials cleared (re-run setup)")
 				UserHash := ""
+				UserID := 0
+				; Clear the stale encrypted hash so next FirstRun save won't collide
+				CurrentSettings.hash := ""
+				PersistSettings()
 				SB_SetText("⚠️ Hash decryption failed — please re-enter via Help → Run Setup")
 			} else {
-				; Auto-migrate: if hash was plaintext, encrypt it now for next save
-				if (!IsEncryptedHash(CurrentSettings.hash) && UserHash != "" && UserHash != "0") {
+				; Auto-migrate: if hash was plaintext and DPAPI is available, encrypt it
+				if (!IsEncryptedHash(CurrentSettings.hash) && UserHash != "" && UserHash != "0" && DPAPIAvailable) {
 					CurrentSettings.hash := DPAPIEncrypt(UserHash)
 					PersistSettings()
 					LogFile("Settings migrated: hash encrypted with DPAPI")
@@ -651,7 +655,8 @@ class MyGui {
 			GetPlayServerFromWRL()
 		}
 		; Feature 6: Load cached user details if available (1-hour TTL)
-		if (FileExist(UserDetailsFile)) {
+		; Skip if no valid credentials (e.g. DPAPI failure cleared UserID)
+		if (UserID && FileExist(UserDetailsFile)) {
 			FileGetTime, cacheTime, %UserDetailsFile%, M
 			EnvSub, cacheTime, %A_Now%, Seconds
 			cacheAge := Abs(cacheTime)
@@ -1153,11 +1158,8 @@ RunDisableTooltips:
 ; Label: refresh Variants tab with filtered patron data
 RunVariantRefresh:
 	{
-		if !UserID {
-			MsgBox % "Need User ID & Hash"
+		if !EnsureCredentials()
 			return
-		}
-		GuiControlGet, patronChoice,, VariantPatronChoice
 		patronMap := BuildPatronDisplayMap()
 		patronid := patronMap[patronChoice]
 		if (patronid = "")
@@ -1430,10 +1432,8 @@ SaveSettings()
 
 ExportCSV()
 {
-	if !UserID {
-		MsgBox % "Need User ID & Hash"
+	if !EnsureCredentials()
 		return
-	}
 	FormatTime, timestamp, , yyyy-MM-dd_HHmmss
 	filename := "idlecombos_export_" timestamp ".csv"
 	FileDelete, %filename%
@@ -1559,15 +1559,19 @@ Buy_Event:
 		return
 	}
 
+; Shared guard: warn if game client is running, otherwise open chests by ID
+OpenChestIfGameClosed(chestid) {
+	if (Not WinExist("ahk_exe IdleDragons.exe")) {
+		Open_Chests(chestid)
+	} else {
+		MsgBox, 0, , % "NOTE: It's recommended to close the game client before opening chests"
+	}
+}
+
 OpenSilver()
 	{
-		if (Not WinExist("ahk_exe IdleDragons.exe")) {
-			Open_Chests(1)
-			return
-		} else {
-			MsgBox, 0, , % "NOTE: It's recommended to close the game client before opening chests"
-			return
-		}
+		OpenChestIfGameClosed(1)
+		return
 	}
 
 ; Label: open silver chests via menu (checks game client running)
@@ -1579,13 +1583,8 @@ Open_Silver:
 
 OpenGold()
 	{
-		if (Not WinExist("ahk_exe IdleDragons.exe")) {
-			Open_Chests(2)
-			return
-		} else {
-			MsgBox, 0, , % "NOTE: It's recommended to close the game client before opening chests"
-			return
-		}
+		OpenChestIfGameClosed(2)
+		return
 	}
 
 ; Label: open gold chests via menu (checks game client running)
@@ -1597,18 +1596,14 @@ Open_Gold:
 
 OpenEvent()
 	{
-		if (Not WinExist("ahk_exe IdleDragons.exe")) {
-			InputBox, chestid, Opening Chests, % "Enter Chest ID?`n", , 200, 150
-			if ErrorLevel
-				return
-			if (chestid) {
-				Open_Chests(chestid)
-			}
+		InputBox, chestid, Opening Chests, % "Enter Chest ID?`n", , 200, 150
+		if ErrorLevel
 			return
-		} else {
-			MsgBox, 0, , % "NOTE: It's recommended to close the game client before opening chests"
-			return
+		if (chestid) {
+			OpenChestIfGameClosed(chestid)
 		}
+		return
+	}
 	}
 
 ; Label: open event chests via menu (prompts for chest ID)
@@ -1802,10 +1797,7 @@ Open_Codes:
 					codelistcount += 1
 					codelistcodes := codelistcodes sCode "`n"
 				} else {
-					if !UserID {
-						MsgBox % "Need User ID & Hash"
-						FirstRun()
-					}
+					EnsureCredentials()
 					codeparams := DummyData "&user_id=" UserID "&hash=" UserHash "&instance_id=" InstanceID "&code=" sCode
 					rawresults := ServerCall("redeemcoupon", codeparams)
 					coderesults := JSON.parse(rawresults)
@@ -2076,6 +2068,17 @@ PromptCount(title, prompt, width, height, defaultVal) {
 	return count
 }
 
+; EnsureCredentials - Check UserID is set, prompt setup if not
+; Returns: true if credentials available, false if user cancelled/missing
+EnsureCredentials() {
+	if !UserID {
+		MsgBox % "Need User ID & Hash"
+		FirstRun()
+		return (UserID != 0 && UserID != "")
+	}
+	return true
+}
+
 ; BeginBusyOp - Guard entry for long-running operations
 ; Returns: true if operation can proceed, false if blocked
 BeginBusyOp() {
@@ -2084,9 +2087,9 @@ BeginBusyOp() {
 		return false
 	}
 	IsBusy := true
-	if !UserID {
-		MsgBox % "Need User ID & Hash"
-		FirstRun()
+	if !EnsureCredentials() {
+		IsBusy := false
+		return false
 	}
 	return true
 }
@@ -2505,6 +2508,18 @@ UseBlacksmith(buffid) {
 	EndBusyOp()
 }
 
+; Calculate blacksmith contracts used from starting count minus remaining
+BlacksmithContractsUsed(buffid, remaining) {
+	switch buffid {
+		case 31:   return (CurrentTinyBS - remaining)
+		case 32:   return (CurrentSmBS - remaining)
+		case 33:   return (CurrentMdBS - remaining)
+		case 34:   return (CurrentLgBS - remaining)
+		case 1797: return (CurrentHgBS - remaining)
+	}
+	return 0
+}
+
 ; Core blacksmith logic — resolve contract metadata, prompt count, batch API calls, log results
 _UseBlacksmith_Inner(buffid) {
 	RotateLogFile(BlacksmithLogFile)
@@ -2598,13 +2613,7 @@ _UseBlacksmith_Inner(buffid) {
 				Clipboard := bsResult
 		}
 		MsgBox % "Error: " rawresults
-			switch buffid {
-				case 31: contractsused := (CurrentTinyBS - blacksmithresults.buffs_remaining)
-				case 32: contractsused := (CurrentSmBS - blacksmithresults.buffs_remaining)
-				case 33: contractsused := (CurrentMdBS - blacksmithresults.buffs_remaining)
-				case 34: contractsused := (CurrentLgBS - blacksmithresults.buffs_remaining)
-				case 1797: contractsused := (CurrentHgBS - blacksmithresults.buffs_remaining)
-			}
+			contractsused := BlacksmithContractsUsed(buffid, blacksmithresults.buffs_remaining)
 			LogFile(contractname "Blacksmith Contracts Used: " Floor(contractsused))
 			if( DisableUserDetailsReload == 0) {
 				GetUserDetails()
@@ -2632,13 +2641,7 @@ _UseBlacksmith_Inner(buffid) {
 			Clipboard := bsResult
 	}
 	tempsavesetting := 0
-	switch buffid {
-		case 31: contractsused := (CurrentTinyBS - blacksmithresults.buffs_remaining)
-		case 32: contractsused := (CurrentSmBS - blacksmithresults.buffs_remaining)
-		case 33: contractsused := (CurrentMdBS - blacksmithresults.buffs_remaining)
-		case 34: contractsused := (CurrentLgBS - blacksmithresults.buffs_remaining)
-		case 1797: contractsused := (CurrentHgBS - blacksmithresults.buffs_remaining)
-	}
+	contractsused := BlacksmithContractsUsed(buffid, blacksmithresults.buffs_remaining)
 	LogFile(contractname " Blacksmith Contracts used on " ChampFromID(heroid) ": " Floor(contractsused))
 	if( DisableUserDetailsReload == 0) {
 		GetUserDetails()
@@ -2703,10 +2706,7 @@ UseBountyClick(name, imagename, offset_x, offset_y, delay, repeat := 1, move_x :
 ; Apply bounty contracts via mouse automation (alpha — requires 1280x720, not fullscreen)
 UseBounty(buffid) {
 	RotateLogFile(BountyLogFile)
-	if !UserID {
-		MsgBox % "Need User ID & Hash"
-		FirstRun()
-	}
+	EnsureCredentials()
 	switch buffid {
 		case 17:
 			currentcontracts := CurrentTinyBounties
@@ -3119,7 +3119,58 @@ setGameInstallConsole( manual = false) {
 
 ; Initial setup wizard — detect game, extract credentials from WRL or manual input
 FirstRun() {
-	if(LoadGameClient == 4) {
+	; Step 1: Ask which platform the game is installed on
+	if (LoadGameClient == 4) {
+		; Already set to console — skip platform selection
+	} else {
+		MsgBox, 3, IdleCombos Setup, % "Detect game install from Epic Games?`n`n(Click Yes for Epic, No to try other platforms, Cancel to enter credentials manually)"
+		IfMsgBox, Yes
+		{
+			if (setGameInstallEpic(false)) {
+				MsgBox, % "Epic Games install found at:`n" GameInstallDir
+			} else {
+				MsgBox, Epic Games install not found. You can enter credentials manually.
+			}
+		}
+		IfMsgBox, No
+		{
+			MsgBox, 3, IdleCombos Setup, % "Detect game install from Steam?`n`n(Click Yes for Steam, No to try Standalone)"
+			IfMsgBox, Yes
+			{
+				if (setGameInstallSteam(false)) {
+					MsgBox, % "Steam install found at:`n" GameInstallDir
+				} else {
+					MsgBox, Steam install not found. You can enter credentials manually.
+				}
+			}
+			IfMsgBox, No
+			{
+				MsgBox, 4, IdleCombos Setup, % "Detect Standalone install?"
+				IfMsgBox, Yes
+				{
+					if (setGameInstallStandalone(false)) {
+						MsgBox, % "Standalone install found at:`n" GameInstallDir
+					} else {
+						MsgBox, Standalone install not found. You can enter credentials manually.
+					}
+				}
+				IfMsgBox, No
+				{
+					; Console / manual entry path
+					LoadGameClient := 4
+				}
+			}
+		}
+		IfMsgBox, Cancel
+		{
+			; Skip to manual credential entry below
+			LoadGameClient := 4
+		}
+	}
+
+	; Step 2: Get credentials
+	if (LoadGameClient == 4) {
+		; Console or manual: prompt for user_id and hash directly
 		InputBox, UserID, user_id, Please enter your "user_id" value., , 250, 125
 		if ErrorLevel
 			return
@@ -3128,15 +3179,14 @@ FirstRun() {
 			return
 		LogFile("User ID: " UserID " & Hash: [REDACTED] manually entered")
 	} else {
-		MsgBox, 4, , Get User ID and Hash from webrequestlog.txt?
-		IfMsgBox, Yes
-		{
+		; Platform detected — try reading credentials from WRL
+		if (WRLFile != "" && FileExist(WRLFile)) {
 			GetIdFromWRL()
 			LogFile("Platform: " GamePlatform)
 			LogFile("User ID: " UserID " & Hash: [REDACTED] detected in WRL")
 			GetPlayServerFromWRL()
 		} else {
-			MsgBox, 4, , Choose install directory manually?
+			MsgBox, 4, , Could not find webRequestLog.txt automatically.`nChoose install directory manually?
 			IfMsgBox, Yes
 			{
 				FileSelectFile, WRLFile, 1, webRequestLog.txt, Select webRequestLog file, webRequestLog.txt
@@ -3156,15 +3206,21 @@ FirstRun() {
 			}
 		}
 	}
+
+	; Step 3: Save credentials
 	CurrentSettings.user_id := UserID
 	CurrentSettings.user_id_epic := UserIDEpic
 	CurrentSettings.user_id_steam := UserIDSteam
+	; Encrypt hash for storage (falls back to plaintext if DPAPI unavailable)
 	CurrentSettings.hash := DPAPIEncrypt(UserHash)
 	CurrentSettings.firstrun := 1
 	CurrentSettings.wrlpath := WRLFile
 	PersistSettings()
 	LogFile("IdleCombos Setup Completed")
 	SB_SetText("✅ User ID & Hash Ready")
+	; Auto-fetch user details after successful setup
+	if (UserID && UserHash)
+		GetUserDetails()
 }
 
 ; Update CurrentTime global with formatted timestamp
@@ -3495,6 +3551,9 @@ CheckAchievements() {
 	APIStatus("⌛ Parsing Data - Achievements... Please wait...")
 	AchievementNeeds := ""
 	AchievementGearChamp := ""
+	; Skip if data appears empty/unloaded (prevents misleading Todo items from zero-data)
+	if (!UserDetails.details.stats.highest_level_gear)
+		return
 	; Find which champion holds the highest gear
 	for k, v in UserDetails.details.loot {
 		if ((v.enchant + 1) = UserDetails.details.stats.highest_level_gear) {
@@ -3651,6 +3710,12 @@ ServerCall(callname, parameters, newservername = "") {
 	} else {
 		playservername := newservername
 	}
+	; Validate server name against allowlist (SEC-3: prevent credential exfiltration via tampered settings)
+	if !RegExMatch(playservername, "^(master|ps[0-9]+)$") {
+		LogFile("WARNING: Invalid server name rejected: " playservername)
+		SB_SetText("❌ Invalid server name: " playservername)
+		return ""
+	}
 		APIStatus("⌛ Contacting API Server (" playservername ")... '" callname "'... Please wait...")
 	URLtoCall := "https://" playservername ".idlechampions.com/~idledragons/post.php?call=" callname parameters
 	data := ""
@@ -3741,10 +3806,7 @@ LaunchGame() {
 ; Label: download journal pages from game API
 Get_Journal:
 	{
-		if !UserID {
-			MsgBox % "Need User ID & Hash"
-			FirstRun()
-		}
+		EnsureCredentials()
 		if (InstanceID = 0) {
 			MsgBox, 4, , No Instance ID detected. Check server for user details?
 				IfMsgBox, Yes

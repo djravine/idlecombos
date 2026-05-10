@@ -61,10 +61,14 @@ class DictionarySyncTests
 
 	test_Extract_NumericCoercion()
 	{
+		; AHK v1.1 stores numeric keys as numbers — string "10" does NOT auto-coerce.
+		; Project convention: always use id+0 for numeric key lookup (see AGENTS.md).
 		defs := [{"id": 10, "name": "Ten"}]
 		result := ExtractDefinitionMap(defs)
 		Yunit.Assert(result.items[10] = "Ten", "Numeric ID lookup should work")
-		Yunit.Assert(result.items["10"] = "Ten", "String ID lookup should also work via coercion")
+		; Verify coercion via local variable (how id+0 is used in practice)
+		idStr := "10"
+		Yunit.Assert(result.items[idStr + 0] = "Ten", "Coerced string ID lookup should work via id+0 pattern")
 	}
 
 	test_Extract_TracksMaxId()

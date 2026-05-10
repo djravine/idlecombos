@@ -54,11 +54,15 @@ jobs:
       run: tar -czf "$ARCHIVE_NAME"-themes.tar.gz "$ARCHIVE_NAME"
     - name: Archive Release ZIP - With Themes
       run: zip -r "$ARCHIVE_NAME"-themes.zip "$ARCHIVE_NAME"
+    - name: Generate SHA-256 checksums
+      run: |
+        sha256sum *.zip *.tar.gz > SHA256SUMS.txt
+        cat SHA256SUMS.txt
     - name: Upload Release
       uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1
       with:
         allowUpdates: true
-        artifacts: "*.zip,*.tar.gz"
+        artifacts: "*.zip,*.tar.gz,SHA256SUMS.txt"
         draft: true
         removeArtifacts: true
         replacesArtifacts: true

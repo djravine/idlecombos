@@ -8,6 +8,31 @@ To all the Idle Dragoneers who inspired and assisted me!
 
 ## 3.80
 
+* Fix DPAPI graceful fallback — probe round-trip at startup, skip encryption when unavailable (hash stored as plaintext instead of being wiped)
+* Fix DPAPI decryption failure clearing UserID and auto-clearing stale encrypted hash from settings
+* Fix CheckAchievements showing misleading Todo items when data is empty/loading (guard on highest_level_gear)
+* Fix cached data loading overwriting DPAPI failure warning in status bar (skip cache when UserID = 0)
+* Fix FirstRun now asks which platform (Epic/Steam/Standalone/Console) before detecting game install
+* Fix FirstRun auto-fetches user details from API after successful credential setup
+* Fix ByRef not working on object properties in ParseInventoryDataFromDetails — inline DefaultToZero check
+* Fix RequireKey() calling LogFile() (app-only function) from IdleCombosLib.ahk — broke test loading
+* Fix test_GrandTour assertion updated to match API-synced campaign name "A Grand Tour of the Sword Coast"
+* Fix test_Extract_NumericCoercion using local variable for id+0 coercion pattern
+* Add DPAPI test environment guards — skip encrypt/round-trip tests when CryptProtectData unavailable
+* Add ServerName allowlist validation in ServerCall() — reject names not matching `^(master|ps[0-9]+)$`
+* Add SHA-256 checksums (SHA256SUMS.txt) to release workflow artifacts
+* Add defensive .gitignore patterns for .env, *.pem, *.key, *.pfx, *.crt, webRequestLog.txt
+* Add DictGet() helper for numeric-coerced dictionary lookups
+* Add OpenChestIfGameClosed() shared guard for silver/gold/event chest opening
+* Add EnsureCredentials() helper — replaces 6 repeated "Need User ID & Hash" blocks
+* Add BlacksmithContractsUsed() helper — deduplicates contract calculation in error/success paths
+* Replace deprecated Discord webhook actions (node20 deprecation) with curl-based notification
+* Add CI push trigger for master/develop branches
+* Remove unused journal.json placeholder from .gitignore and AGENTS.md
+* Document dictionary update TOFU risk assessment in SECURITY.md
+* Refactor repeated credential checks into shared EnsureCredentials() helper and deduplicate open-chest guard logic
+* Add DictGet() helper for numeric-coerced dictionary lookups and simplify blacksmith contract usage calculation
+* Add CI push trigger for master/develop and remove unused journal.json placeholder from ignored/runtime docs
 * Add Pity Timers tab — champions grouped by chests-until-epic (was menu-only dialog)
 * Add Item Levels tab — gear iLvl report with core/event averages, highest/lowest, shinies (was menu-only dialog)
 * Add Incomplete Variants tab — patron-filterable adventure completion tracker with in-tab refresh (was menu-only dialog)
@@ -77,6 +102,8 @@ To all the Idle Dragoneers who inspired and assisted me!
 * Auto-migrate existing users: plaintext hashes are detected on load, used as-is, then encrypted and re-saved transparently with zero user action
 * Add DPAPIEncrypt/DPAPIDecrypt/IsEncryptedHash helpers to IdleCombosLib.ahk with 18 unit tests (round-trip, passthrough, migration, edge cases)
 * Update SECURITY.md: document DPAPI encryption, migration flow, and per-field encryption rationale
+* Add comment headers to all functions and label handlers in IdleCombos.ahk (~100 functions documented)
+* Update all markdown docs to reflect v3.80 codebase: AGENTS.md, SECURITY.md, CODE_DEPLOY.md, CODE_FLOW.md, THIRD_PARTY.md, USER_MANUAL.md, README.md, CONTRIBUTING.md, SETTINGS_SCHEMA.md
 
 ## 3.79
 

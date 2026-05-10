@@ -49,7 +49,7 @@ class CampaignTests
 {
 	test_GrandTour()
 	{
-		Yunit.Assert(campaignFromID("1") = "Grand Tour of the Sword Coast", "Campaign 1 = Grand Tour")
+		Yunit.Assert(campaignFromID("1") = "A Grand Tour of the Sword Coast", "Campaign 1 = A Grand Tour")
 	}
 
 	test_TombOfAnnihilation()

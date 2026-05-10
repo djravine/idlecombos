@@ -84,9 +84,10 @@
 │     StatusBar (bottom)                                       │
 │     Sidebar: Reload/Exit buttons, Crash Protect toggle,      │
 │              Data Timestamp, Update button                   │
-│     Tab Control (8 tabs):                                    │
-│       Summary  │ Adventures │ Inventory │ Patrons            │
-│       Champions│ Event      │ Settings  │ Log                │
+│     Tab Control (11 tabs):                                   │
+│       Summary   │ Adventures │ Inventory   │ Patrons         │
+│       Champions │ Pity Timers│ Item Levels │ Variants        │
+│       Event     │ Settings   │ Log                           │
 │     Settings tab:                                            │
 │       ServerName edit, Tab/Style dropdowns                   │
 │       12 checkboxes (logging, auto-detect, save prefs, etc.) │

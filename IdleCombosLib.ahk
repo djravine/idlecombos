@@ -126,6 +126,11 @@ ChestIDFromChampID(id) {
 	return result ? result : "UNKNOWN"
 }
 
+; Get value from dictionary map by ID with numeric coercion.
+DictGet(map, id) {
+	return map[id + 0]
+}
+
 ;=============================================================================
 ; CODE PARSING
 ;=============================================================================
@@ -270,15 +275,34 @@ ClearMockServerCall() {
 ; Migration: plaintext values (no "DPAPI:" prefix) are used as-is on load,
 ; then automatically encrypted on the next save. Existing users migrate
 ; transparently with zero action required.
+;
+; DPAPIAvailable: probed once at startup via round-trip test. When false,
+; all encrypt calls return the plaintext unchanged (graceful fallback).
 ;=============================================================================
+
+; Probe DPAPI availability via encrypt+decrypt round-trip
+global DPAPIAvailable := false
+_dpapiProbe := DPAPIEncrypt("probe")
+if (_dpapiProbe != "" && SubStr(_dpapiProbe, 1, 6) = "DPAPI:") {
+	_dpapiProbeBack := DPAPIDecrypt(_dpapiProbe)
+	if (_dpapiProbeBack = "probe")
+		DPAPIAvailable := true
+}
+_dpapiProbe := ""
+_dpapiProbeBack := ""
 
 ;-----------------------------------------------------------------------------
 ; DPAPIEncrypt(plainText) - Encrypt a string using Windows DPAPI
 ; Returns "DPAPI:" + hex-encoded ciphertext, or original value if empty/zero.
+; Returns plaintext unchanged if DPAPIAvailable is false (graceful fallback).
 ; Returns "" on encryption failure.
 ;-----------------------------------------------------------------------------
 DPAPIEncrypt(plainText) {
 	if (plainText = "" || plainText = "0" || plainText = 0)
+		return plainText
+
+	; Skip encryption if DPAPI probe failed (avoids encrypt-succeed/decrypt-fail loops)
+	if (!DPAPIAvailable)
 		return plainText
 
 	; Convert string to UTF-8 bytes
@@ -521,11 +545,8 @@ RequireKey(obj, keys*) {
 	path := ""
 	for _, key in keys {
 		path .= (path ? "." : "") key
-		if (!IsObject(current) || !current.HasKey(key)) {
-			if (!TestMode)
-				LogFile("WARNING: Required API key missing: " path)
+		if (!IsObject(current) || !current.HasKey(key))
 			return ""
-		}
 		current := current[key]
 	}
 	return current
@@ -713,14 +734,17 @@ ParseInventoryDataFromDetails(details) {
 
 	tokencount := 0
 	for _, bc in BountyContracts {
-		DefaultToZero(bc._val)
+		; ByRef does not work on object properties in AHK v1.1 — inline the check
+		if (bc._val = "")
+			bc._val := 0
 		result[bc.var] := bc._val
 		tokencount += bc._val * bc.mult
 	}
 
 	bsLevels := 0
 	for _, bs in BlacksmithContracts {
-		DefaultToZero(bs._val)
+		if (bs._val = "")
+			bs._val := 0
 		result[bs.var] := bs._val
 		bsLevels += bs._val * bs.mult
 	}

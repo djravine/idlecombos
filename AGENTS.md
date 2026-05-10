@@ -177,7 +177,6 @@ git tag v3.80 && git push origin v3.80
 | `chestopenlog.json` | Open_Chests() | Chest open results history (rotated) | No (gitignored) |
 | `blacksmithlog.json` | UseBlacksmith() | Blacksmith contract results (rotated) | No (gitignored) |
 | `bountylog.json` | UseBounty() | Bounty contract results (rotated) | No (gitignored) |
-| `journal.json` | (unused/reserved) | Placeholder for future journaling | No (gitignored) |
 | `campaign.json` | IncompleteBase() | Campaign details cache | No (gitignored) |
 | `idlecombolog.txt` | LogFile() | General app activity log | No (gitignored) |
 | `webRequestLog.txt` | GetIDFromWRL() → ParseWRLCredentials() | Game's WRL file (user_id/hash auto-detect) | External (game dir) |

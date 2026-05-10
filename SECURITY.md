@@ -98,7 +98,20 @@ This is the highest supply-chain risk. The binary is loaded at runtime via `DllC
 
 ### Dictionary auto-update
 
-`Update_Dictionary()` downloads `idledict.json` from GitHub raw URL (`https://raw.githubusercontent.com/djravine/idlecombos/master/idledict.json`). The download includes basic integrity verification but does not pin to a specific commit SHA or release tag.
+`Update_Dictionary()` downloads `idledict.json` from GitHub raw URL (`https://raw.githubusercontent.com/djravine/idlecombos/master/idledict.json`). The download is fetched from the mutable `master` branch (not a pinned commit or signed release tag).
+
+**Current integrity checks:**
+
+* Downloaded file must be valid JSON (parse-back verification)
+* Required keys must be present (`version`, `champions`)
+* Version downgrades are rejected (`downloaded.version >= current.version`)
+
+**Not verified:**
+
+* No cryptographic signature or checksum from a separate trust anchor
+* No commit SHA pinning — relies on GitHub account security (TOFU model)
+
+**Risk assessment (LOW):** The dictionary contains only display-name mappings (champion, chest, campaign, patron, feat names). A tampered dictionary cannot steal credentials, execute code, or modify application behaviour — it can only cause incorrect display names in the UI. The HTTPS transport and structural validation provide reasonable protection for this threat level.
 
 ## CI/CD Security
 

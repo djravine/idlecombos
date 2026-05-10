@@ -7,21 +7,34 @@ name: Publish Release
 
 jobs:
 
-  build:
+  notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Get Latest Release
-        id: latest_release
-        uses: kaliber5/action-get-release@3f646c865ef0df7b7df7df1d25898ac0bca2ed4d # v1
-        with:
-          token: ${{ github.token }}
-          latest: true
       - name: Discord Publish
-        uses: rjstone/discord-webhook-notify@2d99583c5afcbb98ae855619fdfa2f0ec3f371e5 # v1
-        with:
-          severity: info
-          description: "**NEW:** ${{steps.latest_release.outputs.name}} has been released."
-          details: "**DOWNLOAD:** [${{steps.latest_release.outputs.name}}](${{steps.latest_release.outputs.html_url}})"
-          footer: "PUBLISHED: ${{steps.latest_release.outputs.published_at}} ID: ${{steps.latest_release.outputs.id}}"
-          text: ""
-          webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          RELEASE_NAME="${{ github.event.release.name }}"
+          RELEASE_URL="${{ github.event.release.html_url }}"
+          PUBLISHED_AT="${{ github.event.release.published_at }}"
+          RELEASE_ID="${{ github.event.release.id }}"
+
+          # Skip if webhook not configured
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "::warning::DISCORD_WEBHOOK secret not set — skipping notification"
+            exit 0
+          fi
+
+          curl -s -o /dev/null -w "%{http_code}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"embeds\": [{
+                \"title\": \"New Release\",
+                \"description\": \"**NEW:** ${RELEASE_NAME} has been released.\n\n**DOWNLOAD:** [${RELEASE_NAME}](${RELEASE_URL})\",
+                \"color\": 3066993,
+                \"footer\": {
+                  \"text\": \"PUBLISHED: ${PUBLISHED_AT} ID: ${RELEASE_ID}\"
+                }
+              }]
+            }" \
+            "$DISCORD_WEBHOOK"

@@ -223,7 +223,8 @@ Sidebar buttons are disabled during bulk operations (buying/opening chests, appl
 | Run Setup | Re-run the first-run setup wizard |
 | Clear Log | Clear the activity log |
 | Clear Redeem Code History | Reset the list of previously redeemed codes |
-| Update Dictionary | Download latest champion/chest definitions from GitHub |
+| Update Dictionary from Git | Download latest champion/chest definitions from GitHub |
+| Sync Dictionary from API | Fetch live definitions from game API, diff, and merge |
 | Download Journal | Fetch game journal data |
 | List User Details | Show your user ID and masked hash |
 | List Champ IDs | Show all champion ID-to-name mappings |
