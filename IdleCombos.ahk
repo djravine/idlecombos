@@ -655,8 +655,8 @@ class MyGui {
 			GetPlayServerFromWRL()
 		}
 		; Feature 6: Load cached user details if available (1-hour TTL)
-		; Skip if no valid credentials (e.g. DPAPI failure cleared UserID)
-		if (UserID && FileExist(UserDetailsFile)) {
+		; Skip if no valid credentials or if first-run setup just completed (fresh fetch pending)
+		if (UserID && !FirstRunFetchPending && FileExist(UserDetailsFile)) {
 			FileGetTime, cacheTime, %UserDetailsFile%, M
 			EnvSub, cacheTime, %A_Now%, Seconds
 			cacheAge := Abs(cacheTime)
@@ -668,7 +668,6 @@ class MyGui {
 						InstanceID := UserDetails.details.instance_id
 						ActiveInstance := UserDetails.details.active_game_instance_id
 						cacheMinutes := Floor(cacheAge / 60)
-						APIStatus("📋 Cached data (" cacheMinutes " min ago) — press Update for fresh data")
 						ParseChampData()
 						ParseAdventureData()
 						ParseTimestamps()
@@ -681,7 +680,12 @@ class MyGui {
 						CheckEvents()
 						SetTimer, TimestampTickTimer, 1000
 						this.Update()
+						SB_SetText("📋 Cached data (" cacheMinutes " min ago) — press Update for fresh data")
 					}
+				} catch e {
+					errMsg := IsObject(e) ? (e.message " @ " e.file ":" e.line " in " e.what) : e
+					LogFile("WARNING: Cached data parse failed: " errMsg)
+					SB_SetText("⚠️ Cache error: " errMsg)
 				}
 			}
 		}
@@ -690,6 +694,12 @@ class MyGui {
 		}
 		if (LaunchGameonStart == "1") {
 			LaunchGame()
+		}
+
+		; Auto-fetch after first-run setup (runs AFTER all Load() init is complete)
+		if (FirstRunFetchPending) {
+			FirstRunFetchPending := false
+			GetUserDetails()
 		}
 
 		this.Update()
@@ -728,7 +738,7 @@ class MyGui {
 			GuiControl, Enable, BtnToggle
 		}
 		GuiControl, MyWindow:, OutputText, % OutputText, w250 h210
-		SendMessage, 0x115, 7, 0, Edit2 ; Scroll to the bottom of the log
+		Try SendMessage, 0x115, 7, 0, Edit2 ; Scroll to the bottom of the log
 		GuiControl, MyWindow:, CrashProtectStatus, % CrashProtectStatus, w250 h210
 		; Relative time is updated by TimestampTickTimer (1s tick)
 		GuiControl, MyWindow:, LastUpdated, % LastUpdated
@@ -1603,7 +1613,6 @@ OpenEvent()
 			OpenChestIfGameClosed(chestid)
 		}
 		return
-	}
 	}
 
 ; Label: open event chests via menu (prompts for chest ID)
@@ -3218,9 +3227,8 @@ FirstRun() {
 	PersistSettings()
 	LogFile("IdleCombos Setup Completed")
 	SB_SetText("✅ User ID & Hash Ready")
-	; Auto-fetch user details after successful setup
-	if (UserID && UserHash)
-		GetUserDetails()
+	; Flag for Load() to auto-fetch after all initialization completes
+	global FirstRunFetchPending := true
 }
 
 ; Update CurrentTime global with formatted timestamp
@@ -3433,12 +3441,7 @@ ParseTimestamps() {
 	LastUpdated := result.lastUpdated
 	NextTGPDrop := result.nextTGPDrop
 	if (result.tgpReady) {
-		Gui, Font, cGreen
-		GuiControl, Font, NextTGPDrop
 		TrayTip, IdleCombos, Time Gate Piece is ready!, 5, 1
-	} else {
-		Gui, Font, cBlack
-		GuiControl, Font, NextTGPDrop
 	}
 }
 
@@ -3532,18 +3535,10 @@ CheckPatronProgress() {
 }
 
 ; Apply colour to a single patron's progress row based on completion state
+; NOTE: Patron data now rendered in ListView — per-cell colouring not supported.
+; Kept as no-op to avoid breaking callers; remove when CheckPatronProgress is refactored.
 ColorPatronProgress(name, variants, fpCurrency, challenges, completed, variantTotal) {
-	if (variants == "Locked")
-		return
-	color := (fpCurrency = "5000") ? "cGreen" : "cRed"
-	Gui, Font, %color%
-	GuiControl, Font, %name%FPCurrency
-	color := (challenges = "8") ? "cGreen" : "cRed"
-	Gui, Font, %color%
-	GuiControl, Font, %name%Challenges
-	color := (completed = variantTotal) ? "cGreen" : "cRed"
-	Gui, Font, %color%
-	GuiControl, Font, %name%Variants
+	return
 }
 
 ; Extract and display achievement requirements in the Summary tab
