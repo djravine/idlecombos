@@ -94,6 +94,10 @@ To all the Idle Dragoneers who inspired and assisted me!
 * Cache UserDetails between sessions (loads cached data on startup, 1-hour TTL)
 * Non-blocking: Sleep calls in batch loops allow GUI message pump processing
 * SettingsCheckValue bumped to 24 (new: autorefreshminutes)
+* Add USER_MANUAL.md — comprehensive user guide with feature reference, settings, hotkeys, and troubleshooting
+* Add CODE_DEPLOY.md — release pipeline documentation (CI → tag → draft → publish)
+* Add Documentation section to README.md linking all project docs
+* Add USER_MANUAL.md to release archives (release.yml)
 
 ## 3.77
 

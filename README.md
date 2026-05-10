@@ -52,9 +52,16 @@ Companion App for Idle Champions, written in [AHK](https://www.autohotkey.com/).
 * Right-click `IdleCombos.ahk` and open with AutoHotKey
 * The application will ask you to detect your App ID from your currently installed Idle Champions install folder
 
-## Contributing
+## Documentation
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for developer setup and guidelines.
+* [User Manual](USER_MANUAL.md) — full feature guide, settings reference, and troubleshooting
+* [Changelog](CHANGELOG.md) — version history
+* [Contributing](CONTRIBUTING.md) — developer setup and guidelines
+* [Security](SECURITY.md) — threat model and credential handling
+* [Deploy Process](CODE_DEPLOY.md) — release pipeline and packaging
+* [Code Flow](CODE_FLOW.md) — startup process diagram and timings
+* [Settings Schema](SETTINGS_SCHEMA.md) — settings key history and migration
+* [Third Party](THIRD_PARTY.md) — vendored asset inventory with SHA-256 hashes
 
 ## Discord
 
