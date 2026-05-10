@@ -94,6 +94,8 @@ idlecombos-vX.YZ/
 ├── CONTRIBUTING.md
 ├── USER_MANUAL.md
 ├── LICENSE
+├── Lib/
+│   └── ScrollBox.ahk       (vendored scrollable text display)
 ├── images/
 │   └── *.png              (13 GUI assets)
 └── styles/                (themes archive only)
@@ -110,10 +112,6 @@ idlecombos-vX.YZ/
 * `.vscode/` — editor config
 * `advdefs.json` — regenerated at runtime from API
 * All gitignored runtime files (settings, logs, caches)
-
-### Known Packaging Gap
-
-`Lib/ScrollBox.ahk` is `#Include`d by `IdleCombos.ahk` but is **not** copied into the release archive. If this file is required at runtime, `release.yml` needs a step to copy `Lib/` contents. Currently the app will fail to launch from a release archive if ScrollBox is expected.
 
 ## CI Pipeline Detail
 
