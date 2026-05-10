@@ -648,23 +648,15 @@ ParseWRLCredentials(text) {
 ; Returns: formatted time string like "May 10, 3:45 PM"
 ;-----------------------------------------------------------------------------
 EpochToLocalTime(epochSeconds) {
-	localdiff := (A_Now - A_NowUTC)
-	if (localdiff < -28000000) {
-		localdiff += 70000000
-	}
-	if (localdiff < -250000) {
-		localdiff += 760000
-	}
-	StringTrimRight, localdiffh, localdiff, 4
-	localdiffm := SubStr(localdiff, -3)
-	StringTrimRight, localdiffm, localdiffm, 2
-	if (localdiffm > 59) {
-		localdiffm -= 40
-	}
+	; Convert epoch to UTC timestamp
 	timestampvalue := "19700101000000"
 	timestampvalue += epochSeconds, s
-	EnvAdd, timestampvalue, localdiffh, h
-	EnvAdd, timestampvalue, localdiffm, m
+	; Calculate UTC-to-local offset using AHK date math (handles day boundaries)
+	localRef := A_Now
+	utcRef := A_NowUTC
+	EnvSub, localRef, %utcRef%, Seconds
+	; Apply local offset to get local time
+	timestampvalue += localRef, s
 	FormatTime, result, % timestampvalue, MMM d`, h:mm tt
 	return result
 }
@@ -1109,6 +1101,45 @@ ExtractDefinitionMap(definesArray) {
 	}
 
 	return {"items": result, "skipped": skipped, "maxId": maxId}
+}
+
+;-----------------------------------------------------------------------------
+; ExtractChampNamesFromDefines(upgradeDefines, lootDefines)
+; Extracts champion names from getuserdetails defines as a supplement when
+; getDefinitions champion_defines is outdated. Parses possessive patterns
+; ("ChampName's") from upgrade tip_text and loot effect descriptions.
+; Returns: object mapping hero_id → champion name
+;-----------------------------------------------------------------------------
+ExtractChampNamesFromDefines(upgradeDefines, lootDefines) {
+	result := {}
+	; Primary: upgrade_defines tip_text ("Grimm's attacks", "Vlithryn's main buff")
+	if (IsObject(upgradeDefines)) {
+		for _, u in upgradeDefines {
+			hid := u.hero_id + 0
+			if (hid <= 0 || result.HasKey(hid))
+				continue
+			tip := u.tip_text
+			if (tip != "" && RegExMatch(tip, "(\w+)'s ", m))
+				result[hid] := m1
+		}
+	}
+	; Supplement: loot_defines effect descriptions ("of Laurana's Battle Plan")
+	if (IsObject(lootDefines)) {
+		for _, item in lootDefines {
+			hid := item.hero_id + 0
+			if (hid <= 0 || result.HasKey(hid))
+				continue
+			if (IsObject(item.effects)) {
+				for _, eff in item.effects {
+					if (eff.description != "" && RegExMatch(eff.description, "of (.*?)'s ", m)) {
+						result[hid] := m1
+						break
+					}
+				}
+			}
+		}
+	}
+	return result
 }
 
 ;-----------------------------------------------------------------------------

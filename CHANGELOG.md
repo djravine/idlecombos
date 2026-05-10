@@ -6,6 +6,15 @@ To all the Idle Dragoneers who inspired and assisted me!
 
 ------
 
+## 3.81
+
+* Fix Event tab not showing data — `CheckEvents()` iterated `event_details` as array but API returns single object; now reads `events_details.active_events` (main event) and `event_details` (mini-event) correctly
+* Event tab now shows both Main Event and Mini Event sections with type labels, heroes, chests, and token counts
+* Look up event name and token name from `defines.event_v2_defines` (e.g. "The Great Modron March", "Rusted Gears")
+* Fix `EpochToLocalTime()` producing future timestamps for UTC+ timezones — naive `A_Now - A_NowUTC` subtraction broke across day boundaries; now uses `EnvSub` date math
+* Restructure `idledict.json` champions and campaigns from position-indexed arrays to ID-keyed objects (matching chests/patrons/feats) — easier to manually edit and enables future dictionary sync improvements
+* Dictionary sync now extracts champion names from `getuserdetails` defines (upgrade tip_text and loot effect descriptions) as supplement when `getDefinitions` `champion_defines` is outdated for newer heroes
+
 ## 3.80
 
 * Fix RunDisableTooltips reading wrong hwnd variable (`hcbx11` → `hcb11`) — tooltip toggle was broken

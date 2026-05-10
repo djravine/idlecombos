@@ -7,8 +7,8 @@
 #include Lib\ScrollBox.ahk
 
 ;Versions
-global VersionNumber := "3.80"
-global CurrentDictionary := "2.42"
+global VersionNumber := "3.81"
+global CurrentDictionary := "2.43"
 
 ;Local File globals
 global OutputLogFile := ""
@@ -194,7 +194,7 @@ global ElminsterChallenges := ""
 global ElminsterRequires := ""
 global ElminsterCosts := ""
 
-;Event globals
+;Event globals (main event from events_details.active_events)
 global EventID := ""
 global EventName := ""
 global EventDesc := ""
@@ -202,7 +202,17 @@ global EventTokenName := ""
 global EventTokens := ""
 global EventHeroIDs := ""
 global EventChestIDs := ""
+global EventHeroes := ""
+global EventChests := ""
 global EventDetails := ""
+
+;Mini-event globals (from event_details singular object)
+global MiniEventID := ""
+global MiniEventName := ""
+global MiniEventDesc := ""
+global MiniEventTokens := ""
+global MiniEventHeroes := ""
+global MiniEventChests := ""
 
 ;Web Tools globals
 global WebToolGithub := "https://github.com/djravine/idlecombos"
@@ -1027,14 +1037,77 @@ Loop % LV_GetCount("Col")
 			LV_ModifyCol(A_Index, "AutoHdr")
 
 		;Event
-		;Event
 		Gui, MyWindow:Default
 		Gui, ListView, EventLV
 		LV_Delete()
-		if (EventID != 0) {
-			LV_Add("", "Event", EventName)
+		if (EventID != 0 && MiniEventID != 0 && EventID != MiniEventID) {
+			; ── Both main event and mini-event active ──
+			mainName := EventName != "" ? EventName : "Event " EventID
+			LV_Add("", "Type", "Main Event")
+			LV_Add("", "Event", mainName)
 			LV_Add("", "Event ID", EventID)
-			LV_Add("", "Description", EventDesc)
+			LV_Add("", EventTokenName, EventTokens)
+			LV_Add("", "───────────", "───────────────────────────")
+			Loop, Parse, EventHeroes, `,
+			{
+				hero := Trim(A_LoopField)
+				if (hero != "")
+					LV_Add("", "Hero", hero)
+			}
+			LV_Add("", "───────────", "───────────────────────────")
+			Loop, Parse, EventChests, `,
+			{
+				chest := Trim(A_LoopField)
+				if (chest != "")
+					LV_Add("", "Chest", chest)
+			}
+			LV_Add("", "═══════════", "═══════════════════════════")
+			LV_Add("", "Type", "Mini Event")
+			LV_Add("", "Event", MiniEventName)
+			LV_Add("", "Event ID", MiniEventID)
+			LV_Add("", "Description", MiniEventDesc)
+			LV_Add("", "Mini Tokens", MiniEventTokens)
+			LV_Add("", "───────────", "───────────────────────────")
+			Loop, Parse, MiniEventHeroes, `,
+			{
+				hero := Trim(A_LoopField)
+				if (hero != "")
+					LV_Add("", "Hero", hero)
+			}
+			LV_Add("", "───────────", "───────────────────────────")
+			Loop, Parse, MiniEventChests, `,
+			{
+				chest := Trim(A_LoopField)
+				if (chest != "")
+					LV_Add("", "Chest", chest)
+			}
+		} else if (MiniEventID != 0) {
+			; ── Mini-event only (or mini promoted to primary) ──
+			LV_Add("", "Type", "Mini Event")
+			LV_Add("", "Event", MiniEventName)
+			LV_Add("", "Event ID", MiniEventID)
+			LV_Add("", "Description", MiniEventDesc)
+			LV_Add("", "Mini Tokens", MiniEventTokens)
+			LV_Add("", "───────────", "───────────────────────────")
+			Loop, Parse, MiniEventHeroes, `,
+			{
+				hero := Trim(A_LoopField)
+				if (hero != "")
+					LV_Add("", "Hero", hero)
+			}
+			LV_Add("", "───────────", "───────────────────────────")
+			Loop, Parse, MiniEventChests, `,
+			{
+				chest := Trim(A_LoopField)
+				if (chest != "")
+					LV_Add("", "Chest", chest)
+			}
+		} else if (EventID != 0) {
+			; ── Main event only (no mini-event) ──
+			mainName := EventName != "" ? EventName : "Event " EventID
+			LV_Add("", "Type", "Main Event")
+			LV_Add("", "Event", mainName)
+			LV_Add("", "Event ID", EventID)
 			LV_Add("", EventTokenName, EventTokens)
 			LV_Add("", "───────────", "───────────────────────────")
 			Loop, Parse, EventHeroes, `,
@@ -3622,59 +3695,185 @@ CheckBlessings() {
 }
 
 ; Extract and display active event details in the Event tab
+; Reads from two API paths:
+;   events_details (plural)  → main event system (tokens, active_events with heroes/chests)
+;   event_details  (singular) → featured/mini-event (name, description, own heroes/chests)
 CheckEvents() {
 	APIStatus("⌛ Parsing Data - Events... Please wait...")
-	EventNextID := UserDetails.details.next_event
+	; Main event defaults
 	EventID := 0
-	EventName := "N/A"
+	EventName := ""
 	EventDesc := "No Event currently in Progress"
-	EventTokenName := "Tokens"
+	EventTokenName := "Event Tokens"
 	EventTokens := 0
 	EventHeroIDs := ""
-	EventHeros := "N/A"
+	EventHeroes := ""
 	EventChestIDs := ""
-	EventChests := "N/A"
-	for k, v in UserDetails.details.event_details {
-		if (v.event_id == EventNextID && v.active = "1") {
-			EventID := EventNextID
-			EventName := v.name
-			EventDesc := v.description
-			EventTokenName := v.details.event_token.name_plural
-			EventTokens := v.user_data.event_tokens
-			EventHeroCount := 0
-			EventHeroIDs := ""
-			EventHeroes := ""
-			EventChestCount := 0
-			EventChestIDs := ""
-			EventChests := ""
-			for l, w in v.details.years {
-				for m, x in w.hero_ids {
-					if (EventHeroCount > 0) {
-						EventHeroIDs .= ","
-						EventHeroes .= ", "
+	EventChests := ""
+	; Mini-event defaults
+	MiniEventID := 0
+	MiniEventName := ""
+	MiniEventDesc := ""
+	MiniEventTokens := 0
+	MiniEventHeroes := ""
+	MiniEventChests := ""
+	; ── Main event: events_details.active_events ──
+	evd := UserDetails.details.events_details
+	if (IsObject(evd)) {
+		EventTokens := evd.tokens + 0
+		if (IsObject(evd.active_events)) {
+			for i, ae in evd.active_events {
+				EventID := ae.event_id + 0
+				; Look up event name and token name from defines
+				if (IsObject(UserDetails.defines) && IsObject(UserDetails.defines.event_v2_defines)) {
+					for di, def in UserDetails.defines.event_v2_defines {
+						if (def.id + 0 == EventID) {
+							EventName := def.name
+							EventDesc := def.description
+							if (IsObject(def.static_details) && IsObject(def.static_details.event_token)) {
+								tokenName := def.static_details.event_token.name_plural
+								if (tokenName != "")
+									EventTokenName := tokenName
+							}
+							break
+						}
 					}
-					EventHeroIDs .= x
-					EventHeroes .= ChampFromID(x) " (" x ")"
-					EventHeroCount += 1
 				}
-				for m, x in w.chest_ids {
-					if (EventChestCount > 0) {
-						EventChestIDs .= ","
-						EventChests .= ", "
+				; Collect heroes from new, reworked, and flex lists
+				heroCount := 0
+				EventHeroIDs := ""
+				EventHeroes := ""
+				heroSources := [ae.new_hero_ids, ae.reworked_hero_ids, ae.flex_hero_ids]
+				for si, src in heroSources {
+					if (IsObject(src)) {
+						for j, hid in src {
+							if (heroCount > 0) {
+								EventHeroIDs .= ","
+								EventHeroes .= ", "
+							}
+							EventHeroIDs .= hid
+							EventHeroes .= ChampFromID(hid) " (" hid ")"
+							heroCount += 1
+						}
 					}
-					EventChestIDs .= x
-					EventChests .= ChestFromID(x) " (" x ")"
-					EventChestCount += 1
+				}
+				; Chests from boon_items
+				chestCount := 0
+				EventChestIDs := ""
+				EventChests := ""
+				if (IsObject(ae.boon_items) && IsObject(ae.boon_items.chest_type_ids)) {
+					for j, cid in ae.boon_items.chest_type_ids {
+						if (chestCount > 0) {
+							EventChestIDs .= ","
+							EventChests .= ", "
+						}
+						EventChestIDs .= cid
+						EventChests .= ChestFromID(cid) " (" cid ")"
+						chestCount += 1
+					}
+				}
+				break ; use first active event only
+			}
+		}
+	}
+	; ── event_details (singular object) — can be main event OR mini-event ──
+	ed := UserDetails.details.event_details
+	if (IsObject(ed)) {
+		edID := ed.event_id + 0
+		edIsMini := IsObject(ed.details) && ed.details.is_mini_event
+		; Grab name/description for main event regardless of active status
+		if (!edIsMini && edID == EventID && ed.name != "")
+			EventName := ed.name
+		if (!edIsMini && edID == EventID && ed.description != "")
+			EventDesc := ed.description
+		if (ed.active) {
+			if (edIsMini) {
+			; Populate mini-event globals
+			MiniEventID := edID
+			MiniEventName := ed.name
+			MiniEventDesc := ed.description
+			MiniEventTokens := ed.user_data.event_tokens + 0
+			; Heroes
+			heroCount := 0
+			MiniEventHeroes := ""
+			if (IsObject(ed.details) && IsObject(ed.details.hero_ids)) {
+				for i, hid in ed.details.hero_ids {
+					if (heroCount > 0)
+						MiniEventHeroes .= ", "
+					MiniEventHeroes .= ChampFromID(hid) " (" hid ")"
+					heroCount += 1
+				}
+			}
+			; Chests
+			chestCount := 0
+			MiniEventChests := ""
+			if (IsObject(ed.details) && IsObject(ed.details.chest_ids)) {
+				for i, cid in ed.details.chest_ids {
+					if (chestCount > 0)
+						MiniEventChests .= ", "
+					MiniEventChests .= ChestFromID(cid) " (" cid ")"
+					chestCount += 1
+				}
+			}
+			; If no main event, promote mini-event to primary (used by Buy/Open_Chests)
+			if (EventID == 0) {
+				EventID := MiniEventID
+				EventName := MiniEventName
+				EventDesc := MiniEventDesc
+				EventTokens := MiniEventTokens
+				EventHeroes := MiniEventHeroes
+				EventChests := MiniEventChests
+			}
+		} else {
+			; event_details IS the main event — enrich main event globals with name/description
+			if (ed.name != "")
+				EventName := ed.name
+			if (ed.description != "")
+				EventDesc := ed.description
+			; If no main event from events_details, use event_details as primary source
+			if (EventID == 0) {
+				EventID := edID
+				EventTokens := ed.user_data.event_tokens + 0
+				heroCount := 0
+				EventHeroIDs := ""
+				EventHeroes := ""
+				if (IsObject(ed.details) && IsObject(ed.details.hero_ids)) {
+					for i, hid in ed.details.hero_ids {
+						if (heroCount > 0) {
+							EventHeroIDs .= ","
+							EventHeroes .= ", "
+						}
+						EventHeroIDs .= hid
+						EventHeroes .= ChampFromID(hid) " (" hid ")"
+						heroCount += 1
+					}
+				}
+				chestCount := 0
+				EventChestIDs := ""
+				EventChests := ""
+				if (IsObject(ed.details) && IsObject(ed.details.chest_ids)) {
+					for i, cid in ed.details.chest_ids {
+						if (chestCount > 0) {
+							EventChestIDs .= ","
+							EventChests .= ", "
+						}
+						EventChestIDs .= cid
+						EventChests .= ChestFromID(cid) " (" cid ")"
+						chestCount += 1
+					}
 				}
 			}
 		}
 	}
+	}
+	; Build display text (backward compat)
 	InfoEventName := EventDesc "`n`n"
 	InfoEventTokens := ""
 	InfoEventHeroes := ""
 	InfoEventChests := ""
 	if (EventID != 0) {
-		InfoEventName := EventName " (ID:" EventID ") - " EventDesc "`n`n"
+		displayName := EventName != "" ? EventName : "Event " EventID
+		InfoEventName := displayName " (ID:" EventID ") - " EventDesc "`n`n"
 		InfoEventTokens := EventTokenName ": " EventTokens "`n`n"
 		InfoEventHeroes := "HEROES: " EventHeroes "`n`n"
 		InfoEventChests := "CHESTS: " EventChests "`n`n"
@@ -3963,6 +4162,23 @@ Sync_Dictionary_From_API() {
 	chestResult := hasChests ? ExtractDefinitionMap(defsObj.chest_type_defines) : {"items": {}, "skipped": 0, "maxId": 0}
 	campaignResult := hasCampaigns ? ExtractDefinitionMap(defsObj.campaign_defines) : {"items": {}, "skipped": 0, "maxId": 0}
 	patronResult := hasPatrons ? ExtractDefinitionMap(defsObj.patron_defines) : {"items": {}, "skipped": 0, "maxId": 0}
+
+	; Supplement champion names from getuserdetails defines (loot/upgrade descriptions)
+	; Fills gaps where getDefinitions champion_defines is outdated for newer heroes
+	if (IsObject(UserDetails) && IsObject(UserDetails.defines)) {
+		supplementChamps := ExtractChampNamesFromDefines(UserDetails.defines.upgrade_defines, UserDetails.defines.loot_defines)
+		for hid, name in supplementChamps {
+			if (!champResult.items.HasKey(hid)) {
+				; Only supplement if local dict has no valid name (avoid overwriting good names with regex fragments)
+				localName := _dict.champions[hid + 0]
+				if (!localName || localName = "" || localName = "UNKNOWN") {
+					champResult.items[hid] := name
+					if (hid > champResult.maxId)
+						champResult.maxId := hid
+				}
+			}
+		}
+	}
 
 	; Feats need special handling: API returns hero_id + name, local dict stores "ChampName (FeatName)"
 	; Build a champion ID→name lookup from the API response for feat formatting
