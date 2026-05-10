@@ -4169,9 +4169,13 @@ Sync_Dictionary_From_API() {
 		supplementChamps := ExtractChampNamesFromDefines(UserDetails.defines.upgrade_defines, UserDetails.defines.loot_defines)
 		for hid, name in supplementChamps {
 			if (!champResult.items.HasKey(hid)) {
-				champResult.items[hid] := name
-				if (hid > champResult.maxId)
-					champResult.maxId := hid
+				; Only supplement if local dict has no valid name (avoid overwriting good names with regex fragments)
+				localName := _dict.champions[hid + 0]
+				if (!localName || localName = "" || localName = "UNKNOWN") {
+					champResult.items[hid] := name
+					if (hid > champResult.maxId)
+						champResult.maxId := hid
+				}
 			}
 		}
 	}
