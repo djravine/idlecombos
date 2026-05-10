@@ -61,3 +61,4 @@ jobs:
       with:
         name: junit-results
         path: tests/junit.xml
+        retention-days: 30

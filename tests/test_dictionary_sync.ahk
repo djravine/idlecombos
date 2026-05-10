@@ -1,0 +1,249 @@
+﻿;=============================================================================
+; DICTIONARY SYNC TESTS
+; Tests for ExtractDefinitionMap, DiffDefinitionSection,
+; BuildSyncPreviewText, and ApplySyncToDict
+;=============================================================================
+
+class DictionarySyncTests
+{
+	;=========================================================================
+	; ExtractDefinitionMap tests
+	;=========================================================================
+
+	test_Extract_ValidChampions()
+	{
+		defs := [{"id": 1, "name": "Bruenor"}, {"id": 2, "name": "Celeste"}]
+		result := ExtractDefinitionMap(defs)
+		Yunit.Assert(result.items[1] = "Bruenor", "Champion 1 should be Bruenor")
+		Yunit.Assert(result.items[2] = "Celeste", "Champion 2 should be Celeste")
+		Yunit.Assert(result.skipped = 0, "No entries should be skipped")
+		Yunit.Assert(result.maxId = 2, "Max ID should be 2")
+	}
+
+	test_Extract_SkipsMissingId()
+	{
+		defs := [{"name": "NoId"}, {"id": 5, "name": "Valid"}]
+		result := ExtractDefinitionMap(defs)
+		Yunit.Assert(result.items[5] = "Valid", "Valid entry should be extracted")
+		Yunit.Assert(result.skipped = 1, "One entry should be skipped")
+	}
+
+	test_Extract_SkipsMissingName()
+	{
+		defs := [{"id": 3}, {"id": 4, "name": "HasName"}]
+		result := ExtractDefinitionMap(defs)
+		Yunit.Assert(result.items[4] = "HasName", "Valid entry should be extracted")
+		Yunit.Assert(result.skipped = 1, "One entry should be skipped")
+	}
+
+	test_Extract_SkipsBlankName()
+	{
+		defs := [{"id": 1, "name": ""}, {"id": 2, "name": "  "}, {"id": 3, "name": "OK"}]
+		result := ExtractDefinitionMap(defs)
+		Yunit.Assert(result.items[3] = "OK", "Valid entry should be extracted")
+		Yunit.Assert(result.skipped = 2, "Two entries should be skipped (empty and whitespace)")
+	}
+
+	test_Extract_SkipsZeroId()
+	{
+		defs := [{"id": 0, "name": "Zero"}, {"id": -1, "name": "Negative"}]
+		result := ExtractDefinitionMap(defs)
+		Yunit.Assert(result.skipped = 2, "Zero and negative IDs should be skipped")
+	}
+
+	test_Extract_EmptyArray()
+	{
+		defs := []
+		result := ExtractDefinitionMap(defs)
+		Yunit.Assert(result.skipped = 0, "No entries to skip")
+		Yunit.Assert(result.maxId = 0, "Max ID should be 0 for empty array")
+	}
+
+	test_Extract_NumericCoercion()
+	{
+		defs := [{"id": 10, "name": "Ten"}]
+		result := ExtractDefinitionMap(defs)
+		Yunit.Assert(result.items[10] = "Ten", "Numeric ID lookup should work")
+		Yunit.Assert(result.items["10"] = "Ten", "String ID lookup should also work via coercion")
+	}
+
+	test_Extract_TracksMaxId()
+	{
+		defs := [{"id": 5, "name": "A"}, {"id": 200, "name": "B"}, {"id": 50, "name": "C"}]
+		result := ExtractDefinitionMap(defs)
+		Yunit.Assert(result.maxId = 200, "Max ID should be 200")
+	}
+
+	test_Extract_TrimsWhitespace()
+	{
+		defs := [{"id": 1, "name": "  Padded Name  "}]
+		result := ExtractDefinitionMap(defs)
+		Yunit.Assert(result.items[1] = "Padded Name", "Name should be trimmed")
+	}
+
+	;=========================================================================
+	; DiffDefinitionSection tests
+	;=========================================================================
+
+	test_Diff_DetectsNewEntries()
+	{
+		current := {1: "Bruenor", 2: "Celeste"}
+		api := {1: "Bruenor", 2: "Celeste", 3: "Nayeli"}
+		diff := DiffDefinitionSection(current, api)
+		Yunit.Assert(diff.newCount = 1, "Should find 1 new entry")
+		Yunit.Assert(diff.new[1].id = 3, "New entry ID should be 3")
+		Yunit.Assert(diff.new[1].name = "Nayeli", "New entry name should be Nayeli")
+	}
+
+	test_Diff_DetectsRenames()
+	{
+		current := {1: "OldName"}
+		api := {1: "NewName"}
+		diff := DiffDefinitionSection(current, api)
+		Yunit.Assert(diff.changedCount = 1, "Should find 1 rename")
+		Yunit.Assert(diff.changed[1].old_name = "OldName", "Old name should match")
+		Yunit.Assert(diff.changed[1].new_name = "NewName", "New name should match")
+	}
+
+	test_Diff_NoChanges()
+	{
+		current := {1: "Same", 2: "Also Same"}
+		api := {1: "Same", 2: "Also Same"}
+		diff := DiffDefinitionSection(current, api)
+		Yunit.Assert(diff.newCount = 0, "Should find no new entries")
+		Yunit.Assert(diff.changedCount = 0, "Should find no renames")
+	}
+
+	test_Diff_IgnoresRemovals()
+	{
+		current := {1: "Keep", 2: "AlsoKeep", 3: "WillBeRemoved"}
+		api := {1: "Keep", 2: "AlsoKeep"}
+		diff := DiffDefinitionSection(current, api)
+		Yunit.Assert(diff.newCount = 0, "No new entries")
+		Yunit.Assert(diff.changedCount = 0, "No renames - removal should be ignored")
+	}
+
+	test_Diff_PreservesLocalOverrides()
+	{
+		current := {1: "Normal", 205: "Gold Mithral Hall Chest (DO NOT USE)"}
+		api := {1: "Normal", 205: "Gold Mithral Hall Chest"}
+		preserve := {205: true}
+		diff := DiffDefinitionSection(current, api, preserve)
+		Yunit.Assert(diff.changedCount = 0, "Preserved key should not be reported as changed")
+	}
+
+	test_Diff_MixedChanges()
+	{
+		current := {1: "Old1", 2: "Same"}
+		api := {1: "New1", 2: "Same", 3: "Brand New"}
+		diff := DiffDefinitionSection(current, api)
+		Yunit.Assert(diff.newCount = 1, "Should find 1 new entry")
+		Yunit.Assert(diff.changedCount = 1, "Should find 1 rename")
+	}
+
+	;=========================================================================
+	; BuildSyncPreviewText tests
+	;=========================================================================
+
+	test_Preview_NoChanges()
+	{
+		champDiff := {"new": [], "changed": [], "newCount": 0, "changedCount": 0}
+		chestDiff := {"new": [], "changed": [], "newCount": 0, "changedCount": 0}
+		text := BuildSyncPreviewText(champDiff, chestDiff)
+		Yunit.Assert(InStr(text, "New: 0"), "Should show 0 new entries")
+	}
+
+	test_Preview_WithNewEntries()
+	{
+		champDiff := {"new": [{"id": 155, "name": "NewHero"}], "changed": [], "newCount": 1, "changedCount": 0}
+		chestDiff := {"new": [], "changed": [], "newCount": 0, "changedCount": 0}
+		text := BuildSyncPreviewText(champDiff, chestDiff)
+		Yunit.Assert(InStr(text, "+ 155: NewHero"), "Should show new champion entry")
+	}
+
+	test_Preview_WithRenames()
+	{
+		champDiff := {"new": [], "changed": [{"id": 1, "old_name": "Old", "new_name": "New"}], "newCount": 0, "changedCount": 1}
+		chestDiff := {"new": [], "changed": [], "newCount": 0, "changedCount": 0}
+		text := BuildSyncPreviewText(champDiff, chestDiff)
+		Yunit.Assert(InStr(text, "~ 1: Old -> New"), "Should show rename entry")
+	}
+
+	test_Preview_ShowsSkipped()
+	{
+		champDiff := {"new": [], "changed": [], "newCount": 0, "changedCount": 0}
+		chestDiff := {"new": [], "changed": [], "newCount": 0, "changedCount": 0}
+		text := BuildSyncPreviewText(champDiff, chestDiff, 3, 2)
+		Yunit.Assert(InStr(text, "Skipped malformed API entries: 5"), "Should show total skipped count")
+	}
+
+	;=========================================================================
+	; ApplySyncToDict tests
+	;=========================================================================
+
+	test_Apply_AddsNewChampions()
+	{
+		dict := {"champions": {1: "Bruenor"}, "chests": {}, "max_champ_id": "1", "max_chest_id": "0"}
+		champDiff := {"new": [{"id": 2, "name": "Celeste"}], "changed": []}
+		chestDiff := {"new": [], "changed": []}
+		result := ApplySyncToDict(dict, champDiff, chestDiff, 2, 0)
+		Yunit.Assert(result.champions[2] = "Celeste", "New champion should be added")
+	}
+
+	test_Apply_RenamesChampions()
+	{
+		dict := {"champions": {1: "OldName"}, "chests": {}, "max_champ_id": "1", "max_chest_id": "0"}
+		champDiff := {"new": [], "changed": [{"id": 1, "new_name": "NewName"}]}
+		chestDiff := {"new": [], "changed": []}
+		result := ApplySyncToDict(dict, champDiff, chestDiff, 1, 0)
+		Yunit.Assert(result.champions[1] = "NewName", "Champion should be renamed")
+	}
+
+	test_Apply_AddsNewChests()
+	{
+		dict := {"champions": {}, "chests": {1: "Silver"}, "max_champ_id": "0", "max_chest_id": "1"}
+		champDiff := {"new": [], "changed": []}
+		chestDiff := {"new": [{"id": 2, "name": "Gold"}], "changed": []}
+		result := ApplySyncToDict(dict, champDiff, chestDiff, 0, 2)
+		Yunit.Assert(result.chests[2] = "Gold", "New chest should be added")
+	}
+
+	test_Apply_UpdatesMaxChampId()
+	{
+		dict := {"champions": {}, "chests": {}, "max_champ_id": "100", "max_chest_id": "50"}
+		champDiff := {"new": [{"id": 155, "name": "NewHero"}], "changed": []}
+		chestDiff := {"new": [], "changed": []}
+		result := ApplySyncToDict(dict, champDiff, chestDiff, 155, 50)
+		Yunit.Assert(result.max_champ_id + 0 = 155, "Max champ ID should update to 155")
+	}
+
+	test_Apply_UpdatesMaxChestId()
+	{
+		dict := {"champions": {}, "chests": {}, "max_champ_id": "100", "max_chest_id": "500"}
+		champDiff := {"new": [], "changed": []}
+		chestDiff := {"new": [{"id": 600, "name": "NewChest"}], "changed": []}
+		result := ApplySyncToDict(dict, champDiff, chestDiff, 100, 600)
+		Yunit.Assert(result.max_chest_id + 0 = 600, "Max chest ID should update to 600")
+	}
+
+	test_Apply_PreservesMaxIdWhenLower()
+	{
+		dict := {"champions": {}, "chests": {}, "max_champ_id": "200", "max_chest_id": "500"}
+		champDiff := {"new": [], "changed": []}
+		chestDiff := {"new": [], "changed": []}
+		result := ApplySyncToDict(dict, champDiff, chestDiff, 100, 400)
+		Yunit.Assert(result.max_champ_id + 0 = 200, "Max champ ID should stay at 200")
+		Yunit.Assert(result.max_chest_id + 0 = 500, "Max chest ID should stay at 500")
+	}
+
+	test_Apply_PreservesUntouchedSections()
+	{
+		dict := {"champions": {}, "chests": {}, "max_champ_id": "0", "max_chest_id": "0", "version": "2.41", "patrons": {1: "Mirt"}, "campaigns": {1: "Grand Tour"}}
+		champDiff := {"new": [], "changed": []}
+		chestDiff := {"new": [], "changed": []}
+		result := ApplySyncToDict(dict, champDiff, chestDiff, 0, 0)
+		Yunit.Assert(result.version = "2.41", "Version should be unchanged")
+		Yunit.Assert(result.patrons[1] = "Mirt", "Patrons should be unchanged")
+		Yunit.Assert(result.campaigns[1] = "Grand Tour", "Campaigns should be unchanged")
+	}
+}

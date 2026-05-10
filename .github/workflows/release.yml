@@ -7,7 +7,20 @@ name: Create Release
 
 jobs:
 
+  test:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - name: Install AutoHotkey
+      run: choco install autohotkey.install --version=1.1.37.1 -y
+    - name: Run unit tests
+      run: |
+        $ahk = "C:\Program Files\AutoHotkey\AutoHotkey.exe"
+        & $ahk "$PWD\tests\run_tests_ci.ahk"
+      timeout-minutes: 2
+
   build:
+    needs: test
     runs-on: ubuntu-latest
     env:
       ARCHIVE_NAME: ${{ github.event.repository.name }}-${{github.ref_name}}

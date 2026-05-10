@@ -103,6 +103,7 @@ idlecombos/
 * **IsBusy guard**: Long-running operations (Buy_Chests, Open_Chests, UseBlacksmith) set `IsBusy := true` at entry, `false` at exit. Prevents hotkey reentrancy.
 * **Security**: Never log `UserHash` — use `[REDACTED]`. Hash masked in UI display. See `SECURITY.md`.
 * **JSON keys**: `JSON.parse()` stores numeric-looking keys as numbers. Dictionary lookups must use `id + 0` to coerce to numeric for map access.
+* **Changelog**: Always add entries to `CHANGELOG.md` under the current version section after making changes. Every user-visible fix, feature, or refactor gets a bullet point. This is the primary record of what changed and when.
 * **Markdown (GitHub-flavoured)**:
   * No trailing spaces for line breaks; use blank lines between blocks.
   * ATX headings (`##`) with blank line before/after.

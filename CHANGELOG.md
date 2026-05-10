@@ -6,6 +6,50 @@ To all the Idle Dragoneers who inspired and assisted me!
 
 ------
 
+## 3.80
+
+* Add Pity Timers tab — champions grouped by chests-until-epic (was menu-only dialog)
+* Add Item Levels tab — gear iLvl report with core/event averages, highest/lowest, shinies (was menu-only dialog)
+* Add Incomplete Variants tab — patron-filterable adventure completion tracker with in-tab refresh (was menu-only dialog)
+* Add "Sync Dictionary from API" — fetches live champion/chest definitions from the game API, diffs against local dictionary, previews changes, and merges with backup (Help menu)
+* Tab count: 8 → 11
+* Display "Map" instead of "-1" for adventure ID when on the world map
+* Add "Show API Messages in Status Bar" setting to toggle verbose parsing/API progress messages
+* Improve save dialogs: show what's being saved and target filename (was vague "Save to File?")
+* Add numeric input validation to all chest/blacksmith/bounty count prompts (reject non-integer, zero, negative)
+* SettingsCheckValue bumped to 25 (new: showapimessages)
+* Add USkin.dll SHA-256 hash verification before DllCall("LoadLibrary") — blocks tampered binaries
+* Add try/catch + atomic write (temp file → rename) to ViewICSettings/UpdateICSetting
+* Add dictionary update downgrade rejection — downloaded version must be >= current
+* Mask user hash fully as `****` in List User Details (was showing first/last 4 chars)
+* Add WRL file path validation — reject paths outside game/script directory
+* Extract 6 Parse*Data() functions to IdleCombosLib.ahk as testable pure versions
+* Add tests/test_parsing.ahk with 51 new tests covering all extracted parsing functions
+* Refactor game detection: shared tryDetectPlatform() with platform descriptor table replaces 4 near-identical functions
+* Untrack advdefs.json — add to .gitignore (was creating dirty working trees)
+* Fix release packaging: include Lib/ScrollBox.ahk in archives (app failed to launch without it)
+* Make release.yml run tests before packaging (new test job with needs: dependency)
+* Fix CI: pin AutoHotkey Chocolatey version to 1.1.37.1 (1.1.37.02 was delisted)
+* Fix CI: exclude vendored Lib/Yunit/ from markdownlint (14 false-positive errors)
+* Fix CI: change trigger from push+PR to PR-only
+* Add retention-days: 30 to CI JUnit artifact upload
+* Add USER_MANUAL.md — comprehensive user guide with feature reference, settings, hotkeys, and troubleshooting
+* Add CODE_DEPLOY.md — release pipeline documentation
+* Add Documentation section to README.md linking all project markdown docs
+* Self-host README screenshots (Summary, Adventures, Inventory, Settings) — was single external Imgur link
+* Add shared PromptCount() helper for InputBox validation across all batch operations
+* Add BeginBusyOp()/EndBusyOp() guard wrapper — fixes bug where cancelling InputBox permanently locked IsBusy
+* Remove dead code: ShowPityTimers(), GearReport(), IncompleteVariants/Base/Patron() replaced by tabs (~196 lines)
+* Remove redundant menu items moved to tabs (Pity Timers, Item Level Report, Incomplete Variants)
+* Remove 15 commented-out debug MsgBox/ScrollBox lines and stale code blocks
+* Add live ticking timestamp in sidebar — shows elapsed time (Xs, Xm Xs, Xh Xm, Xd Xh) updated every second
+* Fix "Map" adventure display breaking LoadAdventure/EndAdventure checks (still compared against "-1")
+* Fix cached user details not setting ActiveInstance/InstanceID before parsing (adventures showed in wrong slots)
+* Fix sidebar relative time using local time instead of UTC (showed timezone offset as elapsed time)
+* Expand THIRD_PARTY.md: USkin.dll provenance, AGPL/MIT Yunit boundary, ScrollBox location
+* Add USER_MANUAL.md to release archives
+* Add AGENTS.md convention: always update CHANGELOG.md after making changes
+
 ## 3.79
 
 * Add USER_MANUAL.md — comprehensive user guide with feature reference, settings, hotkeys, and troubleshooting
