@@ -1150,6 +1150,7 @@ RunDisableTooltips:
 		return
 	}
 
+; Label: refresh Variants tab with filtered patron data
 RunVariantRefresh:
 	{
 		if !UserID {
@@ -1240,24 +1241,28 @@ RunVariantRefresh:
 		return
 	}
 
+; Label: menu handler — refresh user details from API
 Update_Clicked:
 	{
 		GetUserDetails()
 		return
 	}
 
+; Label: menu handler — reload IdleCombos script
 Reload_Clicked:
 	{
 		Reload
 		return
 	}
 
+; Label: menu handler — exit IdleCombos
 Exit_Clicked:
 	{
 		ExitApp
 		return
 	}
 
+; Label: toggle crash protection monitoring on/off
 Crash_Toggle:
 	{
 		msgbox, % CrashProtectStatus
@@ -1278,6 +1283,7 @@ Crash_Toggle:
 		return
 	}
 
+; Monitor game process and restart on crash (Steam only). Runs on a timer.
 CrashProtect() {
 	loop {
 		if (CrashProtectStatus == "Crash Protect`nDisabled") {
@@ -1296,11 +1302,13 @@ CrashProtect() {
 	return
 }
 
+; Cleanup handler called on script exit — remove skin and save settings
 ExitFunc() {
 	SkinForm(0)
 	return
 }
 
+; Force script to run in 32-bit mode (required for COM/WinHttp)
 RunWith(version){	
 	if (A_PtrSize=(version=32?4:8)) ;For 32 set to 4 otherwise 8 for 64 bit
 		Return
@@ -1313,6 +1321,7 @@ RunWith(version){
 	ExitApp
 }
 
+; Load/apply/remove Windows theme via USkin.dll. SHA-256 verified before loading.
 SkinForm(DLLPath, Param1 = "Apply", SkinName = ""){
 	if (StyleSystem) {
 		if(Param1 = Apply) {
@@ -1354,6 +1363,7 @@ SkinForm(DLLPath, Param1 = "Apply", SkinName = ""){
 	}
 }
 
+; Apply selected theme and update background colour
 SetStyle(SelectedStyle) {
 	if (StyleSystem) {
 		if (SelectedStyle) {
@@ -1460,17 +1470,20 @@ ExportCSV()
 	LogFile("CSV exported: " filename)
 }
 
+; Label: save all current settings to disk
 Save_Settings:
 	{
 		SaveSettings()
 		return
 	}
 
+; Timer: auto-refresh user details at configured interval
 AutoRefreshTimer:
 	if (!IsBusy && UserID)
 		GetUserDetails()
 	return
 
+; Timer: update sidebar elapsed-time display every second
 TimestampTickTimer:
 	if (SummaryDataLoaded && UserDetails.current_time) {
 		elapsed := A_NowUTC
@@ -1488,12 +1501,14 @@ TimestampTickTimer:
 	}
 	return
 
+; Label: show About dialog with version and credits
 About_Clicked:
 	{
 		ScrollBox(About, "p b1 h100 w510 f{s10, Consolas}", "About")
 		return
 	}
 
+; Label: show hotkey reference dialog
 Hotkeys_Clicked:
 	{
 		ScrollBox(HotkeyInfo, "p b1 h250 w400 f{s10, Consolas}", "Hotkey Details")
@@ -1506,6 +1521,7 @@ BuySilver()
 		return
 	}
 
+; Label: buy silver chests via menu
 Buy_Silver:
 	{
 		BuySilver()
@@ -1518,6 +1534,7 @@ BuyGold()
 		return
 	}
 
+; Label: buy gold chests via menu
 Buy_Gold:
 	{
 		BuyGold()
@@ -1535,6 +1552,7 @@ BuyEvent()
 		return
 	}
 
+; Label: buy event chests via menu (prompts for chest ID)
 Buy_Event:
 	{
 		BuyEvent()
@@ -1552,6 +1570,7 @@ OpenSilver()
 		}
 	}
 
+; Label: open silver chests via menu (checks game client running)
 Open_Silver:
 	{
 		OpenSilver()
@@ -1569,6 +1588,7 @@ OpenGold()
 		}
 	}
 
+; Label: open gold chests via menu (checks game client running)
 Open_Gold:
 	{
 		OpenGold()
@@ -1591,12 +1611,14 @@ OpenEvent()
 		}
 	}
 
+; Label: open event chests via menu (prompts for chest ID)
 Open_Event:
 	{
 		OpenEvent()
 		return
 	}
 
+; Label: open redeem codes window with paste/autoload/submit controls
 Open_Codes:
 	{
 		; GUI MENU
@@ -1967,12 +1989,14 @@ Open_Codes:
 		return
 	}
 
+; Label: close redeem codes window
 Close_Codes:
 	{
 		Gui, CodeWindow:Destroy
 		return
 	}
 
+; Label: launch Briv stack calculator with user inputs
 Briv_Calc:
 	{
 		InputBox, BrivSlot4, Briv Slot 4, Please enter the percentage listed`non your Briv Slot 4 item., , 250, 150, , , , , %BrivSlot4%
@@ -1987,31 +2011,37 @@ Briv_Calc:
 		return
 	}
 
+; Open SoulReaver game viewer website
 Open_Web_Game_Viewer() {
 		Run, %WebToolGameViewer%
 		return
 	}
 
+; Open Kleho data viewer website
 Open_Web_Data_Viewer() {
 		Run, %WebToolDataViewer%
 		return
 	}
 
+; Open ByteGlow utilities website
 Open_Web_Utilities() {
 		Run, %WebToolUtilities%
 		return
 	}
 
+; Open formation calculator website
 Open_Web_Utilities_Formation() {
 		Run, %WebToolUtilitiesFormation%
 		return
 	}
 
+; Open modron core calculator website
 Open_Web_Utilities_Modron() {
 		Run, %WebToolUtilitiesModron%
 		return
 	}
 
+; Label: clear the application log file
 Clear_Log:
 	{
 		MsgBox, 4, Clear Log, Are you sure?
@@ -2070,6 +2100,7 @@ EndBusyOp(statusMsg := "") {
 		GetUserDetails()
 }
 
+; Purchase additional chests to meet the user's open request when they don't own enough
 Buy_Extra_Chests(chestid,extracount) {
 	chestparams := DummyData "&user_id=" UserID "&hash=" UserHash "&instance_id=" InstanceID "&chest_type_id=" chestid "&count="
 	gemsspent := 0
@@ -2098,6 +2129,7 @@ Buy_Extra_Chests(chestid,extracount) {
 	return gemsspent
 }
 
+; Buy chests by ID with IsBusy guard. Delegates to _Buy_Chests_Inner.
 Buy_Chests(chestid) {
 	if !BeginBusyOp()
 		return
@@ -2105,6 +2137,7 @@ Buy_Chests(chestid) {
 	EndBusyOp()
 }
 
+; Core chest purchase logic — prompt count, validate, batch API calls, save results
 _Buy_Chests_Inner(chestid) {
 	if !CurrentGems && (chestid = 1 OR chestid = 2) {
 		MsgBox, 4, , No gems detected. Check server for user details?
@@ -2228,6 +2261,7 @@ _Buy_Chests_Inner(chestid) {
 	return
 }
 
+; Open chests by ID with IsBusy guard. Delegates to _Open_Chests_Inner.
 Open_Chests(chestid) {
 	if !BeginBusyOp()
 		return
@@ -2235,6 +2269,7 @@ Open_Chests(chestid) {
 	EndBusyOp()
 }
 
+; Core chest opening logic — prompt count, validate, batch API calls, log shinies
 _Open_Chests_Inner(chestid) {
 	RotateLogFile(ChestOpenLogFile)
 	if (!CurrentGolds && !CurrentSilvers && !CurrentGems && (chestid = 1 OR chestid = 2) ) {
@@ -2427,36 +2462,42 @@ _Open_Chests_Inner(chestid) {
 	return
 }
 
+; Label: use tiny blacksmith contracts
 Tiny_Blacksmith:
 	{
 		UseBlacksmith(31)
 		return
 	}
 
+; Label: use small blacksmith contracts
 Sm_Blacksmith:
 	{
 		UseBlacksmith(32)
 		return
 	}
 
+; Label: use medium blacksmith contracts
 Med_Blacksmith:
 	{
 		UseBlacksmith(33)
 		return
 	}
 
+; Label: use large blacksmith contracts
 Lg_Blacksmith:
 	{
 		UseBlacksmith(34)
 		return
 	}
 
+; Label: use huge blacksmith contracts
 Hg_Blacksmith:
 	{
 		UseBlacksmith(1797)
 		return
 	}
 
+; Apply blacksmith contracts by buff_id with IsBusy guard. Delegates to _UseBlacksmith_Inner.
 UseBlacksmith(buffid) {
 	if !BeginBusyOp()
 		return
@@ -2464,6 +2505,7 @@ UseBlacksmith(buffid) {
 	EndBusyOp()
 }
 
+; Core blacksmith logic — resolve contract metadata, prompt count, batch API calls, log results
 _UseBlacksmith_Inner(buffid) {
 	RotateLogFile(BlacksmithLogFile)
 	; Contract metadata: buff_id → {current var, last count var, name}
@@ -2605,30 +2647,35 @@ _UseBlacksmith_Inner(buffid) {
 	return
 }
 
+; Label: use tiny bounty contracts
 Tiny_Bounty:
 	{
 		UseBounty(17)
 		return
 	}
 
+; Label: use small bounty contracts
 Sm_Bounty:
 	{
 		UseBounty(18)
 		return
 	}
 
+; Label: use medium bounty contracts
 Med_Bounty:
 	{
 		UseBounty(19)
 		return
 	}
 
+; Label: use large bounty contracts
 Lg_Bounty:
 	{
 		UseBounty(20)
 		return
 	}
 
+; Perform image search and mouse click for bounty automation (alpha)
 UseBountyClick(name, imagename, offset_x, offset_y, delay, repeat := 1, move_x := 0, move_y := 0) {
 	FileAppend, %name%`n, %BountyLogFile%
 	WinGet, PID, PID, Idle Champions
@@ -2653,6 +2700,7 @@ UseBountyClick(name, imagename, offset_x, offset_y, delay, repeat := 1, move_x :
 	return 0
 }
 
+; Apply bounty contracts via mouse automation (alpha — requires 1280x720, not fullscreen)
 UseBounty(buffid) {
 	RotateLogFile(BountyLogFile)
 	if !UserID {
@@ -2778,6 +2826,7 @@ UseBounty(buffid) {
 
 global lastadv := 0			;fmagdi - to be used to save ended adventureid for use as default for next load 
 
+; Load a new adventure by ID with optional patron selection
 LoadAdventure() {
 	GetUserDetails()
 	while !(CurrentAdventure == "Map" || CurrentAdventure == "-1") {
@@ -2812,6 +2861,7 @@ LoadAdventure() {
 	return
 }
 
+; End current foreground adventure
 EndAdventure() {
 	GetUserDetails()				;fmagdi - updates info before ending an adventure to be sure you are ending the correct one
 	if (CurrentAdventure == "Map" || CurrentAdventure == "-1") {
@@ -2822,6 +2872,7 @@ EndAdventure() {
 	EndAdventureInstance("Current", CurrentAdventure, CurrentPatron, ActiveInstance)
 }
 
+; End background party 1 adventure
 EndBGAdventure() {
 	if (ActiveInstance == "1") {
 		bginstance := 2
@@ -2835,6 +2886,7 @@ EndBGAdventure() {
 	EndAdventureInstance("Background", BackgroundAdventure, BackgroundPatron, bginstance)
 }
 
+; End background party 2 adventure
 EndBG2Adventure() {
 	if (ActiveInstance == "3" or ActiveInstance == "4") {
 		bginstance := 2
@@ -2848,6 +2900,7 @@ EndBG2Adventure() {
 	EndAdventureInstance("Background2", Background2Adventure, Background2Patron, bginstance)
 }
 
+; End background party 3 adventure
 EndBG3Adventure() {
 	if (ActiveInstance == "4") {
 		bginstance := 3
@@ -2861,6 +2914,7 @@ EndBG3Adventure() {
 	EndAdventureInstance("Background3", Background3Adventure, Background3Patron, bginstance)
 }
 
+; Generic adventure end handler — confirms and sends softreset API call
 EndAdventureInstance(label, adventure, patron, gameInstanceId) {
 	MsgBox, 4, , % "Are you sure you want to end your " label " adventure?`nParty: " gameInstanceId " AdvID: " adventure " Patron: " patron
 	IfMsgBox, No
@@ -2874,6 +2928,7 @@ EndAdventureInstance(label, adventure, patron, gameInstanceId) {
 }
 ;	fmagdi -stop
 
+; Set tray icon from IconFile global
 SetIcon() {
 	;IdleChampions Icon
 	if FileExist(IconFile) {
@@ -2881,6 +2936,7 @@ SetIcon() {
 	}
 }
 
+; Shared platform detection engine — scans for game install using platform descriptor
 tryDetectPlatform(desc, manual) {
 	; Shared detection engine for platform-based game install detection.
 	; Descriptor fields: checkPath, installDir, clientExe, platformName,
@@ -2938,10 +2994,12 @@ tryDetectPlatform(desc, manual) {
 	return false
 }
 
+; Detect Epic Games install (menu handler, manual mode)
 detectGameInstallEpic() {
 	setGameInstallEpic(true)
 }
 
+; Detect Epic Games install (auto or manual)
 setGameInstallEpic(manual = false) {
 	desc := {}
 	desc.isEpic       := 1
@@ -2952,10 +3010,12 @@ setGameInstallEpic(manual = false) {
 	return tryDetectPlatform(desc, manual)
 }
 
+; Detect Steam install (menu handler, manual mode)
 detectGameInstallSteam() {
 	setGameInstallSteam(true)
 }
 
+; Detect Steam install (auto or manual)
 setGameInstallSteam(manual = false) {
 	desc := {}
 	desc.isEpic       := 0
@@ -2971,10 +3031,12 @@ setGameInstallSteam(manual = false) {
 	return tryDetectPlatform(desc, manual)
 }
 
+; Detect Standalone install (menu handler, manual mode)
 detectGameInstallStandalone() {
 	setGameInstallStandalone(true)
 }
 
+; Detect Standalone install (auto or manual)
 setGameInstallStandalone(manual = false) {
 	desc := {}
 	desc.isEpic       := 0
@@ -2992,10 +3054,12 @@ setGameInstallStandalone(manual = false) {
 	return setGameInstallStandaloneLauncher(manual)
 }
 
+; Detect Standalone Launcher install (menu handler, manual mode)
 detectGameInstallStandaloneLauncher() {
 	setGameInstallStandaloneLauncher(true)
 }
 
+; Detect Standalone Launcher install (auto or manual)
 setGameInstallStandaloneLauncher(manual = false) {
 	desc := {}
 	desc.isEpic       := 0
@@ -3026,10 +3090,12 @@ applyGameInstall(installDir, client, platform, wrlPath, loadClient) {
 	SetIcon()
 }
 
+; Detect Console platform (menu handler, manual mode)
 detectGameInstallConsole() {
 	setGameInstallConsole(true)
 }
 
+; Detect Console platform (auto or manual)
 setGameInstallConsole( manual = false) {
 	; Detect Console install
 	if FileExist(GameInstallDirStandalone) {
@@ -3051,6 +3117,7 @@ setGameInstallConsole( manual = false) {
 	return false
 }
 
+; Initial setup wizard — detect game, extract credentials from WRL or manual input
 FirstRun() {
 	if(LoadGameClient == 4) {
 		InputBox, UserID, user_id, Please enter your "user_id" value., , 250, 125
@@ -3100,10 +3167,12 @@ FirstRun() {
 	SB_SetText("✅ User ID & Hash Ready")
 }
 
+; Update CurrentTime global with formatted timestamp
 UpdateLogTime() {
 	FormatTime, CurrentTime, , yyyy-MM-dd HH:mm:ss
 }
 
+; Append timestamped message to the application log file
 LogFile(LogMessage) {
 	if (LogEnabled) {
 		OutputLogFile := LogFileName
@@ -3139,6 +3208,7 @@ ValidateWRLPath(path) {
 	return true
 }
 
+; Extract user credentials (user_id, hash) from the game's webRequestLog.txt
 GetIDFromWRL() {
 	if !ValidateWRLPath(WRLFile)
 		return
@@ -3164,6 +3234,7 @@ GetIDFromWRL() {
 	return
 }
 
+; Extract play server name from the game's webRequestLog.txt
 GetPlayServerFromWRL() {
 	if !ValidateWRLPath(WRLFile)
 		return
@@ -3197,6 +3268,7 @@ GetPlayServerFromWRL() {
 	return
 }
 
+; Parse and detect play server from API response data
 GetPlayServer(oData) {
 	LogFile("Detecting play server")
 	NewServerName := ParsePlayServerName(oData)
@@ -3211,6 +3283,7 @@ GetPlayServer(oData) {
 	return playservername
 }
 
+; Master API fetch — calls getuserdetails and cascades all Parse*() functions to populate UI
 GetUserDetails(newservername = "") {
 	If (newservername = "") {
 		playservername := ServerName
@@ -3262,6 +3335,7 @@ GetUserDetails(newservername = "") {
 	return
 }
 
+; Extract and assign adventure instance data (foreground + 3 backgrounds) to globals
 ParseAdventureData() {
 	APIStatus("⌛ Parsing Data - Adventures... Please wait...")
 	result := ParseAdventureDataFromDetails(UserDetails.details, ActiveInstance)
@@ -3296,6 +3370,7 @@ ParseAdventureData() {
 	ChampionsActiveCount := result.champsActiveCount
 }
 
+; Extract and display timestamp data (last API call, next TGP drop, etc.)
 ParseTimestamps() {
 	APIStatus("⌛ Parsing Data - Timestamps... Please wait...")
 	result := ParseTimestampsFromData(UserDetails.current_time, UserDetails.details.stats)
@@ -3311,6 +3386,7 @@ ParseTimestamps() {
 	}
 }
 
+; Extract and assign inventory counts (gems, chests, bounties, blacksmith contracts)
 ParseInventoryData() {
 	APIStatus("⌛ Parsing Data - Inventory... Please wait...")
 	result := ParseInventoryDataFromDetails(UserDetails.details)
@@ -3337,6 +3413,7 @@ ParseInventoryData() {
 	AvailableBSLvs      := result.availableBSLvs
 }
 
+; Extract and assign patron progress data (variants, challenges, unlock status)
 ParsePatronData() {
 	APIStatus("⌛ Parsing Data - Patrons... Please wait...")
 	result := ParsePatronDataFromDetails(UserDetails.details, CurrentTGPs, CurrentSilvers, CurrentGems, CurrentLgBounties, TotalChamps)
@@ -3362,6 +3439,7 @@ ParsePatronData() {
 	}
 }
 
+; Extract and assign loot/gear statistics (champions, familiars, costumes, epics)
 ParseLootData() {
 	APIStatus("⌛ Parsing Data - Loot... Please wait...")
 	result := ParseLootDataFromDetails(UserDetails.details, ActiveInstance)
@@ -3374,6 +3452,7 @@ ParseLootData() {
 	; AchievementInfo text no longer used — Summary tab uses StatsLV/BlessingsLV
 }
 
+; Extract and assign champion ownership count and stat details
 ParseChampData() {
 	APIStatus("⌛ Parsing Data - Champions... Please wait...")
 	result := ParseChampDataFromDetails(UserDetails.details)
@@ -3381,6 +3460,7 @@ ParseChampData() {
 	ChampDetails := result.champDetails
 }	
 
+; Colour-code patron progress indicators in the Patrons ListView
 CheckPatronProgress() {
 	APIStatus("⌛ Parsing Data - Patrons... Please wait...")
 	; Loop over patrons — avoids 5 near-identical lines (P3-17)
@@ -3395,6 +3475,7 @@ CheckPatronProgress() {
 	}
 }
 
+; Apply colour to a single patron's progress row based on completion state
 ColorPatronProgress(name, variants, fpCurrency, challenges, completed, variantTotal) {
 	if (variants == "Locked")
 		return
@@ -3409,6 +3490,7 @@ ColorPatronProgress(name, variants, fpCurrency, challenges, completed, variantTo
 	GuiControl, Font, %name%Variants
 }
 
+; Extract and display achievement requirements in the Summary tab
 CheckAchievements() {
 	APIStatus("⌛ Parsing Data - Achievements... Please wait...")
 	AchievementNeeds := ""
@@ -3483,12 +3565,14 @@ CheckAchievements() {
 	SummaryDataLoaded := true
 }
 
+; Placeholder for blessing data (now handled in Update)
 CheckBlessings() {
 	; Blessing data is now rendered directly in Update() from UserDetails
 	; This function is kept as a no-op for backward compatibility with the call in GetUserDetails()
 	return
 }
 
+; Extract and display active event details in the Event tab
 CheckEvents() {
 	APIStatus("⌛ Parsing Data - Events... Please wait...")
 	EventNextID := UserDetails.details.next_event
@@ -3549,12 +3633,14 @@ CheckEvents() {
 	EventDetails := InfoEventName InfoEventTokens InfoEventHeroes InfoEventChests
 }
 
+; Display API status message in the status bar (respects ShowAPIMessages setting)
 APIStatus(msg) {
 	global ShowAPIMessages
 	if (ShowAPIMessages)
 		SB_SetText(msg)
 }
 
+; HTTPS POST to game API with retry logic and server redirect handling
 ServerCall(callname, parameters, newservername = "") {
 	global MockServerCallEnabled, MockServerCallResponse
 	if (MockServerCallEnabled) {
@@ -3626,6 +3712,7 @@ BatchAPICall(callname, params, ByRef count, batchSize, statusPrefix) {
 	return rawresults
 }
 
+; Start game client (Epic/Steam/Standalone) based on LoadGameClient setting
 LaunchGame() {
 	if( GamePlatform == "Standalone Launcher") {
 		if (Not WinExist("ahk_exe IdleDragonsLauncher.exe")) {
@@ -3651,6 +3738,7 @@ LaunchGame() {
 	return
 }
 
+; Label: download journal pages from game API
 Get_Journal:
 	{
 		if !UserID {
@@ -3684,6 +3772,7 @@ Get_Journal:
 		return
 	}
 
+; Label: open CNE support ticket URL in browser
 Open_Ticket:
 	{
 		if (GamePlatform = "Steam"){
@@ -3694,18 +3783,21 @@ Open_Ticket:
 		return
 	}
 
+; Label: open Discord support server link
 Discord_Clicked:
 	{
 		Run, % WebToolDiscord
 		return
 	}
 
+; Label: open GitHub project page
 Github_Clicked:
 	{
 		Run, % WebToolGithub
 		return
 	}
 
+; Download and verify dictionary update from GitHub raw URL
 Update_Dictionary() {
 	if !(DictionaryVersion == CurrentDictionary) {
 		;Download to temp file first for integrity verification
@@ -3951,6 +4043,7 @@ WriteDictionaryJson(dictObj) {
 	return true
 }
 
+; Label: display user ID, masked hash, and platform IDs
 List_UserDetails:
 	{
 		hashMasked := "****" (StrLen(UserHash) > 0 ? " (" StrLen(UserHash) " chars)" : "")
@@ -3967,6 +4060,7 @@ List_UserDetails:
 		return	
 	}
 
+; Label: display all champion IDs and names from dictionary
 List_ChampIDs:
 	{
 		champnamelen := 0
@@ -3992,6 +4086,7 @@ List_ChampIDs:
 	}
 
 
+; Label: display all chest IDs and names from dictionary
 List_ChestIDs:
 	{
 		chestnamelen := 0
@@ -4016,6 +4111,7 @@ List_ChestIDs:
 		return	
 	}
 
+; Display game client localSettings.json contents in a dialog
 ViewICSettings() {
 	rawicsettings := ""
 	FileRead, rawicsettings, %ICSettingsFile%
@@ -4028,18 +4124,22 @@ ViewICSettings() {
 	MsgBox, , localSettings.json file, % rawicsettings
 }
 
+; Prompt and update UI scale in game client settings
 SetUIScale() {
 	UpdateICSetting("UIScale", "UI Scale", "Please enter the desired UI Scale.`n(0.5 - 1.25)", 0.5, 1.25, "UI Scale")
 }
 
+; Prompt and update framerate in game client settings
 SetFramerate() {
 	UpdateICSetting("TargetFramerate", "Framerate", "Please enter the desired Framerate.`n(1 - 240)", 1, 240, "Framerate")
 }
 
+; Prompt and update particle percentage in game client settings
 SetParticles() {
 	UpdateICSetting("PercentOfParticlesSpawned", "Particles", "Please enter the desired Percentage.`n(0 - 100)", 0, 100, "Particles")
 }
 
+; Generic game client setting updater — read, modify, and write back localSettings.json
 UpdateICSetting(settingKey, title, prompt, minVal, maxVal, logName) {
 	FileRead, rawicsettings, %ICSettingsFile%
 	Try {
@@ -4073,6 +4173,7 @@ UpdateICSetting(settingKey, title, prompt, minVal, maxVal, logName) {
 	SB_SetText("✅ " logName " changed to " newVal)
 }
 
+; GUI wrapper for Briv stack calculator — prompts for inputs, displays results
 SimulateBriv(i) {
 	SB_SetText("⌛ Calculating...")
 	r := SimulateBrivCalc(BrivSlot4, BrivZone, i)
@@ -4081,6 +4182,7 @@ SimulateBriv(i) {
 	Return message
 }
 
+; Generate and open formation image from Kleho for current adventure
 KlehoImage() {
 	campaignid := 0
 	currenttimegate := ""
@@ -4135,6 +4237,7 @@ KlehoImage() {
 	return
 }
 
+; Fetch and cache adventure definitions from API for the Variants tab
 AdventureList() {
 	getparams := DummyData "&user_id=" UserID "&hash=" UserHash "&instance_id=" InstanceID
 	sResult := ServerCall("getcampaigndetails", getparams)
@@ -4161,6 +4264,7 @@ AdventureList() {
 	return
 }
 
+; Display active patron feats for the heroes in the current formation
 PatronFeats() {
 	assignedfeats := ""
 	for k, v in UserDetails.details.heroes {
