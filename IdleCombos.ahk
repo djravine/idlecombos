@@ -196,9 +196,6 @@ global EventDetails := ""
 global WebToolGithub := "https://github.com/djravine/idlecombos"
 global WebToolDiscord := "https://discord.gg/wFtrGqd3ZQ"
 global WebToolCodes := "https://incendar.com/idlechampions_codes.php"
-global WebToolCodesRecent := "#i11"
-global WebToolCodesSpecial := "#i22"
-global WebToolCodesPermanent := "#i33"
 global WebToolGameViewer := "http://idlechampions.soulreaver.usermd.net"
 global WebToolDataViewer := "https://idle.kleho.ru"
 global WebToolUtilities := "https://ic.byteglow.com"
@@ -1238,12 +1235,8 @@ Open_Event:
 Open_Codes:
 	{
 		; GUI MENU
-		Menu, FileMenu, Add, Auto Load Recent (Web)`tCtrl+L, Get_Codes_Autoload_Recent
-		Menu, FileMenu, Add, Auto Load Special (Web)`tCtrl+M, Get_Codes_Autoload_Special
-		Menu, FileMenu, Add, Auto Load Permanent (Web)`tCtrl+N, Get_Codes_Autoload_Permanent
-		Menu, FileMenu, Add, Auto Load &Recent && Run (Web)`tCtrl+R, Get_Codes_Autoload_Run_Recent
-		Menu, FileMenu, Add, Auto Load &Special && Run (Web)`tCtrl+E, Get_Codes_Autoload_Run_Special
-		Menu, FileMenu, Add, Auto Load &Permanent && Run (Web)`tCtrl+P, Get_Codes_Autoload_Run_Permanent
+		Menu, FileMenu, Add, Auto Load Codes (Web)`tCtrl+L, Get_Codes_Autoload_Recent
+		Menu, FileMenu, Add, Auto Load Codes && Run (Web)`tCtrl+R, Get_Codes_Autoload_Run_Recent
 		Menu, FileMenu, Add, &Submit`tCtrl+S, Redeem_Codes
 		Menu, FileMenu, Add, Show Submit &History`tCtrl+H, Redeem_Codes_History
 		Menu, FileMenu, Add, &Clear Submit History`tCtrl+C, Redeem_Codes_History_Clear
@@ -1259,10 +1252,8 @@ Open_Codes:
 		Gui, Menu, MyMenuBar
 		Gui, CodeWindow: -Resize -MaximizeBox +MinSize
 		Gui, CodeWindow:Show, w230 h270, 📜 Codes
-		Gui, CodeWindow:Add, Edit, r12 vCodestoEnter w190 x20 y20, IDLE-CHAM-PION-SNOW
-		Gui, CodeWindow:Add, Button, vButton_Recent gGet_Codes_Autoload_Run_Recent, Recent
-		Gui, CodeWindow:Add, Button, x+15 vButton_Special gGet_Codes_Autoload_Run_Special, Special
-		Gui, CodeWindow:Add, Button, x+15 vButton_Permanent gGet_Codes_Autoload_Run_Permanent, Permanent
+		Gui, CodeWindow:Add, Edit, r12 vCodestoEnter w190 x20 y40, IDLE-CHAM-PION-SNOW
+		Gui, CodeWindow:Add, Button, vButton_Recent gGet_Codes_Autoload_Run_Recent x20 y10 w190, Load Web
 		Gui, CodeWindow:Add, Button, x20 vButton_Submit gRedeem_Codes, Submit
 		Gui, CodeWindow:Add, Button, x+10 vButton_Paste gPaste, Paste
 		Gui, CodeWindow:Add, Button, x+10 vButton_Delete gDelete, Clear
@@ -1292,67 +1283,38 @@ Open_Codes:
 	}
 
 	Open_Web_Codes_Page() {
-		Run, WebToolCodes
+		Run, %WebToolCodes%
 		return
-	}
-
-	Open_Web_Codes_Page_Element(TextboxID) {
-		Run, %WebToolCodes%%TextboxID%
-		return
-	}
-
-	Wait_For_Load(wb)
-	{
-		while wb.busy or wb.ReadyState != 4
-			Sleep, 1
 	}
 
 	Get_Codes_Autoload_Recent() {
-		Get_Codes_Autoload(WebToolCodesRecent)
+		Get_Codes_Autoload()
 		return
 	}
 
-	Get_Codes_Autoload_Special() {
-		Get_Codes_Autoload(WebToolCodesSpecial)
-		return
-	}
-
-	Get_Codes_Autoload_Permanent() {
-		Get_Codes_Autoload(WebToolCodesPermanent)
-		return
-	}
-
-	Get_Codes_Autoload(TextboxID) {
-		; MsgBox, % TextboxID
-
-		;Old method
-		; Open_Web_Codes_Page_Element(TextboxID)
-		; winwait, ALL active Idle Champions of the Forgotten Realms chest combination🔒 codes
-		; sleep, 1500
-		; send, ^a
-		; clipboard := ""
-		; send, ^c
-		; ClipWait, 1
-
-		;Use new COM Object to hide browser
+	Get_Codes_Autoload() {
+		;Use XMLHTTP to download page and extract codes from allCodes JS constant
 		try {
-			wb := ComObjCreate("InternetExplorer.Application")
-			wb.Visible := False
-			wb.Navigate(WebToolCodes)
-			Wait_For_Load(wb)
-			if(SubStr(TextboxID, 1, 1) == "#") {
-				TextboxIDTrim := SubStr(TextboxID, 2, 10)
-			} else {
-				TextboxIDTrim := TextboxID
-			}
-			; MsgBox, % TextboxIDTrim
-			Codes := wb.document.getElementByID(TextboxIDTrim).innerText
-			clipboard := Codes
-			wb.quit()
+			WR := ComObjCreate("Msxml2.XMLHTTP.6.0")
+			WR.Open("GET", WebToolCodes, false)
+			WR.Send()
+			html := WR.ResponseText
 		} catch e {
-			MsgBox, An exception was thrown!`n%e%
+			MsgBox, Failed to download codes page!`nPlease check your internet connection.`n`n%e%
 			return
 		}
+
+		;Extract the allCodes JavaScript constant (matches the site's "Copy ALL Recent Active Codes" button)
+		RegExMatch(html, "const allCodes = ""(.+?)""", match)
+		if (match1 = "") {
+			MsgBox, Could not find codes on the page.`nThe website layout may have changed again.
+			return
+		}
+
+		;Replace literal \r\n escape sequences with actual newlines
+		Codes := StrReplace(match1, "\r\n", "`r`n")
+
+		clipboard := Codes
 
 		if WinExist("📜 Codes") {
 			WinActivate
@@ -1363,22 +1325,12 @@ Open_Codes:
 	}
 
 	Get_Codes_Autoload_Run_Recent() {
-		Get_Codes_Autoload_Run(WebToolCodesRecent)
+		Get_Codes_Autoload_Run()
 		return
 	}
 
-	Get_Codes_Autoload_Run_Special() {
-		Get_Codes_Autoload_Run(WebToolCodesSpecial)
-		return
-	}
-
-	Get_Codes_Autoload_Run_Permanent() {
-		Get_Codes_Autoload_Run(WebToolCodesPermanent)
-		return
-	}
-
-	Get_Codes_Autoload_Run(TextboxID) {
-		Get_Codes_Autoload(TextboxID)
+	Get_Codes_Autoload_Run() {
+		Get_Codes_Autoload()
 		Redeem_Codes()
 		return
 	}
