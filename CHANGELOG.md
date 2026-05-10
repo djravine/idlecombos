@@ -8,6 +8,9 @@ To all the Idle Dragoneers who inspired and assisted me!
 
 ## 3.80
 
+* Fix Event tab not showing data — `CheckEvents()` iterated `event_details` as array but API returns single object; now reads `events_details.active_events` (main event) and `event_details` (mini-event) correctly
+* Event tab now shows both Main Event and Mini Event sections with type labels, heroes, chests, and token counts
+* Fix `EpochToLocalTime()` producing future timestamps for UTC+ timezones — naive `A_Now - A_NowUTC` subtraction broke across day boundaries; now uses `EnvSub` date math
 * Fix RunDisableTooltips reading wrong hwnd variable (`hcbx11` → `hcb11`) — tooltip toggle was broken
 * Fix Variants tab using undefined `patronChoice` — add GuiControlGet to read `VariantPatronChoice` DDL
 * Fix CrashProtect timer checking wrong status string (`Crash Protect\nDisabled` → `Crash Protect: Disabled`) — disable was not stopping the loop

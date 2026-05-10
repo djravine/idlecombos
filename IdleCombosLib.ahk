@@ -648,23 +648,15 @@ ParseWRLCredentials(text) {
 ; Returns: formatted time string like "May 10, 3:45 PM"
 ;-----------------------------------------------------------------------------
 EpochToLocalTime(epochSeconds) {
-	localdiff := (A_Now - A_NowUTC)
-	if (localdiff < -28000000) {
-		localdiff += 70000000
-	}
-	if (localdiff < -250000) {
-		localdiff += 760000
-	}
-	StringTrimRight, localdiffh, localdiff, 4
-	localdiffm := SubStr(localdiff, -3)
-	StringTrimRight, localdiffm, localdiffm, 2
-	if (localdiffm > 59) {
-		localdiffm -= 40
-	}
+	; Convert epoch to UTC timestamp
 	timestampvalue := "19700101000000"
 	timestampvalue += epochSeconds, s
-	EnvAdd, timestampvalue, localdiffh, h
-	EnvAdd, timestampvalue, localdiffm, m
+	; Calculate UTC-to-local offset using AHK date math (handles day boundaries)
+	localRef := A_Now
+	utcRef := A_NowUTC
+	EnvSub, localRef, %utcRef%, Seconds
+	; Apply local offset to get local time
+	timestampvalue += localRef, s
 	FormatTime, result, % timestampvalue, MMM d`, h:mm tt
 	return result
 }
