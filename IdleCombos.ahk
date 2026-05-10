@@ -1378,19 +1378,46 @@ Crash_Toggle:
 	}
 
 ; Monitor game process and restart on crash (Steam only). Runs on a timer.
+; Uses WinWait with timeout instead of fixed sleep to avoid launching multiple
+; copies when the game is slow to start. Gives up after 3 consecutive failures.
 CrashProtect() {
+	cooldownSec := 120
+	maxAttempts := 3
+	attempts := 0
 	loop {
-		if (CrashProtectStatus == "Crash Protect: Disabled") {
+		if (CrashProtectStatus == "Crash Protect: Disabled")
+			return
+		if (WinExist("ahk_exe IdleDragons.exe")) {
+			; Game is running — reset attempt counter
+			attempts := 0
+			Sleep 5000
+			continue
+		}
+		; Game not running — attempt restart
+		attempts += 1
+		if (attempts > maxAttempts) {
+			CrashProtectStatus := "Crash Protect: Disabled"
+			SB_SetText("❌ Crash Protect: gave up after " maxAttempts " failed attempts")
+			LogFile("Crash Protect: stopped after " maxAttempts " consecutive restart failures")
+			GuiControl, MyWindow:, CrashProtectStatus, % CrashProtectStatus
 			return
 		}
-		While(Not WinExist("ahk_exe IdleDragons.exe")) {
-			Sleep 2500
-			Run, %GameClient%
-			++CrashCount
+		++CrashCount
+		LogFile("Crash Protect: restarting client (attempt " attempts "/" maxAttempts ", total restarts: " CrashCount ")")
+		SB_SetText("⌛ Crash Protect: restarting (attempt " attempts "/" maxAttempts ")...")
+		Run, %GameClient%, %GameInstallDir%
+		; Wait for game window to appear (up to cooldown period)
+		WinWait, ahk_exe IdleDragons.exe, , %cooldownSec%
+		if (ErrorLevel) {
+			; Game didn't start within cooldown — log and retry on next loop
+			LogFile("Crash Protect: game not detected within " cooldownSec "s")
+			SB_SetText("⚠️ Crash Protect: game not detected after " cooldownSec "s, retrying...")
+		} else {
+			; Game started successfully
 			SB_SetText("✅ Crash Protect has restarted your client")
 			oMyGUI.Update()
 			LogFile("Restarts since enabling Crash Protect: " CrashCount)
-			Sleep 10000
+			attempts := 0
 		}
 	}
 	return
