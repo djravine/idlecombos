@@ -13,5 +13,6 @@
         "renpy": {
             "parser": "code"
         }
-    }
+    },
+    "snyk.advanced.autoSelectOrganization": true
 }

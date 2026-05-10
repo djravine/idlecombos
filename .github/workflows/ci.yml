@@ -1,0 +1,63 @@
+on:
+  pull_request:
+    branches: [master, develop]
+
+name: CI
+
+jobs:
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - name: Lint Markdown
+      uses: DavidAnson/markdownlint-cli2-action@05f32210e84442804257b2a6f20b273450ec8265 # v19.1.0
+      with:
+        globs: '**/*.md #!Lib/**'
+
+  validate:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - name: Install AutoHotkey
+      run: choco install autohotkey.install --version=1.1.37.1 -y
+    - name: Syntax check IdleCombos.ahk
+      run: |
+        $ahk = "C:\Program Files\AutoHotkey\AutoHotkey.exe"
+        $proc = Start-Process -FilePath $ahk -ArgumentList "/iLib NUL /ErrorStdOut `"$PWD\IdleCombos.ahk`"" -Wait -PassThru -NoNewWindow -RedirectStandardError "$env:TEMP\ahk_err.txt"
+        $err = Get-Content "$env:TEMP\ahk_err.txt" -ErrorAction SilentlyContinue
+        if ($err) { Write-Host $err; exit 1 }
+        Write-Host "Syntax check passed"
+    - name: Syntax check IdleCombosLib.ahk
+      run: |
+        $ahk = "C:\Program Files\AutoHotkey\AutoHotkey.exe"
+        $proc = Start-Process -FilePath $ahk -ArgumentList "/iLib NUL /ErrorStdOut `"$PWD\IdleCombosLib.ahk`"" -Wait -PassThru -NoNewWindow -RedirectStandardError "$env:TEMP\ahk_err.txt"
+        $err = Get-Content "$env:TEMP\ahk_err.txt" -ErrorAction SilentlyContinue
+        if ($err) { Write-Host $err; exit 1 }
+        Write-Host "Syntax check passed"
+    - name: Version string consistency
+      run: |
+        $ahk_ver = (Select-String -Path "IdleCombos.ahk" -Pattern 'VersionNumber\s*:=\s*"([^"]+)"' | ForEach-Object { $_.Matches[0].Groups[1].Value })
+        $readme_ver = (Select-String -Path "README.md" -Pattern '\*\*v([^\*]+)\*\*' | ForEach-Object { $_.Matches[0].Groups[1].Value })
+        Write-Host "IdleCombos.ahk version: $ahk_ver"
+        Write-Host "README.md version: $readme_ver"
+        if ($ahk_ver -ne $readme_ver) { Write-Host "ERROR: Version mismatch!"; exit 1 }
+        Write-Host "Version strings match"
+
+  test:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - name: Install AutoHotkey
+      run: choco install autohotkey.install --version=1.1.37.1 -y
+    - name: Run unit tests
+      run: |
+        $ahk = "C:\Program Files\AutoHotkey\AutoHotkey.exe"
+        & $ahk "$PWD\tests\run_tests_ci.ahk"
+      timeout-minutes: 2
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: junit-results
+        path: tests/junit.xml

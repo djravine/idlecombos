@@ -6,6 +6,99 @@ To all the Idle Dragoneers who inspired and assisted me!
 
 ------
 
+## 3.78
+
+* Fix Web Codes feature (site layout changed, old method broken)
+* Replace deprecated Internet Explorer COM with XMLHTTP for code fetching
+* Simplify Codes window: single "Load Web" button replaces Recent/Special/Permanent
+* Load Web now extracts all active codes matching the site's "Copy ALL Recent Active Codes" button
+* Remove unused Ctrl+M, Ctrl+N, Ctrl+E, Ctrl+P hotkeys
+* Fix infinite loop in ServerCall play server redirect (only redirect if target differs)
+* Fix stray brace in GetUserDetails causing data not to display after load
+* Fix ParsePlayServerName using legacy assignment (= vs :=) breaking JSON response parsing
+* Restore UTF-8 BOM to IdleCombos.ahk (required for emoji rendering in status bar)
+* Upgrade all API calls from HTTP to HTTPS
+* Redact user hash from log output for security
+* Fix typo: `swtichPlayServer` → `switchPlayServer`
+* Fix impossible range condition in FeatFromID (id >= 746 and id <= 726 → 784)
+* Fix malformed condition in ChestIDFromChampID (id <= id < 154 → id <= 154)
+* Fix duplicate case "539" in FeatFromID (unreachable second entry)
+* Pin all GitHub Actions to SHA hashes; upgrade checkout to v4
+* Add dictionary update integrity verification (download to temp, validate before replacing)
+* Settings migration now merges new keys instead of deleting user settings
+* Mask user hash in "List User Details" display
+* Remove dead code: ServerCallNew, ServerCallAlt, UseBounty2, CustomMsgBox, StrReverse
+* Extract pure functions to IdleCombosLib.ahk (shared between app and tests)
+* Add Yunit test framework with 67 unit tests
+* Add CI pipeline: markdownlint, AHK syntax check, unit tests on push/PR
+* Add LICENSE (MIT), CONTRIBUTING.md, .markdownlint.json
+* Convert idledict.ahk from 1530-line switch blocks to JSON data file (idledict.json)
+* Dictionary update now downloads JSON instead of executable AHK code (security improvement)
+* Fix Unicode characters (Môrgæn, Faerûn, Corazón) now display correctly in dictionary
+* Fix JSON dictionary key lookups (numeric coercion for map access)
+* Fix release packaging: add idledict.json, IdleCombos.ico, LICENSE to archives (was shipping broken)
+* Fix ci.yml: replace stale idledict.ahk syntax check with IdleCombosLib.ahk
+* Fix stale idledict.ahk references in README.md and CONTRIBUTING.md
+* SHA-pin all CI workflow actions (checkout, markdownlint, upload-artifact)
+* Add CI version-string consistency check (IdleCombos.ahk vs README.md)
+* Add .gitignore entries for campaign.json, formationimages/
+* Fix 268 markdownlint errors across all project-owned markdown files
+* Add SECURITY.md documenting credential threat model and supply chain risks
+* Add THIRD_PARTY.md inventorying all vendored assets with SHA-256 hashes
+* Add SETTINGS_SCHEMA.md documenting settings key history and bump procedure
+* Add provenance header to json.ahk (source URL, license, SHA-256)
+* Make PersistSettings() atomic (write temp file, then rename)
+* Add try/catch to JSON.parse() on critical paths (dictionary init, settings load, dictionary update, Epic detection)
+* Add TestMode global to suppress MsgBox/ExitApp in test context
+* Add MockServerCall mechanism for testable API-handling code (6 new tests)
+* Move SettingsCheckValue, NewSettings, DummyData constants to IdleCombosLib.ahk (dedup)
+* Extract ScrollBox to Lib/ScrollBox.ahk with provenance header
+* Add IsBusy reentrancy guard on Buy_Chests, Open_Chests, UseBlacksmith
+* Add RotateLogFile() helper; applied to chest, blacksmith, bounty logs
+* Add BatchAPICall() helper to deduplicate chest/blacksmith batch loops
+* Patron GUI/parsing/progress deduplication: 5 copy-pasted blocks replaced with data-driven loop
+* Game detection deduplication: applyGameInstall() helper replaces repeated state assignment
+* IC Settings deduplication: UpdateICSetting() shared helper (SetUIScale, SetFramerate, SetParticles)
+* Extract ParseWRLCredentials() to lib: pure credential parsing from WRL text (8 new tests)
+* Extract EpochToLocalTime() to lib: timestamp conversion (3 new tests)
+* Extract SimulateBrivCalc() to lib: pure Briv stack math (6 new tests)
+* Extract DefaultToZero() to lib: zero-defaulting helper (4 new tests)
+* Bump dictionary version to 2.41
+* Total: 93 unit tests (up from 67)
+* Convert Adventures, Inventory, Patrons, Champions, Event tabs from Text to ListView controls
+* Convert Summary tab to dual-section ListView (Account Stats + Blessings)
+* Summary tab shows contextual state: setup required, loading, or full data
+* Redesign Settings tab: two-column layout with separator, wider dropdowns
+* Add 2px padding around all tab ListView controls
+* GUI default width increased from 600 to 850 to fit ListView columns
+* GUI default height increased from 275 to 425
+* Resize handler simplified: one MoveDraw per ListView replaces ~25 individual calls
+* Adventures Core column split into Core, XP, Progress columns
+* Inventory tab: section separators between Currency, Chests, Bounties, Blacksmiths
+* Inventory Details column populated on every row (token/iLvl rates, totals)
+* Patrons: cleaned up Requires/Costs columns (shorter labels, checkmark when met)
+* Champions tab: ListView with Champion, Stat, Value columns
+* Event tab: ListView with Detail, Value columns
+* Default to "None" when modron core name not in data
+* Blacksmith results dialog offers "Copy to clipboard?"
+* Chest buy confirmation shows gem count and cost per chest
+* Last Updated shows relative time ("5 min ago")
+* Sidebar buttons (Reload, Update, Toggle) disabled during IsBusy operations
+* Add Ctrl+R hotkey for refresh (GetUserDetails)
+* Restore AHK version display in status bar
+* Progress bar (status bar %) during bulk chest buy, chest open, and blacksmith operations
+* Auto-refresh on configurable timer (Settings: Auto Refresh Minutes, default off)
+* Export inventory and patron data to CSV (Tools → Export to CSV)
+* TrayTip notification when Time Gate Piece is ready
+* ServerCall retry with exponential backoff (3 attempts, 1s→2s→4s)
+* Cache UserDetails between sessions (loads cached data on startup, 1-hour TTL)
+* Non-blocking: Sleep calls in batch loops allow GUI message pump processing
+* SettingsCheckValue bumped to 24 (new: autorefreshminutes)
+* Add USER_MANUAL.md — comprehensive user guide with feature reference, settings, hotkeys, and troubleshooting
+* Add CODE_DEPLOY.md — release pipeline documentation (CI → tag → draft → publish)
+* Add Documentation section to README.md linking all project docs
+* Add USER_MANUAL.md to release archives (release.yml)
+
 ## 3.77
 
 * Increase Blacksmith calls from 50 to 1000
