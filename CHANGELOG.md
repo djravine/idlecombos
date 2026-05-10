@@ -6,6 +6,37 @@ To all the Idle Dragoneers who inspired and assisted me!
 
 ------
 
+## 3.78
+
+* Fix Web Codes feature (site layout changed, old method broken)
+* Replace deprecated Internet Explorer COM with XMLHTTP for code fetching
+* Simplify Codes window: single "Load Web" button replaces Recent/Special/Permanent
+* Load Web now extracts all active codes matching the site's "Copy ALL Recent Active Codes" button
+* Remove unused Ctrl+M, Ctrl+N, Ctrl+E, Ctrl+P hotkeys
+* Fix infinite loop in ServerCall play server redirect (only redirect if target differs)
+* Fix stray brace in GetUserDetails causing data not to display after load
+* Fix ParsePlayServerName using legacy assignment (= vs :=) breaking JSON response parsing
+* Restore UTF-8 BOM to IdleCombos.ahk (required for emoji rendering in status bar)
+* Upgrade all API calls from HTTP to HTTPS
+* Redact user hash from log output for security
+* Fix typo: `swtichPlayServer` → `switchPlayServer`
+* Fix impossible range condition in FeatFromID (id >= 746 and id <= 726 → 784)
+* Fix malformed condition in ChestIDFromChampID (id <= id < 154 → id <= 154)
+* Fix duplicate case "539" in FeatFromID (unreachable second entry)
+* Pin all GitHub Actions to SHA hashes; upgrade checkout to v4
+* Add dictionary update integrity verification (download to temp, validate before replacing)
+* Settings migration now merges new keys instead of deleting user settings
+* Mask user hash in "List User Details" display
+* Remove dead code: ServerCallNew, ServerCallAlt, UseBounty2, CustomMsgBox, StrReverse
+* Extract pure functions to IdleCombosLib.ahk (shared between app and tests)
+* Add Yunit test framework with 67 unit tests
+* Add CI pipeline: markdownlint, AHK syntax check, unit tests on push/PR
+* Add LICENSE (MIT), CONTRIBUTING.md, .markdownlint.json
+* Convert idledict.ahk from 1530-line switch blocks to JSON data file (idledict.json)
+* Dictionary update now downloads JSON instead of executable AHK code (security improvement)
+* Fix Unicode characters (Môrgæn, Faerûn, Corazón) now display correctly in dictionary
+* Fix JSON dictionary key lookups (numeric coercion for map access)
+
 ## 3.77
 
 * Increase Blacksmith calls from 50 to 1000

@@ -12,44 +12,54 @@ IdleCombos - AutoHotkey v1.1 desktop companion app for "Idle Champions" game. Bu
 
 ```
 idlecombos/
-├── IdleCombos.ahk       # MAIN: All app logic (4968 lines, monolithic)
-├── idledict.ahk         # DATA: ID-to-name mappings (champions, chests, campaigns, patrons)
-├── json.ahk             # LIB: JSON parser (external, bundled) [github.com/Chunjee]
+├── IdleCombos.ahk       # MAIN: All app logic (monolithic GUI + business logic)
+├── IdleCombosLib.ahk    # LIB: Extracted pure/testable functions (shared with tests)
+├── idledict.json        # DATA: ID-to-name mappings (champions, chests, campaigns, patrons, feats)
+├── json.ahk             # LIB: JSON parser (Chunjee, stable, v1.1+v2 compatible)
 ├── images/              # UI button/icon PNGs (13 files)
 ├── styles/              # Windows msstyles themes (30) + USkin.dll for theming
-├── .github/workflows/   # Release packaging + Discord notification
-└── *.json               # Runtime data/logs (all gitignored except advdefs.json)
+├── Lib/Yunit/           # TEST: Yunit test framework (vendored, AGPL-3.0)
+├── tests/               # TEST: Unit test suites (67 tests)
+├── .github/workflows/   # CI: lint, syntax check, tests, release packaging
+└── *.json               # Runtime data/logs (all gitignored)
 ```
 
 ## WHERE TO LOOK
 
 | Task | Location | Notes |
 |------|----------|-------|
-| Add feature/tab | `IdleCombos.ahk` MyGui.__New() L325-614 | Add to `TabList` global L61 |
-| API calls | `IdleCombos.ahk` ServerCall() L3831 | 3 variants: ServerCall, ServerCallNew, ServerCallAlt |
-| Parse API response | `IdleCombos.ahk` Parse*Data() L3087-3530 | Called from GetUserDetails() L3031 |
-| Add champion/chest | `idledict.ahk` | ChampFromID(), ChestFromID() switch blocks |
-| Settings persistence | `IdleCombos.ahk` SaveSettings() L1051 | JSON to idlecombosettings.json |
+| Add feature/tab | `IdleCombos.ahk` MyGui.__New() | Add to `TabList` global L61 |
+| Bump version | `IdleCombos.ahk` L9, `README.md` L5, `CHANGELOG.md` top | All three must match |
+| API calls | `IdleCombos.ahk` ServerCall() | Single variant, HTTPS, WinHttp POST |
+| Parse API response | `IdleCombos.ahk` Parse*Data() | Called from GetUserDetails() |
+| Add champion/chest | `idledict.json` | Add entry to `champions` or `chests` object |
+| Settings persistence | `IdleCombos.ahk` SaveSettings() → `IdleCombosLib.ahk` PersistSettings() | JSON to idlecombosettings.json |
+| Add testable logic | `IdleCombosLib.ahk` | Pure functions shared between app and tests |
+| Add/run tests | `tests/` | Yunit framework; run `tests\run_tests.ahk` or headless CI |
 | Hotkeys | `IdleCombos.ahk` L105-107 | Ctrl+Numpad scheme |
-| Game detection | `IdleCombos.ahk` detect*Install() L2712-2847 | Epic, Steam, Standalone |
+| Game detection | `IdleCombos.ahk` detect*Install() | Epic, Steam, Standalone |
 | Release packaging | `.github/workflows/release.yml` | Tag `v*` triggers; dual archives (themes/no-themes) |
+| CI pipeline | `.github/workflows/ci.yml` | Markdown lint + AHK syntax check + unit tests |
 
 ## CODE MAP
 
-| Function | Line | Role |
+| Function | File | Role |
 |----------|------|------|
-| MyGui.__New() | 325 | GUI construction, all tabs/controls |
-| MyGui.Load() | 616 | Settings load, first-run, credential restore |
-| GetUserDetails() | 3031 | Master API fetch + cascade all Parse*() |
-| ServerCall() | 3831 | HTTP POST via WinHttp (primary) |
-| ServerCallNew() | 3864 | HTTP GET via XMLHTTP (secondary) |
-| Buy_Chests() | 1747 | Purchase chests by ID |
-| Open_Chests() | 1872 | Open chests with progress tracking |
-| UseBlacksmith() | 2097 | Apply blacksmith contracts |
-| UseBounty() | 2288 | Apply bounty contracts (alpha, mouse-dependent) |
-| LaunchGame() | 3903 | Start game client (Epic/Steam/Standalone) |
-| FirstRun() | 2848 | Initial setup wizard |
-| Update_Dictionary() | 3983 | Auto-update idledict.ahk from GitHub |
+| MyGui.__New() | IdleCombos.ahk | GUI construction, all tabs/controls |
+| MyGui.Load() | IdleCombos.ahk | Settings load, first-run, credential restore |
+| GetUserDetails() | IdleCombos.ahk | Master API fetch + cascade all Parse*() |
+| ServerCall() | IdleCombos.ahk | HTTPS POST via WinHttp (sole API method) |
+| Buy_Chests() | IdleCombos.ahk | Purchase chests by ID |
+| Open_Chests() | IdleCombos.ahk | Open chests with progress tracking |
+| UseBlacksmith() | IdleCombos.ahk | Apply blacksmith contracts |
+| UseBounty() | IdleCombos.ahk | Apply bounty contracts (alpha, mouse-dependent) |
+| LaunchGame() | IdleCombos.ahk | Start game client (Epic/Steam/Standalone) |
+| FirstRun() | IdleCombos.ahk | Initial setup wizard |
+| Update_Dictionary() | IdleCombos.ahk | Auto-update idledict.ahk from GitHub (with integrity check) |
+| getChestCodes() | IdleCombosLib.ahk | Regex extraction of redeem codes from clipboard |
+| CheckServerCallError() | IdleCombosLib.ahk | Detect API connection errors in response |
+| ParsePlayServerName() | IdleCombosLib.ahk | Extract server name from API redirect response |
+| PersistSettings() | IdleCombosLib.ahk | Atomic JSON write of CurrentSettings to disk |
 
 ## CONVENTIONS
 
@@ -57,11 +67,15 @@ idlecombos/
 - **Globals**: 100+ globals declared at top, organized by category (File, Settings, Server, User, Inventory, Patron).
 - **Functions**: PascalCase for main actions (`BuySilver`), camelCase for helpers (`detectGameInstallEpic`).
 - **State**: All state in global variables, no classes/objects for state management (except `UserDetails` parsed JSON).
-- **API pattern**: `ServerCall(callname, parameters)` → HTTP to `{server}.idlechampions.com/~idledragons/post.php`.
+- **API pattern**: `ServerCall(callname, parameters)` → HTTPS to `{server}.idlechampions.com/~idledragons/post.php`. Handles `switch_play_server` redirect (single hop, no loop).
 - **Data format**: JSON for all persistence (settings, logs, API responses). `JSON.parse()`/`JSON.stringify()` via json.ahk.
-- **GUI**: Single window, tab-based (8 tabs). `Gui, MyWindow:Add` pattern. Resize handler at L862.
-- **Theming**: USkin.dll loaded at runtime for msstyles application. `SkinForm()` L1014.
+- **GUI**: Single window, tab-based (8 tabs). `Gui, MyWindow:Add` pattern.
+- **Theming**: USkin.dll loaded at runtime for msstyles application. `SkinForm()`.
 - **32-bit forced**: `RunWith(32)` at startup - required for COM/WinHttp.
+- **File encoding**: IdleCombos.ahk MUST have UTF-8 BOM (`EF BB BF`) — required for emoji in GUI. Use `:=` (expression) not `=` (legacy) for string assignments in library functions.
+- **Testable code**: Pure functions go in `IdleCombosLib.ahk` (included by both app and tests).
+- **Security**: Never log `UserHash` — use `[REDACTED]`. Hash masked in UI display.
+- **JSON keys**: `JSON.parse()` stores numeric-looking keys as numbers. Dictionary lookups must use `id + 0` to coerce to numeric for map access.
 - **Markdown (GitHub-flavoured)**:
   - No trailing spaces for line breaks; use blank lines between blocks.
   - ATX headings (`##`) with blank line before/after.
@@ -78,7 +92,6 @@ idlecombos/
 - `UseBounty()` is alpha-quality: requires 1280x720 resolution, mouse automation, prone to failure.
 - `idledict.ahk:779` has "DO NOT USE" chest entry (Gold Mithral Hall) - broken game item.
 - Variables prefixed `todo` (L3450-3709) are NOT TODO markers - they're display strings for achievement info.
-- `advdefs.json` is tracked in git but other JSON data files are gitignored - inconsistent.
 - Settings version check (`SettingsCheckValue := 23`) must be incremented when adding new settings keys.
 
 ## COMMANDS
@@ -86,6 +99,12 @@ idlecombos/
 ```bash
 # Run (requires AutoHotkey v1.1 installed)
 # Right-click IdleCombos.ahk → Open with AutoHotkey
+
+# Run tests (interactive, shows GUI results)
+# Right-click tests\run_tests.ahk → Open with AutoHotkey
+
+# Run tests (headless, stdout + junit.xml output)
+# "C:\Program Files\AutoHotkey\AutoHotkey.exe" tests\run_tests_ci.ahk
 
 # Release (tag-triggered CI)
 git tag v3.78 && git push origin v3.78
@@ -113,12 +132,16 @@ git tag v3.78 && git push origin v3.78
 | `webRequestLog.txt` | GetIDFromWRL() L2917 | Game's WRL file (read for user_id/hash auto-detect) | External (game dir) |
 | `localSettings.json` | ViewICSettings() L4096 | Game client settings (read/modify) | External (AppData) |
 
+Default WRL path: `{GameInstallDir}\IdleDragons_Data\StreamingAssets\downloaded_files\webRequestLog.txt` (L42).
+Also checked at script dir as fallback (L640). Server name extracted from last `getuserdetails` call in WRL.
+
 ## NOTES
 
-- No tests, no linter, no build step. Manual testing via UI + log inspection.
+- 67 unit tests via Yunit framework. CI runs markdownlint + AHK syntax check + tests on push/PR.
 - `ServerName` defaults to "master" but auto-detects play server from game's WRL file.
 - Crash protection: monitors game process, can relaunch on crash (Steam only).
-- Dictionary auto-update pulls from `djravine/idlecombos` master branch raw GitHub.
+- Dictionary auto-update pulls from `djravine/idlecombos` master branch raw GitHub (JSON format, with integrity verification).
 - `.vscode/settings.json` is gitignored but present locally (Snyk scanning, spell-right).
 - Dual release archives: "no-themes" (AHK+images only) vs "themes" (includes msstyles+USkin.dll).
 - `DummyData` global (L72) appends fixed params to all API calls - likely for API compatibility.
+- Binary assets (`USkin.dll`, `.msstyles`) stay in git — no LFS. Repo is small; simplicity over correctness here.

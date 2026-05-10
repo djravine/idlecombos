@@ -1,0 +1,57 @@
+on:
+  push:
+    branches: [master, develop]
+  pull_request:
+    branches: [master, develop]
+
+name: CI
+
+jobs:
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Lint Markdown
+      uses: DavidAnson/markdownlint-cli2-action@v19
+      with:
+        globs: '**/*.md'
+
+  validate:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install AutoHotkey
+      run: choco install autohotkey.install --version=1.1.37.02 -y
+    - name: Syntax check IdleCombos.ahk
+      run: |
+        $ahk = "C:\Program Files\AutoHotkey\AutoHotkey.exe"
+        $proc = Start-Process -FilePath $ahk -ArgumentList "/iLib NUL /ErrorStdOut `"$PWD\IdleCombos.ahk`"" -Wait -PassThru -NoNewWindow -RedirectStandardError "$env:TEMP\ahk_err.txt"
+        $err = Get-Content "$env:TEMP\ahk_err.txt" -ErrorAction SilentlyContinue
+        if ($err) { Write-Host $err; exit 1 }
+        Write-Host "Syntax check passed"
+    - name: Syntax check idledict.ahk
+      run: |
+        $ahk = "C:\Program Files\AutoHotkey\AutoHotkey.exe"
+        $proc = Start-Process -FilePath $ahk -ArgumentList "/iLib NUL /ErrorStdOut `"$PWD\idledict.ahk`"" -Wait -PassThru -NoNewWindow -RedirectStandardError "$env:TEMP\ahk_err.txt"
+        $err = Get-Content "$env:TEMP\ahk_err.txt" -ErrorAction SilentlyContinue
+        if ($err) { Write-Host $err; exit 1 }
+        Write-Host "Syntax check passed"
+
+  test:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install AutoHotkey
+      run: choco install autohotkey.install --version=1.1.37.02 -y
+    - name: Run unit tests
+      run: |
+        $ahk = "C:\Program Files\AutoHotkey\AutoHotkey.exe"
+        & $ahk "$PWD\tests\run_tests_ci.ahk"
+      timeout-minutes: 2
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: junit-results
+        path: tests/junit.xml

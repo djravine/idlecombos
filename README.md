@@ -2,7 +2,7 @@
 
 Companion App for Idle Champions, written in [AHK](https://www.autohotkey.com/).
 
-**v3.77** is the current supported Version. [View changelog.](https://github.com/djravine/idlecombos/blob/master/CHANGELOG.md)
+**v3.78** is the current supported Version. [View changelog.](https://github.com/djravine/idlecombos/blob/master/CHANGELOG.md)
 
 ![Screenshot](https://i.imgur.com/LoeTt9r.png)
 
@@ -12,15 +12,21 @@ Companion App for Idle Champions, written in [AHK](https://www.autohotkey.com/).
 * Steam game detection only works if your Steam Library is in the default location.
 * If you use a VPN you may have API communication issues. Please whitelist AHK/IdleCombos in your VPN.
 
+## Security Notice
+
+* Your `user_id` and `hash` are sensitive credentials stored locally in `idlecombosettings.json`.
+* Do not share your `hash` with anyone — it grants full API access to your account.
+* IdleCombos never sends your credentials anywhere except the official game API server.
+
 ## Features
 
 * Simple account statistics display
 * Easy buying/opening many chests (Gold/Silver/Event)
 * Easy apply bulk blacksmith contracts
-* Enter multiple redeem codes at once  
-  ![Redeem Codes](https://i.imgur.com/vwqDR4U.png)
-* Briv Stack Calculator [github.com/Deatho0ne]
-* Manual starting/stopping adventures (Sometimes can fix stuck accounts)
+* Enter multiple redeem codes at once
+* Load active codes directly from the web
+* [Briv Stack Calculator](https://github.com/Deatho0ne) integration
+* Manual starting/stopping adventures (sometimes can fix stuck accounts)
 * Can reload game client on crash (Steam only)
 
 ## Requirements
@@ -32,21 +38,27 @@ Companion App for Idle Champions, written in [AHK](https://www.autohotkey.com/).
 
 ## Includes
 
-* IdleCombos.ahk (Current AHK version)
-* idledict.ahk (ID Definitions file)
-* json.ahk (JSON parsing) [github.com/Chunjee]
-* README.md (This file)
+* `IdleCombos.ahk` — Main application
+* `idledict.ahk` — ID definitions file
+* [`json.ahk`](https://github.com/Chunjee/json.ahk) — JSON parsing library
+* `README.md` — This file
 
 ## How To Run
 
 * Install [AutoHotKey v1.1](https://www.autohotkey.com/download/ahk-install.exe)
-* Checkout this REPO or download a [release](https://github.com/djravine/idlecombos/releases)
+* Checkout this repo or download a [release](https://github.com/djravine/idlecombos/releases)
 * If you downloaded a release, unzip into a folder
-* Right click the file `IdleCombos.ahk` and open with AutoHotKey  
-  ![How To Run](https://i.imgur.com/UFWxScW.png)
+* Right-click `IdleCombos.ahk` and open with AutoHotKey
 * The application will ask you to detect your App ID from your currently installed Idle Champions install folder
-* Profit!
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for developer setup and guidelines.
 
 ## Discord
 
-* We have just setup a [Discord Support Server](https://discord.gg/wFtrGqd3ZQ)
+* [Discord Support Server](https://discord.gg/wFtrGqd3ZQ)
+
+## License
+
+[MIT](LICENSE)

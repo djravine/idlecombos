@@ -2,11 +2,11 @@
 #Persistent
 #SingleInstance Force
 #include %A_ScriptDir%
-#include JSON.ahk
-#include idledict.ahk
+#include json.ahk
+#include IdleCombosLib.ahk
 
 ;Versions
-global VersionNumber := "3.77"
+global VersionNumber := "3.78"
 global CurrentDictionary := "2.40"
 
 ;Local File globals
@@ -40,8 +40,8 @@ global GameHashSteam := "ce901520efb6bc265a549aeec201bed0"
 global GameClientEpicLauncher := "com.epicgames.launcher://apps/" GameIDEpic "?action=launch&silent=true"
 global WRLFile := ""
 global WRLFilePath := "IdleDragons_Data\StreamingAssets\downloaded_files\webRequestLog.txt"
-global DictionaryFile := "https://raw.githubusercontent.com/djravine/idlecombos/master/idledict.ahk"
-global LocalDictionary := "idledict.ahk"
+global DictionaryFile := "https://raw.githubusercontent.com/djravine/idlecombos/master/idledict.json"
+global LocalDictionary := "idledict.json"
 global ICSettingsFile := A_AppData
 StringTrimRight, ICSettingsFile, ICSettingsFile, 7
 ICSettingsFile := ICSettingsFile "LocalLow\Codename Entertainment\Idle Champions\localSettings.json"
@@ -210,7 +210,6 @@ global CurrentTime := ""
 global CrashProtectStatus := "Crash Protect: Disabled"
 global CrashCount := 0
 global LastUpdated := "No data loaded"
-global TrayIcon := IconFile
 global LastBSChamp := ""
 global LastBSTnCount := ""
 global LastBSSmCount := ""
@@ -227,7 +226,6 @@ global BgColour := "FFFFFF"
 ;Style support
 global StyleDLLPath := A_ScriptDir "\styles\USkin.dll" ;Location to the USkin.dll file
 global StylePath := A_ScriptDir "\styles\" ;Location where you saved the .msstyles files
-global CurrentStyle := "Concave.msstyles"
 global StyleChoice := "Default"
 global StyleList := "Default||"
 global StyleSystem := false
@@ -623,13 +621,17 @@ class MyGui {
 		; MsgBox, % rawsettings
 		; MsgBox, % CurrentSettings.Count()
 		if !(CurrentSettings.Count() == SettingsCheckValue) {
-			FileDelete, %SettingsFile%
-			FileAppend, %NewSettings%, %SettingsFile%
-			LogFile("Settings File: '" SettingsFile "' - Created")
-			FileRead, rawsettings, %SettingsFile%
-			CurrentSettings := JSON.parse(rawsettings)
+			;Merge new default keys into existing settings (preserves user data)
+			DefaultSettings := JSON.parse(NewSettings)
+			for key, value in DefaultSettings {
+				if !CurrentSettings.HasKey(key) {
+					CurrentSettings[key] := value
+				}
+			}
+			PersistSettings()
+			LogFile("Settings File: '" SettingsFile "' - Migrated (added new keys)")
 			this.Update()
-			MsgBox, Your settings file has been deleted due to an update to IdleCombos. Please verify that your settings are set as preferred.
+			MsgBox, Your settings file has been updated with new options. Your existing preferences have been preserved.
 		}
 
 		if !(LoadGameClient == 4) {
@@ -1075,9 +1077,7 @@ SaveSettings()
 			SetStyle(%StyleSelection%)
 		}
 	}
-	newsettings := JSON.stringify(CurrentSettings)
-	FileDelete, %SettingsFile%
-	FileAppend, %newsettings%, %SettingsFile%
+	PersistSettings()
 	LogFile("Settings have been saved")
 	SB_SetText("✅ Settings have been saved")
 	return
@@ -1092,7 +1092,7 @@ Save_Settings:
 About_Clicked:
 	{
 		;MsgBox, , User Details, % About
-		;CustomMsgBox("About", About, "Consolas", "s10", %BgColour%)
+	
 		ScrollBox(About, "p b1 h100 w510 f{s10, Consolas}", "About")
 		return
 	}
@@ -1100,7 +1100,7 @@ About_Clicked:
 Hotkeys_Clicked:
 	{
 		;MsgBox, , Hotkey Details, % HotkeyInfo
-		;CustomMsgBox("Hotkey Details", HotkeyInfo, "Consolas", "s10", %BgColour%)
+	
 		ScrollBox(HotkeyInfo, "p b1 h250 w400 f{s10, Consolas}", "Hotkey Details")
 		return
 	}
@@ -1153,17 +1153,7 @@ OpenSilver()
 			return
 		} else {
 			MsgBox, 0, , % "NOTE: It's recommended to close the game client before opening chests"
-			return 
-			;MsgBox, 4, , % "NOTE: It's recommended to close the game client before opening chests.`nWould you like to continue anyway?"
-			;IfMsgBox, Yes
-			;{
-			;Open_Chests(1)
-			;	return
-			;}
-			;else IfMsgBox, No
-			;{
-			;	return
-			;}
+			return
 		}
 	}
 
@@ -1181,16 +1171,6 @@ OpenGold()
 		} else {
 			MsgBox, 0, , % "NOTE: It's recommended to close the game client before opening chests"
 			return
-			;MsgBox, 4, , % "NOTE: It's recommended to close the game client before opening chests.`nWould you like to continue anyway?`n`n(Feats earned using this app do not count towards the related achievement.)"
-			;IfMsgBox, Yes
-			;{
-			;	;Open_Chests(2)
-			;	return
-			;}
-			;else IfMsgBox, No
-			;{
-			;	return
-			;}
 		}
 	}
 
@@ -1213,16 +1193,6 @@ OpenEvent()
 		} else {
 			MsgBox, 0, , % "NOTE: It's recommended to close the game client before opening chests"
 			return
-			;MsgBox, 4, , % "NOTE: It's recommended to close the game client before opening chests.`nWould you like to continue anyway?`n`n(Feats earned using this app do not count towards the related achievement.)"
-			;IfMsgBox, Yes
-			;{
-			;	;Open_Chests(2)
-			;	return
-			;}
-			;else IfMsgBox, No
-			;{
-			;	return
-			;}
 		}
 	}
 
@@ -1340,7 +1310,7 @@ Open_Codes:
 		If FileExist(RedeemCodeListFile)
 			FileRead, codelistfile, %RedeemCodeListFile%
 		;MsgBox, , Redeem Code History, % codelistfile
-		;CustomMsgBox("Redeem Code History", codelistfile, "Consolas", "s10", %BgColour%)
+
 		ScrollBox(codelistfile, "p b1 h300 w210 f{s10, Consolas}", "Redeem Code History")
 		return
 	}
@@ -1605,7 +1575,7 @@ Open_Codes:
 			;MsgBox, , Results, % codemessage
 			ScrollBox(codemessage, "p b1 h200 w250", "Redeem Codes Results")
 			;ScrollBox(codemessage, "p b1 h200 w250 f{s10, Consolas}", "Redeem Codes Results")
-			;CustomMsgBox("Redeem Codes Results", codemessage, "Consolas", "s14", %BgColour%)
+		
 			LogFile("Redeem Code Finished")
 		}
 		return
@@ -2398,137 +2368,6 @@ UseBounty(buffid) {
 	}
 }
 
-UseBounty2(buffid) {
-	if !UserID {
-		MsgBox % "Need User ID & Hash"
-		FirstRun()
-	}
-	switch buffid {
-		case 17:
-			currentcontracts := CurrentTinyBounties
-			lastcontracts := LastBountyTnCount
-			contractname := "Tiny"
-		case 18:
-			currentcontracts := CurrentSmBounties
-			lastcontracts := LastBountySmCount
-			contractname := "Small"
-		case 19:
-			currentcontracts := CurrentMdBounties
-			lastcontracts := LastBountyMdCount
-			contractname := "Medium"
-		case 20:
-			currentcontracts := CurrentLgBounties
-			lastcontracts := LastBountyLgCount
-			contractname := "Large"
-	}
-	if !(lastcontracts) {
-		lastcontracts := currentcontracts
-	}
-	if (lastcontracts > currentcontracts) {
-		lastcontracts := currentcontracts
-	}
-	if !(currentcontracts) {
-		MsgBox, 4, , No %contractname% Bounty Contracts detected. Check server for user details?
-			IfMsgBox, Yes
-			{
-				GetUserDetails()
-			}
-	}
-	InputBox, count, Bounties, % "How many " contractname " Bounty Contracts?`n(Max: " currentcontracts ")", , 200, 180, , , , , %lastcontracts%
-	if ErrorLevel
-		return
-	if (count > currentcontracts) {
-		MsgBox, 4, , Insufficient %contractname% Bounty Contracts detected for use.`nContinue anyway?
-		IfMsgBox, No
-		{
-			return
-		}
-	}
-	MsgBox, 4, , % "Use " count " " contractname " Bounty Contracts?"
-	IfMsgBox, No
-	{
-		return
-	}
-	switch buffid {
-		case 17: LastBountyTnCount := count
-		case 18: LastBountySmCount := count
-		case 19: LastBountyMdCount := count
-		case 20: LastBountyLgCount := count
-	}	
-	bountycontractparams := "&user_id=" UserID "&hash=" UserHash "&instance_id=" InstanceID "&buff_id=" buffid "&num_uses="
-	tempsavesetting := 0
-	slot1lvs := 0
-	slot2lvs := 0
-	slot3lvs := 0
-	slot4lvs := 0
-	slot5lvs := 0
-	slot6lvs := 0
-	while (count > 0) {
-		SB_SetText("⌛ " contractname " Bounty Contracts remaining to use: " count)
-		if (count < 50) {
-			rawresults := ServerCall("useserverbuff", bountycontractparams count)
-			count -= count
-		} else {
-			rawresults := ServerCall("useserverbuff", bountycontractparams "50")
-			count -= 50
-		}
-		if (CurrentSettings.alwayssavecontracts || tempsavesetting) {
-			FileAppend, %rawresults%`n, %BountyLogFile%
-		} else {
-			if !CurrentSettings.nosavesetting {
-				InputBox, dummyvar, Bounty Contracts Results, Save to File?, , 250, 150, , , , , % rawresults
-				dummyvar := ""
-				if !ErrorLevel {
-					FileAppend, %rawresults%`n, %BountyLogFile%
-					tempsavesetting := 1
-				}
-			}
-		}
-		bountyresults := JSON.parse(rawresults)
-		if ((bountyresults.success == "0") || (bountyresults.okay == "0")) {
-			MsgBox % "Items gained:`nSlot 1: " slot1lvs "`nSlot 2: " slot2lvs "`nSlot 3: " slot3lvs "`nSlot 4: " slot4lvs "`nSlot 5: " slot5lvs "`nSlot 6: " slot6lvs
-			MsgBox % "Error: " rawresults
-			switch buffid {
-				case 17: contractsused := (CurrentTinyBounties - bountyresults.buffs_remaining)
-				case 18: contractsused := (CurrentSmBounties - bountyresults.buffs_remaining)
-				case 19: contractsused := (CurrentMdBounties - bountyresults.buffs_remaining)
-				case 20: contractsused := (CurrentLgBounties - bountyresults.buffs_remaining)
-			}
-			LogFile(contractname "Bounty Contracts Used: " Floor(contractsused))
-			if( DisableUserDetailsReload == 0) {
-				GetUserDetails()
-			}
-			SB_SetText("⌛ " contractname " Bounty Contracts remaining: " count " (Error)")
-			return
-		}
-		rawactions := JSON.stringify(bountyresults.actions)
-		bountyactions := JSON.parse(rawactions)
-		for k, v in bountyactions {
-			switch v.slot_id {
-				case 1: slot1lvs += v.amount
-				case 2: slot2lvs += v.amount
-				case 3: slot3lvs += v.amount
-				case 4: slot4lvs += v.amount
-				case 5: slot5lvs += v.amount
-				case 6: slot6lvs += v.amount
-			}
-		}
-	}
-	MsgBox % "Items gained:`nSlot 1: " slot1lvs "`nSlot 2: " slot2lvs "`nSlot 3: " slot3lvs "`nSlot 4: " slot4lvs "`nSlot 5: " slot5lvs "`nSlot 6: " slot6lvs
-	tempsavesetting := 0
-	switch buffid {
-		case 17: contractsused := (CurrentTinyBounties - bountyresults.buffs_remaining)
-		case 18: contractsused := (CurrentSmBounties - bountyresults.buffs_remaining)
-		case 19: contractsused := (CurrentMdBounties - bountyresults.buffs_remaining)
-		case 20: contractsused := (CurrentLgBounties - bountyresults.buffs_remaining)
-	}
-	LogFile(contractname " Bounty Contracts used: " Floor(contractsused))
-	if( DisableUserDetailsReload == 0) {
-		GetUserDetails()
-	}
-	SB_SetText("✅ " contractname " Bounty Contracts use completed")
-	return
-}
 
 global lastadv := 0			;fmagdi - to be used to save ended adventureid for use as default for next load 
 
@@ -2805,14 +2644,14 @@ FirstRun() {
 		InputBox, UserHash, hash, Please enter your "hash" value., , 250, 125
 		if ErrorLevel
 			return
-		LogFile("User ID: " UserID " & Hash: " UserHash " manually entered")
+		LogFile("User ID: " UserID " & Hash: [REDACTED] manually entered")
 	} else {
 		MsgBox, 4, , Get User ID and Hash from webrequestlog.txt?
 		IfMsgBox, Yes
 		{
 			GetIdFromWRL()
 			LogFile("Platform: " GamePlatform)
-			LogFile("User ID: " UserID " & Hash: " UserHash " detected in WRL")
+			LogFile("User ID: " UserID " & Hash: [REDACTED] detected in WRL")
 			GetPlayServerFromWRL()
 		} else {
 			MsgBox, 4, , Choose install directory manually?
@@ -2831,7 +2670,7 @@ FirstRun() {
 				InputBox, UserHash, hash, Please enter your "hash" value., , 250, 125
 				if ErrorLevel
 					return
-				LogFile("User ID: " UserID " & Hash: " UserHash " manually entered")
+				LogFile("User ID: " UserID " & Hash: [REDACTED] manually entered")
 			}
 		}
 	}
@@ -2841,9 +2680,7 @@ FirstRun() {
 	CurrentSettings.hash := UserHash
 	CurrentSettings.firstrun := 1
 	CurrentSettings.wrlpath := WRLFile
-	newsettings := JSON.stringify(CurrentSettings)
-	FileDelete, %SettingsFile%
-	FileAppend, %newsettings%, %SettingsFile%
+	PersistSettings()
 	LogFile("IdleCombos Setup Completed")
 	SB_SetText("✅ User ID & Hash Ready")
 }
@@ -2907,11 +2744,6 @@ GetIDFromWRL() {
 	return
 }
 
-StrReverse(String) {
-	String .= "", DllCall("msvcrt.dll\_wcsrev", "Ptr", &String, "CDecl")
-    return String
-}
-
 GetPlayServerFromWRL() {
 	FileRead, oData, %WRLFile%
 	if ErrorLevel {
@@ -2946,37 +2778,15 @@ GetPlayServerFromWRL() {
 
 GetPlayServer(oData) {
 	LogFile("Detecting play server")
-
-	searchString = "play_server"
-	; ScrollBox(oData, "p b1 h700 w1000 f{s10, Consolas}", "oData")
-
-	; reversedData := StrReverse(oData)
-	; ScrollBox(reversedData, "p b1 h700 w1000 f{s10, Consolas}", "reversedData")
-	; MsgBox, % "searchString - " StrReverse(searchString)
-	; position := InStr(reversedData, StrReverse(searchString))
-	; FoundPos2 := StrLen(oData) - (FoundPos2 + StrLen(searchString)) + 1
-	
-	FoundPos2 := InStr(oData, searchString)
-	; MsgBox, % "FoundPos2 - " FoundPos2
-	oData2 := SubStr(oData, (FoundPos2 + 14))
-	
-	; MsgBox, % "oData2 - " oData2
-	FoundPos2 := InStr(oData2, ":\/\/")
-	oData3 := SubStr(oData2, (FoundPos2 + 5))
-	; MsgBox, % "oData3 - " oData3
-	FoundPos2 := InStr(oData3, ".idlechampions.com\/~idledragons\/")
-	NewServerName := ""
-	StringLeft, NewServerName, oData3, (FoundPos2 - 1)
+	NewServerName := ParsePlayServerName(oData)
 	playservername := ServerName
-	if (NewServerName != ServerName){
+	if (NewServerName != "" && NewServerName != ServerName){
 		ServerName := NewServerName
 		playservername := NewServerName
 		SaveSettings()
 		Sleep, 250
 		LogFile("Play Server Detected - " NewServerName)
 	}
-	oData := ; Free the memory.
-	oData2 := ; Free the memory.
 	return playservername
 }
 
@@ -2996,42 +2806,33 @@ GetUserDetails(newservername = "") {
 		SB_SetText("❌ API Error: " ServerError " - Try to close and reopen Idle Champions - Server might be in Maintenance? 😟")
 		ServerError := ""
 	} else {
-		swtichPlayServer := InStr(rawdetails, "switch_play_server")
-		; MsgBox, % "swtichPlayServer - " swtichPlayServer
-		if (swtichPlayServer > 0) {
-			playservername := GetPlayServer(rawdetails)
-			GetUserDetails(playservername)
-		} else {
-			FileDelete, %UserDetailsFile%
-			FileAppend, %rawdetails%, %UserDetailsFile%
-			Try {
-				UserDetails := JSON.parse(rawdetails)
-			} catch e {
-				SB_SetText("❌ API Error: Try to close and reopen Idle Champions - Server might be in Maintenance? 😟")
-				msgbox, % "API ERROR: " e.message
-				return
-			}
-			InstanceID := UserDetails.details.instance_id
-			CurrentSettings.instance_id := InstanceID
-			CurrentSettings.loadgameclient := LoadGameClient
-			ActiveInstance := UserDetails.details.active_game_instance_id
-			newsettings := JSON.stringify(CurrentSettings)
-			FileDelete, %SettingsFile%
-			FileAppend, %newsettings%, %SettingsFile%
-			ParseChampData()
-			ParseAdventureData()
-			ParseTimestamps()
-			ParseInventoryData()
-			ParsePatronData()
-			ParseLootData()
-			CheckAchievements()
-			CheckBlessings()
-			CheckPatronProgress()
-			CheckEvents()
-			SB_SetText("✅ Loaded and Ready 😎")
-			LogFile("User Details - Loaded")
-			oMyGUI.Update()
+		FileDelete, %UserDetailsFile%
+		FileAppend, %rawdetails%, %UserDetailsFile%
+		Try {
+			UserDetails := JSON.parse(rawdetails)
+		} catch e {
+			SB_SetText("❌ API Error: Try to close and reopen Idle Champions - Server might be in Maintenance? 😟")
+			msgbox, % "API ERROR: " e.message
+			return
 		}
+		InstanceID := UserDetails.details.instance_id
+		CurrentSettings.instance_id := InstanceID
+		CurrentSettings.loadgameclient := LoadGameClient
+		ActiveInstance := UserDetails.details.active_game_instance_id
+		PersistSettings()
+		ParseChampData()
+		ParseAdventureData()
+		ParseTimestamps()
+		ParseInventoryData()
+		ParsePatronData()
+		ParseLootData()
+		CheckAchievements()
+		CheckBlessings()
+		CheckPatronProgress()
+		CheckEvents()
+		SB_SetText("✅ Loaded and Ready 😎")
+		LogFile("User Details - Loaded")
+		oMyGUI.Update()
 	}
 	return
 }
@@ -3766,20 +3567,6 @@ CheckEvents() {
 	EventDetails := InfoEventName InfoEventTokens InfoEventHeroes InfoEventChests
 }
 
-CheckServerCallError(data) {
-	FoundPos1 := InStr(data, "Error connecting:", 0, -1, 1)
-	if(FoundPos1 != 0){
-		data1 := SubStr(data, (FoundPos1 + 17))
-		FoundPos1 := InStr(data1, "<br/>")
-		sServerError := ""
-		StringLeft, sServerError, data1, (FoundPos1 - 1)
-		; MsgBox, % "Server Error: " sServerError
-		ServerError := sServerError
-		return false
-	}
-	return true
-}
-
 ServerCall(callname, parameters, newservername = "") {
 	If (newservername = "") {
 		playservername := ServerName
@@ -3787,7 +3574,7 @@ ServerCall(callname, parameters, newservername = "") {
 		playservername := newservername
 	}
 	; SB_SetText("⌛ Contacting API Server (" playservername ")... '" callname "'... Please wait...")
-	URLtoCall := "http://" playservername ".idlechampions.com/~idledragons/post.php?call=" callname parameters
+	URLtoCall := "https://" playservername ".idlechampions.com/~idledragons/post.php?call=" callname parameters
 	WR := ComObjCreate("WinHttp.WinHttpRequest.5.1")
 	;default values on the below in ms, 0 is INF
 	;from https://docs.microsoft.com/en-us/windows/win32/winhttp/iwinhttprequest-settimeouts
@@ -3801,51 +3588,15 @@ ServerCall(callname, parameters, newservername = "") {
 		WR.Close()
 	}
 	LogFile("API Call (" playservername "): " callname)
-	swtichPlayServer := InStr(data, "switch_play_server")
-	; MsgBox, % "swtichPlayServer - " swtichPlayServer
-	if (swtichPlayServer > 0) {
-		playservername := GetPlayServer(data)
-		ServerCall(callname, parameters, playservername)
+	if (InStr(data, "switch_play_server")) {
+		newserver := ParsePlayServerName(data)
+		if (newserver != "" && newserver != playservername) {
+			ServerName := newserver
+			SaveSettings()
+			LogFile("Play Server Switched: " playservername " -> " newserver)
+			return ServerCall(callname, parameters, newserver)
+		}
 	}
-	if( !CheckServerCallError(data) ) {
-		return
-	}
-	return data
-}
-
-ServerCallNew(callname, parameters, newservername = "") {
-	If (newservername = "") {
-		playservername := ServerName
-	} else {
-		playservername := newservername
-	}
-	; SB_SetText("⌛ Contacting API Server (" ServerName ")... '" callname "'... Please wait...")
-	URLtoCall := "http://" ServerName ".idlechampions.com/~idledragons/post.php?call=" callname parameters
-	WR := ComObjCreate("Msxml2.XMLHTTP.6.0")
-	Try {
-		WR.Open("GET", URLtoCall, false)
-		WR.Send()
-		data := WR.ResponseText
-		WR.Close()
-	}
-	LogFile("API Call (" ServerName "): " callname)
-	if( !CheckServerCallError(data) ) {
-		return
-	}
-	return data
-}
-
-ServerCallAlt(callname, parameters, newservername = "") {
-	If (newservername = "") {
-		playservername := ServerName
-	} else {
-		playservername := newservername
-	}
-	; SB_SetText("⌛ Contacting API Server (" ServerName ")... '" callname "'... Please wait...")
-	URLtoCall := "http://" ServerName ".idlechampions.com/~idledragons/post.php?call=" callname parameters
-	URLDownloadToFile, %URLtoCall%, %UserDetailsFile%
-	FileRead, data, %UserDetailsFile%
-	LogFile("API Call (" ServerName "): " callname)
 	if( !CheckServerCallError(data) ) {
 		return
 	}
@@ -3934,8 +3685,25 @@ Github_Clicked:
 
 Update_Dictionary() {
 	if !(DictionaryVersion == CurrentDictionary) {
+		;Download to temp file first for integrity verification
+		tempFile := LocalDictionary ".tmp"
+		UrlDownloadToFile, %DictionaryFile%, %tempFile%
+		if ErrorLevel {
+			MsgBox, Failed to download dictionary update.`nPlease check your internet connection.
+			FileDelete, %tempFile%
+			return
+		}
+		;Verify downloaded file is valid JSON with expected structure
+		FileRead, tempContent, %tempFile%
+		tempParsed := JSON.parse(tempContent)
+		if (!tempParsed.version || !tempParsed.champions) {
+			MsgBox, Downloaded dictionary file appears invalid.`nUpdate aborted for safety.
+			FileDelete, %tempFile%
+			return
+		}
+		;Replace local dictionary with verified download
 		FileDelete, %LocalDictionary%
-		UrlDownloadToFile, %DictionaryFile%, %LocalDictionary%
+		FileMove, %tempFile%, %LocalDictionary%
 		Reload
 		return
 	} else {
@@ -3946,17 +3714,16 @@ Update_Dictionary() {
 
 List_UserDetails:
 	{
+		hashMasked := SubStr(UserHash, 1, 4) "..." SubStr(UserHash, -3)
 		userdetailslist := "Game Platform: " GamePlatform "`n"
 		userdetailslist := userdetailslist "User ID: " UserID "`n"
-		userdetailslist := userdetailslist "User Hash: " UserHash "`n"
+		userdetailslist := userdetailslist "User Hash: " hashMasked " (masked for security)`n"
 		if UserIDEpic {
 			userdetailslist := userdetailslist "Epic Games User ID: " UserIDEpic "`n"
 		}
 		if UserIDSteam {
 			userdetailslist := userdetailslist "Steam User ID: " UserIDSteam "`n"
 		}
-		;MsgBox, , User Details, % userdetailslist
-		;CustomMsgBox("User Details", userdetailslist, "Consolas", "s14", %BgColour%)
 		ScrollBox(userdetailslist, "p b1 h100 w700 f{s14, Consolas}", "User Details")
 		return	
 	}
@@ -3982,7 +3749,7 @@ List_ChampIDs:
 			id += 1
 		}
 		;MsgBox, , Champ ID List, % champidlist
-		;CustomMsgBox("Champion IDs and Names", champidlist, "Consolas", "s14", %BgColour%)
+
 		ScrollBox(champidlist, "p b1 h700 w1000 f{s14, Consolas}", "Champion IDs and Names")
 		return	
 	}
@@ -4009,41 +3776,10 @@ List_ChestIDs:
 			id += 1
 		}
 		;MsgBox, , Chest ID List, % chestidlist
-		;CustomMsgBox("Chest IDs and Names", chestidlist, "Consolas", "s14", %BgColour%)
+
 		ScrollBox(chestidlist, "p b1 h700 w1000 f{s14, Consolas}", "Chest IDs and Names")
 		return	
 	}
-
-CustomMsgBox(Title, Message, Font="", FontOptions="", WindowColor="")
-{
-	Gui,66:Destroy
-	Gui,66:Color,%WindowColor%
-
-	Gui,66:Font,%FontOptions%,%Font%
-	Gui,66:Add,Edit,ReadOnly,%Message%
-	Gui,66:Font
-
-	GuiControlGet,Edit,66:Pos,Static1
-
-	Gui,66:Add,Button,% "Default y+10 w75 g66OK xp+" (TextW / 2) - 38,OK
-
-	;Gui,66:+ToolWindow
-	Gui,66:-MinimizeBox
-	Gui,66:-MaximizeBox
-
-	SoundPlay,*-1
-	Gui,66:Show,,%Title%
-	ControlFocus,OK,%Title%
-
-	Gui,66:+LastFound
-	WinWaitClose
-	Gui,66:Destroy
-	return
-
-	66OK:
-		Gui,66:Destroy
-	return
-}
 
 ViewICSettings() {
 	rawicsettings := ""
@@ -4618,23 +4354,6 @@ ShowPityTimers() {
 	ScrollBox(pitylist, "p b1 h450 w700 f{s10, Consolas}", "Pity Timers")
 	; MsgBox % pitylist
 	return
-}
-
-getChestCodes() {
-	clipContents := clipboard
-	;regexpPattern := "P)\b(?<![A-Za-z0-9-/@#$`%^&!*])([A-Za-z0-9-@#$`%^&!*]{12,20})(?![A-Za-z0-9-/@#$`%^&!*])" ;Original
-	regexpPattern := "P)(?<![A-Za-z0-9-\/@#$`%^&!*_=+\(\)\{\}\[\]])([A-Za-z0-9-@#$%^&!*]{12,20})(?![A-Za-z0-9-\/@#$`%^&!*_=+\(\)\{\}\[\]])"
-	foundCodeString := ""
-	while (clipContents ~= regexpPattern) {
-		foundPos := RegExMatch(clipContents, regexpPattern, foundLength)
-		foundCode := RegExReplace(SubStr(clipContents, foundPos, foundLength), "-")
-		clipContents := SubStr(clipContents, foundPos + foundLength)
-		if (InStr(foundCodeString, foundCode) = 0 && (StrLen(foundCode) = 12 || StrLen(foundCode) == 16)) {
-			foundCodeString .= foundCode . "`r`n"
-		}
-	}
-	foundCodeString := RegExReplace(foundCodeString, "`r`n$")
-	return foundCodeString
 }
 
 ;{ ScrollBox
