@@ -6,6 +6,8 @@ To all the Idle Dragoneers who inspired and assisted me!
 
 ------
 
+## 3.82
+
 ## 3.81
 
 * Fix Event tab not showing data — `CheckEvents()` iterated `event_details` as array but API returns single object; now reads `events_details.active_events` (main event) and `event_details` (mini-event) correctly
