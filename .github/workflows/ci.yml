@@ -43,6 +43,18 @@ jobs:
         Write-Host "README.md version: $readme_ver"
         if ($ahk_ver -ne $readme_ver) { Write-Host "ERROR: Version mismatch!"; exit 1 }
         Write-Host "Version strings match"
+    - name: Validate idledict.json
+      run: |
+        try {
+          $dict = Get-Content "idledict.json" -Raw | ConvertFrom-Json
+          if (-not $dict.version) { Write-Host "ERROR: Missing 'version' key"; exit 1 }
+          if (-not $dict.champions) { Write-Host "ERROR: Missing 'champions' key"; exit 1 }
+          if (-not $dict.chests) { Write-Host "ERROR: Missing 'chests' key"; exit 1 }
+          Write-Host "idledict.json is valid JSON with required keys"
+        } catch {
+          Write-Host "ERROR: idledict.json is not valid JSON: $_"
+          exit 1
+        }
 
   test:
     runs-on: windows-latest

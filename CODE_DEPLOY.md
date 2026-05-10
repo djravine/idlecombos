@@ -7,14 +7,14 @@
 ```text
 develop ──PR──► master ──tag v*──► release.yml (draft) ──publish──► publish.yml (Discord)
                   │
-                  └── ci.yml runs on push/PR (lint, syntax, tests, version check)
+                  └── ci.yml runs on PRs (lint, syntax, tests, version check)
 ```
 
 Three GitHub Actions workflows form the pipeline:
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| `ci.yml` | Push to `master`/`develop`, PRs | Lint, AHK syntax check, unit tests, version consistency |
+| `ci.yml` | PRs to `master`/`develop` | Lint, AHK syntax check, unit tests, version consistency |
 | `release.yml` | Tag push matching `v*` | Package dual archives, create draft release |
 | `publish.yml` | Release published (draft → public) | Send Discord notification |
 
@@ -51,8 +51,8 @@ Wait for CI to pass on `master`.
 ### 2. Tag the release
 
 ```bash
-git tag v3.78
-git push origin v3.78
+git tag v3.80
+git push origin v3.80
 ```
 
 The `v*` tag push triggers `release.yml`.
@@ -63,10 +63,10 @@ The `v*` tag push triggers `release.yml`.
 
 | Archive | Contents |
 |---------|----------|
-| `idlecombos-v3.78-no-themes.zip` | AHK scripts, `idledict.json`, icon, images, docs |
-| `idlecombos-v3.78-no-themes.tar.gz` | Same as above (tar) |
-| `idlecombos-v3.78-themes.zip` | Everything above + `styles/*.msstyles` + `USkin.dll` |
-| `idlecombos-v3.78-themes.tar.gz` | Same as above (tar) |
+| `idlecombos-v3.80-no-themes.zip` | AHK scripts, `idledict.json`, icon, images, docs |
+| `idlecombos-v3.80-no-themes.tar.gz` | Same as above (tar) |
+| `idlecombos-v3.80-themes.zip` | Everything above + `styles/*.msstyles` + `USkin.dll` |
+| `idlecombos-v3.80-themes.tar.gz` | Same as above (tar) |
 
 Go to [GitHub Releases](https://github.com/djravine/idlecombos/releases) and review the draft:
 
@@ -115,7 +115,7 @@ idlecombos-vX.YZ/
 
 ## CI Pipeline Detail
 
-`ci.yml` runs three parallel jobs on every push and PR:
+`ci.yml` runs three parallel jobs on every PR:
 
 ### lint (ubuntu-latest)
 
@@ -124,13 +124,14 @@ idlecombos-vX.YZ/
 
 ### validate (windows-latest)
 
-* Installs AutoHotkey v1.1.37.02 via Chocolatey
+* Installs AutoHotkey v1.1.37.1 via Chocolatey
 * Syntax-checks `IdleCombos.ahk` and `IdleCombosLib.ahk` with `/iLib NUL /ErrorStdOut`
 * Verifies `VersionNumber` in `IdleCombos.ahk` matches the version in `README.md`
+* Validates `idledict.json` is valid JSON with required keys
 
 ### test (windows-latest)
 
-* Installs AutoHotkey v1.1.37.02 via Chocolatey
+* Installs AutoHotkey v1.1.37.1 via Chocolatey
 * Runs `tests\run_tests_ci.ahk` headlessly (2-minute timeout)
 * Uploads `tests/junit.xml` as artifact
 
@@ -151,8 +152,8 @@ If a release has issues:
 2. **Delete tag** (if needed):
 
 ```bash
-git tag -d v3.78
-git push origin :refs/tags/v3.78
+git tag -d v3.80
+git push origin :refs/tags/v3.80
 ```
 
 1. **Fix** on `develop`, merge to `master`, re-tag

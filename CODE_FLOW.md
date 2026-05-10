@@ -1,6 +1,6 @@
 # Application Startup Flow
 
-> IdleCombos v3.78 — AutoHotkey v1.1 startup sequence
+> IdleCombos v3.80 — AutoHotkey v1.1 startup sequence
 
 ## Flow Diagram
 

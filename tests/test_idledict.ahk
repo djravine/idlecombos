@@ -6,17 +6,17 @@ class PatronTests
 {
 	test_Mirt()
 	{
-		Yunit.Assert(PatronFromID("1") = "Mirt", "PatronFromID(1) should return Mirt")
+		Yunit.Assert(PatronFromID("1") = "Mirt the Moneylender", "PatronFromID(1) should return Mirt the Moneylender")
 	}
 
 	test_Vajra()
 	{
-		Yunit.Assert(PatronFromID("2") = "Vajra", "PatronFromID(2) should return Vajra")
+		Yunit.Assert(PatronFromID("2") = "Vajra Safahr", "PatronFromID(2) should return Vajra Safahr")
 	}
 
 	test_Strahd()
 	{
-		Yunit.Assert(PatronFromID("3") = "Strahd", "PatronFromID(3) should return Strahd")
+		Yunit.Assert(PatronFromID("3") = "Strahd von Zarovich", "PatronFromID(3) should return Strahd von Zarovich")
 	}
 
 	test_Zariel()

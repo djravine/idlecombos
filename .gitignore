@@ -22,3 +22,6 @@ formationimages/
 
 # TEST OUTPUT
 tests/junit.xml
+
+# EXPORTS
+idlecombos_export_*.csv

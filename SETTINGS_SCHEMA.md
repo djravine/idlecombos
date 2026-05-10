@@ -4,12 +4,14 @@
 
 `SettingsCheckValue` (defined in `IdleCombosLib.ahk`) is compared against the count of keys in `idlecombosettings.json` at startup. When they differ, new default keys are merged into existing settings without overwriting user values.
 
-## Current Value: 23
+## Current Value: 25
 
 ## Schema History
 
 | Value | Version | Keys Added | Notes |
 |-------|---------|------------|-------|
+| 25 | v3.80 | `showapimessages` | Toggle verbose API/parsing progress in status bar |
+| 24 | v3.80 | `autorefreshminutes` | Auto-refresh user details interval (0=off) |
 | 23 | v3.78 | `redeemcodehistoryskip` | Skip previously redeemed codes |
 | 22 | v3.77 | `disableuserdetailsreload` | Disable auto-reload after actions |
 | 21 | v3.76 | `blacksmithcontractresults` | Show/hide blacksmith result dialog |
@@ -19,13 +21,14 @@
 
 *Note: Earlier versions used a destructive reset (delete + recreate) when the count mismatched. v3.78 introduced non-destructive key merging.*
 
-## Current Keys (23 total)
+## Current Keys (25 total)
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `alwayssavechests` | int | 1 | Auto-save chest open results to log |
 | `alwayssavecontracts` | int | 1 | Auto-save blacksmith results to log |
 | `alwayssavecodes` | int | 1 | Auto-save code redeem results to log |
+| `autorefreshminutes` | int | 0 | Auto-refresh user details interval in minutes (0=off) |
 | `blacksmithcontractresults` | int | 1 | Show blacksmith result dialog |
 | `disabletooltips` | int | 0 | Hide control tooltips |
 | `disableuserdetailsreload` | int | 0 | Skip auto-reload after actions |
@@ -40,6 +43,7 @@
 | `redeemcodehistoryskip` | int | 1 | Skip codes already in redeem history |
 | `serverdetection` | int | 1 | Auto-detect play server from WRL |
 | `servername` | str | "master" | API server name |
+| `showapimessages` | int | 1 | Show verbose API/parsing progress in status bar |
 | `style` | str | "Default" | UI theme name |
 | `tabactive` | str | "Summary" | Tab shown on startup |
 | `user_id` | str | 0 | Idle Champions user ID |

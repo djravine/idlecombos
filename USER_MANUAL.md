@@ -1,6 +1,6 @@
 # User Manual
 
-> IdleCombos v3.78 — Companion App for Idle Champions
+> IdleCombos v3.80 — Companion App for Idle Champions
 
 ## Table of Contents
 

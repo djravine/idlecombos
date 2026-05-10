@@ -17,7 +17,8 @@ Companion App for Idle Champions, written in [AHK](https://www.autohotkey.com/).
 
 ## Security Notice
 
-* Your `user_id` and `hash` are sensitive credentials stored locally in `idlecombosettings.json`.
+* Your `user_id` and `hash` are stored locally in `idlecombosettings.json`.
+* The `hash` is encrypted at rest using Windows DPAPI — only your Windows account can decrypt it.
 * Do not share your `hash` with anyone — it grants full API access to your account.
 * IdleCombos never sends your credentials anywhere except the official game API server.
 
@@ -45,6 +46,7 @@ Companion App for Idle Champions, written in [AHK](https://www.autohotkey.com/).
 * `IdleCombosLib.ahk` — Shared library functions
 * `idledict.json` — Champion/chest/campaign ID definitions
 * [`json.ahk`](https://github.com/Chunjee/json.ahk) — JSON parsing library
+* `Lib/ScrollBox.ahk` — Scrollable text display helper
 * `README.md` — This file
 
 ## How To Run

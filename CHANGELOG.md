@@ -11,7 +11,7 @@ To all the Idle Dragoneers who inspired and assisted me!
 * Add Pity Timers tab — champions grouped by chests-until-epic (was menu-only dialog)
 * Add Item Levels tab — gear iLvl report with core/event averages, highest/lowest, shinies (was menu-only dialog)
 * Add Incomplete Variants tab — patron-filterable adventure completion tracker with in-tab refresh (was menu-only dialog)
-* Add "Sync Dictionary from API" — fetches live champion/chest definitions from the game API, diffs against local dictionary, previews changes, and merges with backup (Help menu)
+* Add "Sync Dictionary from API" — fetches live champion, chest, campaign, patron, and feat definitions from the game API, diffs against local dictionary, previews changes, and merges with backup (Help menu)
 * Tab count: 8 → 11
 * Display "Map" instead of "-1" for adventure ID when on the world map
 * Add "Show API Messages in Status Bar" setting to toggle verbose parsing/API progress messages
@@ -49,6 +49,34 @@ To all the Idle Dragoneers who inspired and assisted me!
 * Expand THIRD_PARTY.md: USkin.dll provenance, AGPL/MIT Yunit boundary, ScrollBox location
 * Add USER_MANUAL.md to release archives
 * Add AGENTS.md convention: always update CHANGELOG.md after making changes
+* Rename Help menu "Update Dictionary" to "Update Dictionary from Git" for clarity
+* Use full patron display names from dictionary (e.g. "Mirt the Moneylender") in Patrons tab, dropdown, CSV export
+* Derive patron dropdown, patronMap, and ListView from dictionary via BuildPatronDropdownList()/BuildPatronDisplayMap() — no more hardcoded patron name lists
+* Add PatronShortNames/PatronIDs shared constants in IdleCombosLib.ahk — single source of truth for adding new patrons
+* Bump dictionary version to 2.42
+* Add tests/test_dictionary_sync.ahk with 42 unit tests covering definition extraction, diffing, preview, merge, and feat formatting
+* Fix USkin.dll hash verification fail-open — now blocks DLL load when hash cannot be parsed (was silently loading unverified binary)
+* Fix SETTINGS_SCHEMA.md stale: updated from 23 to 25 keys, added autorefreshminutes and showapimessages rows
+* Fix CODE_FLOW.md version drift: v3.78 → v3.80
+* Fix THIRD_PARTY.md version drift: v3.79 → v3.80
+* Fix CODE_DEPLOY.md: CI trigger description corrected from push+PR to PR-only
+* Add Lib/ScrollBox.ahk to README.md Includes section and CONTRIBUTING.md Project Structure
+* Add SETTINGS_SCHEMA.md cross-link to CONTRIBUTING.md Version Bumping section
+* Add export CSV pattern to .gitignore (idlecombos_export_*.csv)
+* Refactor: use EndBusyOp() consistently in Buy_Chests/Open_Chests/UseBlacksmith (was manually setting IsBusy := false, missing cleanup on early returns)
+* Refactor: bg1/bg2/bg3 instance assignment from 3 identical 8-field blocks to single loop with dynamic slot key
+* Refactor: blacksmith contract switch to data-driven metadata object (buff_id → name/variable mapping)
+* Refactor: extract FormatMagnitude() helper in IdleCombosLib.ahk — replaces 10 inline SubStr+Format+log+MagList expressions across champion stats, adventure core XP, and patron influence/coins
+* Refactor: extract WriteJsonAtomic(filePath, obj) shared helper — used by PersistSettings() and WriteDictionaryJson()
+* Add idledict.json JSON validity check to CI (validate job) — catches malformed dictionary before merge
+* Add comment headers to all functions in IdleCombosLib.ahk — improved descriptions for all lookup, parsing, and sync functions
+* Refactor: patron unlock requirements from 5 near-identical case branches to table-driven descriptor (unlockReqs map)
+* Refactor: bounty/blacksmith contract metadata into shared BountyContracts/BlacksmithContracts constants in IdleCombosLib.ahk — single source of truth for names, buff IDs, and multipliers used by inventory parsing, GUI display, CSV export
+* Add SafeGet(obj, keys*) and RequireKey(obj, keys*) helpers for safe nested object traversal — fail-fast on missing API paths with LogFile warning
+* Encrypt API hash at rest using Windows DPAPI (CryptProtectData) — hash in idlecombosettings.json is now stored as hex ciphertext with "DPAPI:" prefix instead of plaintext
+* Auto-migrate existing users: plaintext hashes are detected on load, used as-is, then encrypted and re-saved transparently with zero user action
+* Add DPAPIEncrypt/DPAPIDecrypt/IsEncryptedHash helpers to IdleCombosLib.ahk with 18 unit tests (round-trip, passthrough, migration, edge cases)
+* Update SECURITY.md: document DPAPI encryption, migration flow, and per-field encryption rationale
 
 ## 3.79
 

@@ -8,7 +8,7 @@
 
 ;Versions
 global VersionNumber := "3.80"
-global CurrentDictionary := "2.41"
+global CurrentDictionary := "2.42"
 
 ;Local File globals
 global OutputLogFile := ""
@@ -268,6 +268,7 @@ SetIcon()
 
 OnMessage(0x0200, "WM_MOUSEMOVE")
 
+; Handle mouse hover events — display context-sensitive tooltips for GUI controls
 WM_MOUSEMOVE(wParam, lParam, msg, hwnd) {
 	if (DisableTooltips == 0) {
 		; MouseGetPos, , , , ctrlHWND, 2
@@ -410,7 +411,7 @@ class MyGui {
 		Menu, HelpSubmenu, Add, Clear &Log, Clear_Log
 		Menu, HelpSubmenu, Add, Clear Redeem Code H&istory, Redeem_Codes_History_Clear
 		Menu, HelpSubmenu, Add
-		Menu, HelpSubmenu, Add, &Update Dictionary, Update_Dictionary
+		Menu, HelpSubmenu, Add, &Update Dictionary from Git, Update_Dictionary
 		Menu, HelpSubmenu, Add, &Sync Dictionary from API, Sync_Dictionary_From_API
 		Menu, HelpSubmenu, Add, Download &Journal, Get_Journal
 		Menu, HelpSubmenu, Add
@@ -481,8 +482,9 @@ class MyGui {
 
 		Gui, Tab, Variants
 		Gui, MyWindow:Add, Text, x10 y38, Patron:
-		Gui, MyWindow:Add, DropDownList, x55 y34 w120 h60 r7 vVariantPatronChoice gRunVariantRefresh, None|Mirt|Vajra|Strahd|Zariel|Elminster
-		Gui, MyWindow:Add, Button, x185 y34 w80 gRunVariantRefresh, Refresh
+		patronDDL := BuildPatronDropdownList()
+		Gui, MyWindow:Add, DropDownList, x55 y34 w180 h60 r7 vVariantPatronChoice gRunVariantRefresh, %patronDDL%
+		Gui, MyWindow:Add, Button, x240 y34 w80 gRunVariantRefresh, Refresh
 		Gui, MyWindow:Add, ListView, x4 y60 w600 h481 vVariantsLV hwndVariantsHwnd +Grid +ReadOnly -Multi +NoSortHdr, Campaign|Incomplete Adventure IDs
 
 		Gui, Tab, Event
@@ -575,9 +577,24 @@ class MyGui {
 			UserID := CurrentSettings.user_id
 			UserIDEpic := CurrentSettings.user_id_epic
 			UserIDSteam := CurrentSettings.user_id_steam
-			UserHash := CurrentSettings.hash
+			; Decrypt hash (DPAPI-encrypted values start with "DPAPI:")
+			; Plaintext values (pre-encryption users) pass through unchanged
+			UserHash := DPAPIDecrypt(CurrentSettings.hash)
+			if (UserHash = "" && CurrentSettings.hash != "" && CurrentSettings.hash != "0") {
+				; Decryption failed — likely settings from a different machine/user
+				LogFile("WARNING: Hash decryption failed — credentials cleared (re-run setup)")
+				UserHash := ""
+				SB_SetText("⚠️ Hash decryption failed — please re-enter via Help → Run Setup")
+			} else {
+				; Auto-migrate: if hash was plaintext, encrypt it now for next save
+				if (!IsEncryptedHash(CurrentSettings.hash) && UserHash != "" && UserHash != "0") {
+					CurrentSettings.hash := DPAPIEncrypt(UserHash)
+					PersistSettings()
+					LogFile("Settings migrated: hash encrypted with DPAPI")
+				}
+				SB_SetText("✅ User ID & Hash Ready")
+			}
 			InstanceID := CurrentSettings.instance_id
-			SB_SetText("✅ User ID & Hash Ready")
 		} else {
 			SB_SetText("❌ User ID & Hash not found!")
 		}
@@ -780,33 +797,35 @@ LV_Add("", "Gold Chests",       CurrentGolds,        GoldPity)
 LV_Add("", "Silver Chests",     CurrentSilvers,      "")
 LV_Add("", "Time Gate Pieces",  CurrentTGPs,         Floor(CurrentTGPs/6) " Time Gates | Next: " NextTGPDrop)
 LV_Add("", "───────────",       "─────",             "───────────────────────────")
-; Bounty Contracts
-LV_Add("", "Tiny Bounties",     CurrentTinyBounties, "12 Tokens Each")
-LV_Add("", "Small Bounties",    CurrentSmBounties,   "72 Tokens Each")
-LV_Add("", "Medium Bounties",   CurrentMdBounties,   "576 Tokens Each")
-LV_Add("", "Large Bounties",    CurrentLgBounties,   "1152 Tokens Each")
-tokencount := (CurrentTinyBounties*12)+(CurrentSmBounties*72)+(CurrentMdBounties*576)+(CurrentLgBounties*1152)
-LV_Add("", "Total Bounty Tokens", tokencount,        Round(tokencount/2500, 2) " Free Plays")
+; Bounty Contracts — labels and multipliers from shared BountyContracts constant
+tokencount := 0
+for _, bc in BountyContracts {
+	varName := bc.var
+	LV_Add("", bc.name " Bounties", %varName%, bc.mult " " bc.unit " Each")
+	tokencount += %varName% * bc.mult
+}
+LV_Add("", "Total Bounty Tokens", tokencount, Round(tokencount/2500, 2) " Free Plays")
 LV_Add("", "───────────",       "─────",             "───────────────────────────")
-; Blacksmith Contracts
-LV_Add("", "Tiny Blacksmiths",  CurrentTinyBS,       "1 iLvl Each")
-LV_Add("", "Small Blacksmiths", CurrentSmBS,         "2 iLvls Each")
-LV_Add("", "Medium Blacksmiths", CurrentMdBS,        "6 iLvls Each")
-LV_Add("", "Large Blacksmiths", CurrentLgBS,         "24 iLvls Each")
-LV_Add("", "Huge Blacksmiths",  CurrentHgBS,         "120 iLvls Each")
-LV_Add("", "Total Item Levels", CurrentTinyBS+(CurrentSmBS*2)+(CurrentMdBS*6)+(CurrentLgBS*24)+(CurrentHgBS*120), "")
+; Blacksmith Contracts — labels and multipliers from shared BlacksmithContracts constant
+bsLevels := 0
+for _, bs in BlacksmithContracts {
+	varName := bs.var
+	LV_Add("", bs.name " Blacksmiths", %varName%, bs.mult " " bs.unit " Each")
+	bsLevels += %varName% * bs.mult
+}
+LV_Add("", "Total Item Levels", bsLevels, "")
 Loop % LV_GetCount("Col")
 	LV_ModifyCol(A_Index, "AutoHdr")
 
-;Patrons
+;Patrons — display names from dict, variable data via short-name prefix
 Gui, MyWindow:Default
 Gui, ListView, PatronsLV
 LV_Delete()
-LV_Add("", "Mirt",      MirtVariants,      MirtCompleted,      MirtFPCurrency,      MirtChallenges,      MirtRequires,      MirtCosts)
-LV_Add("", "Vajra",     VajraVariants,     VajraCompleted,     VajraFPCurrency,     VajraChallenges,     VajraRequires,     VajraCosts)
-LV_Add("", "Strahd",    StrahdVariants,    StrahdCompleted,    StrahdFPCurrency,    StrahdChallenges,    StrahdRequires,    StrahdCosts)
-LV_Add("", "Zariel",    ZarielVariants,    ZarielCompleted,    ZarielFPCurrency,    ZarielChallenges,    ZarielRequires,    ZarielCosts)
-LV_Add("", "Elminster",  ElminsterVariants, ElminsterCompleted, ElminsterFPCurrency, ElminsterChallenges, ElminsterRequires, ElminsterCosts)
+for _, pid in PatronIDs {
+	pShort := PatronShortNames[pid]
+	pDisplay := PatronFromID(pid)
+	LV_Add("", pDisplay, %pShort%Variants, %pShort%Completed, %pShort%FPCurrency, %pShort%Challenges, %pShort%Requires, %pShort%Costs)
+}
 Loop % LV_GetCount("Col")
 	LV_ModifyCol(A_Index, "AutoHdr")
 
@@ -1055,6 +1074,7 @@ Loop % LV_GetCount("Col")
 	}
 }
 
+; Handle window resize — reposition all controls and ListViews to fit new dimensions
 MyWindowGuiSize(GuiHwnd, EventInfo, Width, Height) {
 	; SB_SetText( GuiHwnd " | " EventInfo " | " Width " | " Height )
 
@@ -1112,6 +1132,7 @@ Control & 8::UseBounty(18) ;Small Bounty
 Control & 9::UseBounty(19) ;Medium Bounty
 Control & 0::UseBounty(20) ;Large Bounty
 
+; Label: apply selected theme from dropdown
 RunStyleChoice:
 	{
 		GuiControlGet, StyleChoice,, % hddl2
@@ -1119,6 +1140,7 @@ RunStyleChoice:
 		return
 	}
 
+; Label: toggle tooltip display on/off
 RunDisableTooltips:
 	{
 		GuiControlGet, DisableTooltips,, % hcbx11
@@ -1135,7 +1157,7 @@ RunVariantRefresh:
 			return
 		}
 		GuiControlGet, patronChoice,, VariantPatronChoice
-		patronMap := {"None":0, "Mirt":1, "Vajra":2, "Strahd":3, "Zariel":4, "Elminster":5}
+		patronMap := BuildPatronDisplayMap()
 		patronid := patronMap[patronChoice]
 		if (patronid = "")
 			patronid := 0
@@ -1298,19 +1320,27 @@ SkinForm(DLLPath, Param1 = "Apply", SkinName = ""){
 			if (FileExist(DLLPath)) {
 				expectedHash := "9CCF45F05DC84F343D63EBCD96D2C2452257C2582EBE05C2FE317A16D62A3347"
 				objShell := ComObjCreate("Shell.Application")
-				try {
-					RunWait, % "cmd /c certutil -hashfile """ DLLPath """ SHA256 > """ A_Temp "\uskin_hash.txt""", , Hide
-					FileRead, hashOutput, %A_Temp%\uskin_hash.txt
-					FileDelete, %A_Temp%\uskin_hash.txt
-					RegExMatch(hashOutput, "m)^([0-9a-fA-F]{64})$", hashMatch)
-					if (hashMatch1 != "") {
-						StringUpper, actualHash, hashMatch1
-						if (actualHash != expectedHash) {
-							LogFile("WARNING: USkin.dll hash mismatch — DLL NOT loaded")
-							return
-						}
+			try {
+				RunWait, % "cmd /c certutil -hashfile """ DLLPath """ SHA256 > """ A_Temp "\uskin_hash.txt""", , Hide
+				FileRead, hashOutput, %A_Temp%\uskin_hash.txt
+				FileDelete, %A_Temp%\uskin_hash.txt
+				RegExMatch(hashOutput, "m)^([0-9a-fA-F]{64})$", hashMatch)
+				if (hashMatch1 != "") {
+					StringUpper, actualHash, hashMatch1
+					if (actualHash != expectedHash) {
+						LogFile("WARNING: USkin.dll hash mismatch — DLL NOT loaded")
+						return
 					}
+				} else {
+					; Hash could not be parsed — fail closed (do not load unverified DLL)
+					LogFile("WARNING: USkin.dll hash could not be verified — DLL NOT loaded")
+					return
 				}
+			} catch {
+				; certutil or file read failed — fail closed
+				LogFile("WARNING: USkin.dll hash verification failed — DLL NOT loaded")
+				return
+			}
 			}
 			DllCall("LoadLibrary", str, DLLPath)
 			DllCall(DLLPath . "\USkinInit", Int, 0, Int, 0, AStr, SkinName)
@@ -1398,27 +1428,26 @@ ExportCSV()
 	filename := "idlecombos_export_" timestamp ".csv"
 	FileDelete, %filename%
 	FileAppend, % "Category,Item,Value,Details`n", %filename%
-	; Inventory
+	; Inventory — bounty and blacksmith from shared metadata constants
 	FileAppend, % "Inventory,Gems," CurrentGems ",`n", %filename%
 	FileAppend, % "Inventory,Spent Gems," SpentGems ",`n", %filename%
 	FileAppend, % "Inventory,Gold Chests," CurrentGolds ",`n", %filename%
 	FileAppend, % "Inventory,Silver Chests," CurrentSilvers ",`n", %filename%
 	FileAppend, % "Inventory,Time Gate Pieces," CurrentTGPs ",= " Floor(CurrentTGPs/6) " Time Gates`n", %filename%
-	FileAppend, % "Inventory,Tiny Bounties," CurrentTinyBounties ",12 Tokens Each`n", %filename%
-	FileAppend, % "Inventory,Small Bounties," CurrentSmBounties ",72 Tokens Each`n", %filename%
-	FileAppend, % "Inventory,Medium Bounties," CurrentMdBounties ",576 Tokens Each`n", %filename%
-	FileAppend, % "Inventory,Large Bounties," CurrentLgBounties ",1152 Tokens Each`n", %filename%
-	FileAppend, % "Inventory,Tiny Blacksmiths," CurrentTinyBS ",1 iLvl Each`n", %filename%
-	FileAppend, % "Inventory,Small Blacksmiths," CurrentSmBS ",2 iLvls Each`n", %filename%
-	FileAppend, % "Inventory,Medium Blacksmiths," CurrentMdBS ",6 iLvls Each`n", %filename%
-	FileAppend, % "Inventory,Large Blacksmiths," CurrentLgBS ",24 iLvls Each`n", %filename%
-	FileAppend, % "Inventory,Huge Blacksmiths," CurrentHgBS ",120 iLvls Each`n", %filename%
-	; Patron data
-	FileAppend, % "Patron,Mirt Variants," MirtVariants ",`n", %filename%
-	FileAppend, % "Patron,Vajra Variants," VajraVariants ",`n", %filename%
-	FileAppend, % "Patron,Strahd Variants," StrahdVariants ",`n", %filename%
-	FileAppend, % "Patron,Zariel Variants," ZarielVariants ",`n", %filename%
-	FileAppend, % "Patron,Elminster Variants," ElminsterVariants ",`n", %filename%
+	for _, bc in BountyContracts {
+		varName := bc.var
+		FileAppend, % "Inventory," bc.name " Bounties," %varName% "," bc.mult " " bc.unit " Each`n", %filename%
+	}
+	for _, bs in BlacksmithContracts {
+		varName := bs.var
+		FileAppend, % "Inventory," bs.name " Blacksmiths," %varName% "," bs.mult " " bs.unit " Each`n", %filename%
+	}
+	; Patron data — display names from dict, values from short-name globals
+	for _, pid in PatronIDs {
+		pShort := PatronShortNames[pid]
+		pDisplay := PatronFromID(pid)
+		FileAppend, % "Patron," pDisplay " Variants," %pShort%Variants ",`n", %filename%
+	}
 	; Account
 	FileAppend, % "Account,Champions Unlocked," ChampionsUnlockedCount ",`n", %filename%
 	FileAppend, % "Account,Champions Active," ChampionsActiveCount ",`n", %filename%
@@ -2073,7 +2102,7 @@ Buy_Chests(chestid) {
 	if !BeginBusyOp()
 		return
 	_Buy_Chests_Inner(chestid)
-	IsBusy := false
+	EndBusyOp()
 }
 
 _Buy_Chests_Inner(chestid) {
@@ -2203,7 +2232,7 @@ Open_Chests(chestid) {
 	if !BeginBusyOp()
 		return
 	_Open_Chests_Inner(chestid)
-	IsBusy := false
+	EndBusyOp()
 }
 
 _Open_Chests_Inner(chestid) {
@@ -2432,33 +2461,25 @@ UseBlacksmith(buffid) {
 	if !BeginBusyOp()
 		return
 	_UseBlacksmith_Inner(buffid)
-	IsBusy := false
+	EndBusyOp()
 }
 
 _UseBlacksmith_Inner(buffid) {
 	RotateLogFile(BlacksmithLogFile)
-	switch buffid {
-		case 31:
-			currentcontracts := CurrentTinyBS
-			lastcontracts := LastBSTnCount
-			contractname := "Tiny"
-		case 32:
-			currentcontracts := CurrentSmBS
-			lastcontracts := LastBSSmCount
-			contractname := "Small"
-		case 33:
-			currentcontracts := CurrentMdBS
-			lastcontracts := LastBSMdCount
-			contractname := "Medium"
-		case 34:
-			currentcontracts := CurrentLgBS
-			lastcontracts := LastBSLgCount
-			contractname := "Large"
-		case 1797:
-			currentcontracts := CurrentHgBS
-			lastcontracts := LastBSHgCount
-			contractname := "Huge"
-	}
+	; Contract metadata: buff_id → {current var, last count var, name}
+	contractMeta := {31: {cur: "CurrentTinyBS", last: "LastBSTnCount", name: "Tiny"}
+		, 32: {cur: "CurrentSmBS", last: "LastBSSmCount", name: "Small"}
+		, 33: {cur: "CurrentMdBS", last: "LastBSMdCount", name: "Medium"}
+		, 34: {cur: "CurrentLgBS", last: "LastBSLgCount", name: "Large"}
+		, 1797: {cur: "CurrentHgBS", last: "LastBSHgCount", name: "Huge"}}
+	meta := contractMeta[buffid]
+	if !IsObject(meta)
+		return
+	curVar := meta.cur
+	lastVar := meta.last
+	currentcontracts := %curVar%
+	lastcontracts := %lastVar%
+	contractname := meta.name
 	if !(lastcontracts) {
 		lastcontracts := currentcontracts
 	}
@@ -3071,7 +3092,7 @@ FirstRun() {
 	CurrentSettings.user_id := UserID
 	CurrentSettings.user_id_epic := UserIDEpic
 	CurrentSettings.user_id_steam := UserIDSteam
-	CurrentSettings.hash := UserHash
+	CurrentSettings.hash := DPAPIEncrypt(UserHash)
 	CurrentSettings.firstrun := 1
 	CurrentSettings.wrlpath := WRLFile
 	PersistSettings()
@@ -3319,8 +3340,8 @@ ParseInventoryData() {
 ParsePatronData() {
 	APIStatus("⌛ Parsing Data - Patrons... Please wait...")
 	result := ParsePatronDataFromDetails(UserDetails.details, CurrentTGPs, CurrentSilvers, CurrentGems, CurrentLgBounties, TotalChamps)
-	pList := ["Mirt", "Vajra", "Strahd", "Zariel", "Elminster"]
-	for _, pName in pList {
+	for _, pid in PatronIDs {
+		pName := PatronShortNames[pid]
 		if !result.HasKey(pName)
 			continue
 		pData          := result[pName]
@@ -3363,8 +3384,8 @@ ParseChampData() {
 CheckPatronProgress() {
 	APIStatus("⌛ Parsing Data - Patrons... Please wait...")
 	; Loop over patrons — avoids 5 near-identical lines (P3-17)
-	pList := ["Mirt", "Vajra", "Strahd", "Zariel", "Elminster"]
-	for _, pName in pList {
+	for _, pid in PatronIDs {
+		pName := PatronShortNames[pid]
 		pVariantsVar   := pName "Variants"
 		pFPVar         := pName "FPCurrency"
 		pChallengesVar := pName "Challenges"
@@ -3762,12 +3783,15 @@ Sync_Dictionary_From_API() {
 		return
 	}
 
-	; Step 3: Extract champion and chest maps from API response
+	; Step 3: Extract definition maps from API response
 	hasChamps := IsObject(defsObj.champion_defines) && defsObj.champion_defines.Length() > 0
 	hasChests := IsObject(defsObj.chest_type_defines) && defsObj.chest_type_defines.Length() > 0
+	hasCampaigns := IsObject(defsObj.campaign_defines) && defsObj.campaign_defines.Length() > 0
+	hasPatrons := IsObject(defsObj.patron_defines) && defsObj.patron_defines.Length() > 0
+	hasFeats := IsObject(defsObj.feat_defines) && defsObj.feat_defines.Length() > 0
 
-	if (!hasChamps && !hasChests) {
-		MsgBox, 16, Dictionary Sync, API response contained no champion or chest definitions.`nNo changes were made.
+	if (!hasChamps && !hasChests && !hasCampaigns && !hasPatrons && !hasFeats) {
+		MsgBox, 16, Dictionary Sync, API response contained no definitions.`nNo changes were made.
 		SB_SetText("❌ Dictionary sync failed - empty definitions")
 		return
 	}
@@ -3781,24 +3805,44 @@ Sync_Dictionary_From_API() {
 			preserveChestKeys[id + 0] := true
 	}
 
-	; Extract and diff
+	; Extract maps from API arrays
 	champResult := hasChamps ? ExtractDefinitionMap(defsObj.champion_defines) : {"items": {}, "skipped": 0, "maxId": 0}
 	chestResult := hasChests ? ExtractDefinitionMap(defsObj.chest_type_defines) : {"items": {}, "skipped": 0, "maxId": 0}
+	campaignResult := hasCampaigns ? ExtractDefinitionMap(defsObj.campaign_defines) : {"items": {}, "skipped": 0, "maxId": 0}
+	patronResult := hasPatrons ? ExtractDefinitionMap(defsObj.patron_defines) : {"items": {}, "skipped": 0, "maxId": 0}
 
+	; Feats need special handling: API returns hero_id + name, local dict stores "ChampName (FeatName)"
+	; Build a champion ID→name lookup from the API response for feat formatting
+	featResult := hasFeats ? ExtractFeatDefinitionMap(defsObj.feat_defines, champResult.items, _dict.champions) : {"items": {}, "skipped": 0, "maxId": 0}
+
+	; Diff each section
 	champDiff := DiffDefinitionSection(_dict.champions, champResult.items)
 	chestDiff := DiffDefinitionSection(_dict.chests, chestResult.items, preserveChestKeys)
+	campaignDiff := DiffDefinitionSection(_dict.campaigns, campaignResult.items)
+	patronDiff := DiffDefinitionSection(_dict.patrons, patronResult.items)
+	featDiff := DiffDefinitionSection(_dict.feats, featResult.items)
 
 	; Step 4: Check for changes
-	totalChanges := champDiff.newCount + champDiff.changedCount + chestDiff.newCount + chestDiff.changedCount
+	allDiffs := [champDiff, chestDiff, campaignDiff, patronDiff, featDiff]
+	totalChanges := 0
+	for _, d in allDiffs
+		totalChanges += d.newCount + d.changedCount
 
 	if (totalChanges = 0) {
-		MsgBox, 64, Dictionary Sync, Dictionary is up to date.`n`nNo new champion or chest definitions were found.
+		MsgBox, 64, Dictionary Sync, Dictionary is up to date.`n`nNo new definitions were found.
 		SB_SetText("✅ Dictionary is up to date")
 		return
 	}
 
 	; Step 5: Show preview
-	previewText := BuildSyncPreviewText(champDiff, chestDiff, champResult.skipped, chestResult.skipped)
+	totalSkipped := champResult.skipped + chestResult.skipped + campaignResult.skipped + patronResult.skipped + featResult.skipped
+	sectionDiffs := []
+	sectionDiffs.Push({"label": "CHAMPIONS", "diff": champDiff})
+	sectionDiffs.Push({"label": "CHESTS", "diff": chestDiff})
+	sectionDiffs.Push({"label": "CAMPAIGNS", "diff": campaignDiff})
+	sectionDiffs.Push({"label": "PATRONS", "diff": patronDiff})
+	sectionDiffs.Push({"label": "FEATS", "diff": featDiff})
+	previewText := BuildSyncPreviewTextMulti(sectionDiffs, totalSkipped)
 	ScrollBox(previewText, "p b1 h400 w700 f{s10, Consolas}", "Dictionary Sync Preview")
 
 	; Step 6: Confirm
@@ -3811,16 +3855,33 @@ Sync_Dictionary_From_API() {
 
 	; Step 7: Apply changes
 	SB_SetText("⌛ Applying dictionary changes...")
-	mergedDict := ApplySyncToDict(_dict, champDiff, chestDiff, champResult.maxId, chestResult.maxId)
+	ApplySyncSectionToDict(_dict, "champions", champDiff)
+	ApplySyncSectionToDict(_dict, "chests", chestDiff)
+	ApplySyncSectionToDict(_dict, "campaigns", campaignDiff)
+	ApplySyncSectionToDict(_dict, "patrons", patronDiff)
+	ApplySyncSectionToDict(_dict, "feats", featDiff)
+
+	; Update max IDs
+	currentMaxChamp := _dict.max_champ_id + 0
+	currentMaxChest := _dict.max_chest_id + 0
+	if (champResult.maxId > currentMaxChamp)
+		_dict.max_champ_id := "" champResult.maxId
+	if (chestResult.maxId > currentMaxChest)
+		_dict.max_chest_id := "" chestResult.maxId
 
 	; Step 8: Write with backup
-	if !WriteDictionaryJson(mergedDict) {
+	if !WriteDictionaryJson(_dict) {
 		MsgBox, 16, Dictionary Sync, Failed to write idledict.json.`nNo changes were applied.
 		SB_SetText("❌ Dictionary sync failed - write error")
 		return
 	}
 
-	LogFile("Dictionary Sync: +" champDiff.newCount " champs, ~" champDiff.changedCount " champ renames, +" chestDiff.newCount " chests, ~" chestDiff.changedCount " chest renames")
+	logMsg := "Dictionary Sync:"
+	for _, s in sectionDiffs {
+		if (s.diff.newCount > 0 || s.diff.changedCount > 0)
+			logMsg .= " " s.label " +" s.diff.newCount "/~" s.diff.changedCount
+	}
+	LogFile(logMsg)
 	Reload
 	return
 }
@@ -3843,7 +3904,7 @@ FetchDefinitionsForSync() {
 	}
 
 	; Step 2: Request filtered definitions (no auth needed)
-	defsParams := DummyData "&filter=champion_defines,chest_type_defines"
+	defsParams := DummyData "&filter=champion_defines,chest_type_defines,campaign_defines,patron_defines,feat_defines"
 	return ServerCall("getDefinitions", defsParams, defsServer)
 }
 

@@ -31,49 +31,95 @@ global DictionaryVersion := _dict.version
 global MaxChampID := _dict.max_champ_id
 global MaxChestID := _dict.max_chest_id
 
-; Get Patron Name from Patron ID
+;=============================================================================
+; PATRON CONSTANTS (derived from dictionary)
+;=============================================================================
+; Patrons have two name forms used throughout the app:
+;   - Short names: "Mirt", "Vajra", etc. Used as AHK variable prefixes
+;     (e.g. MirtVariants, VajraFPCurrency) because AHK v1.1 variables
+;     cannot contain spaces. These are INTERNAL identifiers only.
+;   - Display names: "Mirt the Moneylender", "Vajra Safahr", etc.
+;     Read from idledict.json via PatronFromID(). Shown in UI, exports,
+;     and updated by the API dictionary sync.
+;
+; PatronShortNames: patron_id → short variable prefix (never displayed)
+; PatronIDs: ordered list of patron IDs (excluding 0/None)
+;=============================================================================
+
+global PatronShortNames := {1: "Mirt", 2: "Vajra", 3: "Strahd", 4: "Zariel", 5: "Elminster"}
+global PatronIDs := [1, 2, 3, 4, 5]
+
+;-----------------------------------------------------------------------------
+; BuildPatronDisplayMap() - Build reverse lookup: display name → patron ID
+; Used by the Variants tab dropdown to map user selection back to a patron ID.
+; Keys are full display names from the dictionary (e.g. "Mirt the Moneylender").
+; Includes "None" (ID 0) for the unfiltered option.
+;-----------------------------------------------------------------------------
+BuildPatronDisplayMap() {
+	global _dict
+	result := {}
+	result[PatronFromID(0)] := 0
+	for _, pid in PatronIDs
+		result[PatronFromID(pid)] := pid
+	return result
+}
+
+;-----------------------------------------------------------------------------
+; BuildPatronDropdownList() - Build pipe-delimited string for GUI DropDownList
+; Returns: "None|Mirt the Moneylender|Vajra Safahr|Strahd von Zarovich|..."
+; Names come from the dictionary so they update when the dict is synced.
+;-----------------------------------------------------------------------------
+BuildPatronDropdownList() {
+	global _dict
+	ddl := PatronFromID(0)
+	for _, pid in PatronIDs
+		ddl .= "|" PatronFromID(pid)
+	return ddl
+}
+
+; Get Patron display name from patron ID (e.g. 1 → "Mirt the Moneylender")
 PatronFromID(patronid) {
 	global _dict
 	result := _dict.patrons[patronid + 0]
 	return result ? result : ""
 }
 
-; Get Campaign Name from Campaign ID
+; Get campaign name from campaign ID (e.g. 1 → "Grand Tour of the Sword Coast")
 campaignFromID(campaignid) {
 	global _dict
 	result := _dict.campaigns[campaignid + 0]
 	return result ? result : "Error: " campaignid
 }
 
-; Get Champion Name from Champion ID
+; Get champion name from champion ID (e.g. 1 → "Bruenor"). Returns "UNKNOWN" if not found.
 ChampFromID(id) {
 	global _dict
 	result := _dict.champions[id + 0]
 	return result ? result : "UNKNOWN"
 }
 
-; Get Feat Name from Feat ID
+; Get feat description from feat ID (e.g. 3 → "Bruenor (Rally +40%)"). Returns "UNKNOWN" if not found.
 FeatFromID(id) {
 	global _dict
 	result := _dict.feats[id + 0]
 	return result ? result : "UNKNOWN"
 }
 
-; Get Chest Name from Chest ID
+; Get chest name from chest ID (e.g. 1 → "Silver Chest"). Returns "UNKNOWN" if not found.
 ChestFromID(id) {
 	global _dict
 	result := _dict.chests[id + 0]
 	return result ? result : "UNKNOWN"
 }
 
-; Get Kleho Campaign from Time Gate ID
+; Get Kleho campaign mapping from Time Gate ID. Returns empty string if not found.
 KlehoFromID(id) {
 	global _dict
 	result := _dict.kleho[id + 0]
 	return result ? result : ""
 }
 
-; Get Chest ID from Champion ID
+; Get gold chest ID from champion ID (e.g. 1 → "461" for Bruenor). Returns "UNKNOWN" if not found.
 ChestIDFromChampID(id) {
 	global _dict
 	result := _dict.chest_from_champ[id + 0]
@@ -152,6 +198,23 @@ ParsePlayServerName(oData) {
 }
 
 ;=============================================================================
+; CONTRACT METADATA (shared by inventory display, CSV export, and parsing)
+;=============================================================================
+; Each entry: {buffId, name, varName (global), unit, multiplier}
+; Used to avoid duplicating token/iLvl values across GUI, CSV, and parse code.
+
+global BountyContracts := [{buffId: 17, name: "Tiny", var: "CurrentTinyBounties", unit: "Tokens", mult: 12}
+	, {buffId: 18, name: "Small", var: "CurrentSmBounties", unit: "Tokens", mult: 72}
+	, {buffId: 19, name: "Medium", var: "CurrentMdBounties", unit: "Tokens", mult: 576}
+	, {buffId: 20, name: "Large", var: "CurrentLgBounties", unit: "Tokens", mult: 1152}]
+
+global BlacksmithContracts := [{buffId: 31, name: "Tiny", var: "CurrentTinyBS", unit: "iLvl", mult: 1}
+	, {buffId: 32, name: "Small", var: "CurrentSmBS", unit: "iLvls", mult: 2}
+	, {buffId: 33, name: "Medium", var: "CurrentMdBS", unit: "iLvls", mult: 6}
+	, {buffId: 34, name: "Large", var: "CurrentLgBS", unit: "iLvls", mult: 24}
+	, {buffId: 1797, name: "Huge", var: "CurrentHgBS", unit: "iLvls", mult: 120}]
+
+;=============================================================================
 ; SETTINGS DEFAULTS
 ;=============================================================================
 
@@ -194,6 +257,134 @@ ClearMockServerCall() {
 }
 
 ;=============================================================================
+; DPAPI CREDENTIAL ENCRYPTION
+;=============================================================================
+; Uses Windows Data Protection API (CryptProtectData/CryptUnprotectData)
+; to encrypt sensitive credentials at rest. Encrypted values are stored as
+; hex strings with a "DPAPI:" prefix in the settings JSON.
+;
+; Only the same Windows user on the same machine can decrypt the data.
+; If decryption fails (e.g. settings copied to another machine), the
+; credential is cleared and the user is prompted to re-enter it.
+;
+; Migration: plaintext values (no "DPAPI:" prefix) are used as-is on load,
+; then automatically encrypted on the next save. Existing users migrate
+; transparently with zero action required.
+;=============================================================================
+
+;-----------------------------------------------------------------------------
+; DPAPIEncrypt(plainText) - Encrypt a string using Windows DPAPI
+; Returns "DPAPI:" + hex-encoded ciphertext, or original value if empty/zero.
+; Returns "" on encryption failure.
+;-----------------------------------------------------------------------------
+DPAPIEncrypt(plainText) {
+	if (plainText = "" || plainText = "0" || plainText = 0)
+		return plainText
+
+	; Convert string to UTF-8 bytes
+	inputLen := StrPut(plainText, "UTF-8") - 1
+	VarSetCapacity(inputBuf, inputLen, 0)
+	StrPut(plainText, &inputBuf, inputLen, "UTF-8")
+
+	; DATA_BLOB structures (8 bytes on 32-bit: DWORD cbData + LPBYTE pbData)
+	VarSetCapacity(blobIn, 8, 0)
+	NumPut(inputLen, blobIn, 0, "UInt")
+	NumPut(&inputBuf, blobIn, 4, "Ptr")
+
+	VarSetCapacity(blobOut, 8, 0)
+
+	; CryptProtectData — encrypts data bound to current Windows user
+	result := DllCall("Crypt32\CryptProtectData"
+		, "Ptr", &blobIn       ; pDataIn
+		, "Ptr", 0             ; szDataDescr (not used)
+		, "Ptr", 0             ; pOptionalEntropy (none — user-context is sufficient)
+		, "Ptr", 0             ; pvReserved
+		, "Ptr", 0             ; pPromptStruct (no UI prompt)
+		, "UInt", 0            ; dwFlags (default — current user only)
+		, "Ptr", &blobOut      ; pDataOut
+		, "UInt")
+
+	if (!result)
+		return ""
+
+	; Read encrypted bytes and convert to hex string for JSON storage
+	outLen := NumGet(blobOut, 0, "UInt")
+	outPtr := NumGet(blobOut, 4, "Ptr")
+
+	hex := ""
+	Loop % outLen
+		hex .= Format("{:02X}", NumGet(outPtr + 0, A_Index - 1, "UChar"))
+
+	DllCall("LocalFree", "Ptr", outPtr)
+	return "DPAPI:" hex
+}
+
+;-----------------------------------------------------------------------------
+; DPAPIDecrypt(storedValue) - Decrypt a DPAPI-encrypted value back to plaintext
+; Accepts "DPAPI:HEXDATA" (encrypted) or raw plaintext (auto-migration).
+; Returns decrypted plaintext, or "" if decryption fails (wrong machine/user).
+; Empty/zero values pass through unchanged.
+;-----------------------------------------------------------------------------
+DPAPIDecrypt(storedValue) {
+	if (storedValue = "" || storedValue = "0" || storedValue = 0)
+		return storedValue
+
+	; No DPAPI prefix = plaintext from pre-encryption settings (migration case)
+	if (SubStr(storedValue, 1, 6) != "DPAPI:")
+		return storedValue
+
+	; Strip "DPAPI:" prefix and decode hex to bytes
+	hex := SubStr(storedValue, 7)
+	hexLen := StrLen(hex)
+	if (hexLen = 0 || Mod(hexLen, 2) != 0)
+		return ""
+
+	byteLen := hexLen // 2
+	VarSetCapacity(inputBuf, byteLen, 0)
+	Loop % byteLen {
+		pos := (A_Index - 1) * 2 + 1
+		NumPut("0x" SubStr(hex, pos, 2) + 0, inputBuf, A_Index - 1, "UChar")
+	}
+
+	; DATA_BLOB structures
+	VarSetCapacity(blobIn, 8, 0)
+	NumPut(byteLen, blobIn, 0, "UInt")
+	NumPut(&inputBuf, blobIn, 4, "Ptr")
+
+	VarSetCapacity(blobOut, 8, 0)
+
+	; CryptUnprotectData — decrypts data (must be same Windows user + machine)
+	result := DllCall("Crypt32\CryptUnprotectData"
+		, "Ptr", &blobIn       ; pDataIn
+		, "Ptr", 0             ; ppszDataDescr (not used)
+		, "Ptr", 0             ; pOptionalEntropy
+		, "Ptr", 0             ; pvReserved
+		, "Ptr", 0             ; pPromptStruct
+		, "UInt", 0            ; dwFlags
+		, "Ptr", &blobOut      ; pDataOut
+		, "UInt")
+
+	if (!result)
+		return ""
+
+	; Read decrypted bytes as UTF-8 string
+	outLen := NumGet(blobOut, 0, "UInt")
+	outPtr := NumGet(blobOut, 4, "Ptr")
+	plainText := StrGet(outPtr, outLen, "UTF-8")
+
+	DllCall("LocalFree", "Ptr", outPtr)
+	return plainText
+}
+
+;-----------------------------------------------------------------------------
+; IsEncryptedHash(value) - Check if a hash value is DPAPI-encrypted
+; Returns true if value starts with "DPAPI:", false otherwise.
+;-----------------------------------------------------------------------------
+IsEncryptedHash(value) {
+	return (SubStr(value, 1, 6) = "DPAPI:")
+}
+
+;=============================================================================
 ; LOG ROTATION
 ;=============================================================================
 
@@ -215,24 +406,59 @@ RotateLogFile(filepath, maxSizeKB := 512) {
 }
 
 ;=============================================================================
+; MAGNITUDE FORMATTING
+;=============================================================================
+
+;-----------------------------------------------------------------------------
+; FormatMagnitude(value, padWidth) - Format large numbers with K/M/B/t suffix
+; e.g. 1500 → "1.50K", 2500000 → "2.50M"
+; padWidth: left-pad with spaces to this width (0 = no padding)
+; Returns formatted string. Returns "0" if value is 0 or empty.
+;-----------------------------------------------------------------------------
+FormatMagnitude(value, padWidth := 0) {
+	static magSuffixes := ["K","M","B","t"]
+	if (!value || value = "" || value = 0)
+		return "0"
+	magnitude := Floor(log(value) / 3)
+	formatted := Format("{:.2f}", value / (1000 ** magnitude)) magSuffixes[magnitude]
+	if (padWidth > 0)
+		formatted := SubStr("          " formatted, -(padWidth - 1))
+	return formatted
+}
+
+;=============================================================================
+; ATOMIC JSON FILE WRITE
+;=============================================================================
+
+;-----------------------------------------------------------------------------
+; WriteJsonAtomic(filePath, obj) - Write object as JSON via temp file
+; Writes to .tmp first, validates parse-back, then replaces target file.
+; Returns true on success, false on any failure (file left unchanged).
+;-----------------------------------------------------------------------------
+WriteJsonAtomic(filePath, obj) {
+	jsonText := JSON.stringify(obj)
+	tempFile := filePath ".tmp"
+	FileDelete, %tempFile%
+	FileAppend, %jsonText%, %tempFile%
+	if ErrorLevel {
+		FileDelete, %tempFile%
+		return false
+	}
+	FileDelete, %filePath%
+	FileMove, %tempFile%, %filePath%
+	return true
+}
+
+;=============================================================================
 ; SETTINGS PERSISTENCE
 ;=============================================================================
 
 ;-----------------------------------------------------------------------------
-; PersistSettings() - Write CurrentSettings to disk as JSON
+; PersistSettings() - Write CurrentSettings to disk as JSON (atomic)
 ;-----------------------------------------------------------------------------
 PersistSettings() {
 	global CurrentSettings, SettingsFile
-	newsettings := JSON.stringify(CurrentSettings)
-	tempFile := SettingsFile ".tmp"
-	FileDelete, %tempFile%
-	FileAppend, %newsettings%, %tempFile%
-	if ErrorLevel {
-		FileDelete, %tempFile%
-		return
-	}
-	FileDelete, %SettingsFile%
-	FileMove, %tempFile%, %SettingsFile%
+	WriteJsonAtomic(SettingsFile, CurrentSettings)
 }
 
 ;=============================================================================
@@ -265,6 +491,44 @@ LV_AutoFill(hwnd) {
 DefaultToZero(ByRef val) {
 	if (val = "")
 		val := 0
+}
+
+;-----------------------------------------------------------------------------
+; SafeGet(obj, keys*) - Safely navigate nested object paths without crashing
+; Traverses each key in order. Returns "" if any key is missing or the path
+; hits a non-object. Use instead of direct dot-chain on untrusted API data.
+; Example: SafeGet(details, "stats", "black_viper_total_gems")
+;   → details.stats.black_viper_total_gems or "" if path is broken
+;-----------------------------------------------------------------------------
+SafeGet(obj, keys*) {
+	current := obj
+	for _, key in keys {
+		if (!IsObject(current) || !current.HasKey(key))
+			return ""
+		current := current[key]
+	}
+	return current
+}
+
+;-----------------------------------------------------------------------------
+; RequireKey(obj, keys*) - Fail-fast check for required nested object paths
+; Same traversal as SafeGet, but logs a warning and returns "" with a LogFile
+; call if the path is broken. Use for API fields that MUST exist.
+; Example: RequireKey(details, "stats", "total_hero_levels")
+;-----------------------------------------------------------------------------
+RequireKey(obj, keys*) {
+	current := obj
+	path := ""
+	for _, key in keys {
+		path .= (path ? "." : "") key
+		if (!IsObject(current) || !current.HasKey(key)) {
+			if (!TestMode)
+				LogFile("WARNING: Required API key missing: " path)
+			return ""
+		}
+		current := current[key]
+	}
+	return current
 }
 
 ;=============================================================================
@@ -430,42 +694,48 @@ ParseInventoryDataFromDetails(details) {
 	result.availableTGs := "= " Floor(result.tgps / 6) " Time Gates"
 	result.availableChests := "= " Floor(result.gems / 50) " Silver Chests = " Floor(result.gems / 500) " Gold Chests"
 
-	tinyBounties := "", smBounties := "", mdBounties := "", lgBounties := ""
-	tinyBS := "", smBS := "", mdBS := "", lgBS := "", hgBS := ""
+	; Extract bounty and blacksmith contract counts from buffs using shared metadata
+	for _, bc in BountyContracts
+		bc._val := ""
+	for _, bs in BlacksmithContracts
+		bs._val := ""
+
 	for k, v in details.buffs {
-		switch v.buff_id {
-			case 17:   tinyBounties := v.inventory_amount
-			case 18:   smBounties   := v.inventory_amount
-			case 19:   mdBounties   := v.inventory_amount
-			case 20:   lgBounties   := v.inventory_amount
-			case 31:   tinyBS       := v.inventory_amount
-			case 32:   smBS         := v.inventory_amount
-			case 33:   mdBS         := v.inventory_amount
-			case 34:   lgBS         := v.inventory_amount
-			case 1797: hgBS         := v.inventory_amount
+		for _, bc in BountyContracts {
+			if (v.buff_id = bc.buffId)
+				bc._val := v.inventory_amount
+		}
+		for _, bs in BlacksmithContracts {
+			if (v.buff_id = bs.buffId)
+				bs._val := v.inventory_amount
 		}
 	}
-	DefaultToZero(tinyBounties)
-	DefaultToZero(smBounties)
-	DefaultToZero(mdBounties)
-	DefaultToZero(lgBounties)
-	DefaultToZero(tinyBS)
-	DefaultToZero(smBS)
-	DefaultToZero(mdBS)
-	DefaultToZero(lgBS)
-	DefaultToZero(hgBS)
 
-	result.tinyBounties := tinyBounties
-	result.smBounties   := smBounties
-	result.mdBounties   := mdBounties
-	result.lgBounties   := lgBounties
-	result.tinyBS       := tinyBS
-	result.smBS         := smBS
-	result.mdBS         := mdBS
-	result.lgBS         := lgBS
-	result.hgBS         := hgBS
+	tokencount := 0
+	for _, bc in BountyContracts {
+		DefaultToZero(bc._val)
+		result[bc.var] := bc._val
+		tokencount += bc._val * bc.mult
+	}
 
-	tokencount := (tinyBounties*12) + (smBounties*72) + (mdBounties*576) + (lgBounties*1152)
+	bsLevels := 0
+	for _, bs in BlacksmithContracts {
+		DefaultToZero(bs._val)
+		result[bs.var] := bs._val
+		bsLevels += bs._val * bs.mult
+	}
+
+	; Map short variable names for backward compatibility
+	result.tinyBounties := result["CurrentTinyBounties"]
+	result.smBounties   := result["CurrentSmBounties"]
+	result.mdBounties   := result["CurrentMdBounties"]
+	result.lgBounties   := result["CurrentLgBounties"]
+	result.tinyBS       := result["CurrentTinyBS"]
+	result.smBS         := result["CurrentSmBS"]
+	result.mdBS         := result["CurrentMdBS"]
+	result.lgBS         := result["CurrentLgBS"]
+	result.hgBS         := result["CurrentHgBS"]
+
 	if (details.event_details[1].user_data.event_tokens) {
 		tokentotal := details.event_details[1].user_data.event_tokens
 		result.availableTokens := "= " tokencount " Tokens   (" Round(tokencount/2500, 2) " Free Plays)"
@@ -476,7 +746,7 @@ ParseInventoryDataFromDetails(details) {
 		result.currentTokens   := "(" Round(tokencount/2500, 2) " Free Plays)"
 		result.availableFPs    := ""
 	}
-	result.availableBSLvs := "= " tinyBS+(smBS*2)+(mdBS*6)+(lgBS*24)+(hgBS*120) " Item Levels"
+	result.availableBSLvs := "= " bsLevels " Item Levels"
 	return result
 }
 
@@ -486,7 +756,6 @@ ParseInventoryDataFromDetails(details) {
 ; Returns: object with totalChamps count and champDetails formatted string
 ;-----------------------------------------------------------------------------
 ParseChampDataFromDetails(details) {
-	MagList := ["K","M","B","t"]
 	totalChamps := 0
 	for k, v in details.heroes {
 		if (v.owned == 1) {
@@ -495,9 +764,7 @@ ParseChampDataFromDetails(details) {
 	}
 	champDetails := ""
 	if (details.stats.black_viper_total_gems) {
-		ViperGemsValue := details.stats.black_viper_total_gems
-		ViperGems := SubStr( "          " Format("{:.2f}",ViperGemsValue / (1000 ** Floor(log(ViperGemsValue)/3))) MagList[Floor(log(ViperGemsValue)/3)], -9)
-		champDetails := champDetails "Black Viper Red Gems: " ViperGems "`n`n"
+		champDetails := champDetails "Black Viper Red Gems: " FormatMagnitude(details.stats.black_viper_total_gems, 10) "`n`n"
 	}
 	if (details.stats.total_paid_up_front_gold) {
 		MorgaenGold := SubStr(details.stats.total_paid_up_front_gold, 1, 4)
@@ -506,25 +773,17 @@ ParseChampDataFromDetails(details) {
 		champDetails := champDetails "M" Chr(244) "rg" Chr(230) "n Gold Collected:   " MorgaenGold "`n`n"
 	}
 	if (details.stats.torogar_lifetime_zealot_stacks) {
-		TorogarStacksValue := details.stats.torogar_lifetime_zealot_stacks
-		TorogarStacks := SubStr( "          " Format("{:.2f}",TorogarStacksValue / (1000 ** Floor(log(TorogarStacksValue)/3))) MagList[Floor(log(TorogarStacksValue)/3)], -9)
-		champDetails := champDetails "Torogar Zealot Stacks: " TorogarStacks "`n`n"
+		champDetails := champDetails "Torogar Zealot Stacks: " FormatMagnitude(details.stats.torogar_lifetime_zealot_stacks, 10) "`n`n"
 	}
 	if (details.stats.zorbu_lifelong_hits_humanoid || details.stats.zorbu_lifelong_hits_beast || details.stats.zorbu_lifelong_hits_undead || details.stats.zorbu_lifelong_hits_drow) {
-		ZorbuHitsHumanoidValue := details.stats.zorbu_lifelong_hits_humanoid
-		ZorbuHitsHumanoid := SubStr( "          " Format("{:.2f}",ZorbuHitsHumanoidValue / (1000 ** Floor(log(ZorbuHitsHumanoidValue)/3))) MagList[Floor(log(ZorbuHitsHumanoidValue)/3)], -9)
-		ZorbuHitsBeastValue := details.stats.zorbu_lifelong_hits_beast
-		ZorbuHitsBeast := SubStr( "          " Format("{:.2f}",ZorbuHitsBeastValue / (1000 ** Floor(log(ZorbuHitsBeastValue)/3))) MagList[Floor(log(ZorbuHitsBeastValue)/3)], -9)
-		ZorbuHitsUndeadValue := details.stats.zorbu_lifelong_hits_undead
-		ZorbuHitsUndead := SubStr( "          " Format("{:.2f}",ZorbuHitsUndeadValue / (1000 ** Floor(log(ZorbuHitsUndeadValue)/3))) MagList[Floor(log(ZorbuHitsUndeadValue)/3)], -9)
-		ZorbuHitsDrowValue := details.stats.zorbu_lifelong_hits_drow
-		ZorbuHitsDrow := SubStr( "          " Format("{:.2f}",ZorbuHitsDrowValue / (1000 ** Floor(log(ZorbuHitsDrowValue)/3))) MagList[Floor(log(ZorbuHitsDrowValue)/3)], -9)
-		champDetails := champDetails "Zorbu Kills:`n - Humanoid: " ZorbuHitsHumanoid "`n - Beast:       " ZorbuHitsBeast "`n - Undead:    " ZorbuHitsUndead "`n - Drow:         " ZorbuHitsDrow "`n`n"
+		champDetails := champDetails "Zorbu Kills:`n"
+		champDetails := champDetails " - Humanoid: " FormatMagnitude(details.stats.zorbu_lifelong_hits_humanoid, 10) "`n"
+		champDetails := champDetails " - Beast:       " FormatMagnitude(details.stats.zorbu_lifelong_hits_beast, 10) "`n"
+		champDetails := champDetails " - Undead:    " FormatMagnitude(details.stats.zorbu_lifelong_hits_undead, 10) "`n"
+		champDetails := champDetails " - Drow:         " FormatMagnitude(details.stats.zorbu_lifelong_hits_drow, 10) "`n`n"
 	}
 	if (details.stats.dhani_monsters_painted) {
-		DhaniPaintValue := details.stats.dhani_monsters_painted
-		DhaniPaint := SubStr( "          " Format("{:.2f}",DhaniPaintValue / (1000 ** Floor(log(DhaniPaintValue)/3))) MagList[Floor(log(DhaniPaintValue)/3)], -9)
-		champDetails := champDetails "D'hani Paints: " DhaniPaint "`n`n"
+		champDetails := champDetails "D'hani Paints: " FormatMagnitude(details.stats.dhani_monsters_painted, 10) "`n`n"
 	}
 	return {totalChamps: totalChamps, champDetails: champDetails}
 }
@@ -596,7 +855,6 @@ ParseLootDataFromDetails(details, activeInstance) {
 ParseAdventureDataFromDetails(details, activeInstance) {
 	InstanceList := [{},{},{},{}]
 	CoreList := ["Modest","Strong","Fast","Magic"]
-	MagList := ["K","M","B","t"]
 
 	for k, v in details.game_instances {
 		InstanceList[v.game_instance_id].current_adventure_id := v.current_adventure_id
@@ -617,7 +875,7 @@ ParseAdventureDataFromDetails(details, activeInstance) {
 		core_tolevel := v.exp_total-(2000*(core_level-1)**2+6000*(core_level-1))
 		core_levelxp := 4000*(core_level+1)
 		core_pcttolevel := Floor((core_tolevel / core_levelxp) * 100)
-		core_humxp := Format("{:.2f}",v.exp_total / (1000 ** Floor(log(v.exp_total)/3))) MagList[Floor(log(v.exp_total)/3)]
+		core_humxp := FormatMagnitude(v.exp_total)
 		if (core_level > 15)
 			core_level := core_level " - Max 15"
 		InstanceList[v.instance_id].core_xp := core_humxp " (Lvl " core_level ")"
@@ -626,48 +884,27 @@ ParseAdventureDataFromDetails(details, activeInstance) {
 
 	champsActiveCount := 0
 	bginstance := 0
+	bgKeys := ["bg1", "bg2", "bg3"]
 	result := {fg: {}, bg1: {}, bg2: {}, bg3: {}, champsActiveCount: 0}
 
 	for k, v in InstanceList {
+		; Assign instance fields to the appropriate slot (fg or bg1/bg2/bg3)
 		if (k == activeInstance) {
-			result.fg.adventure    := v.current_adventure_id == -1 ? "Map" : v.current_adventure_id
-			result.fg.area         := v.current_area
-			result.fg.patron       := v.Patron
-			result.fg.coreName     := v.core_name
-			result.fg.coreXP       := v.core_xp
-			result.fg.coreProgress := v.core_progress
-			result.fg.champCount   := v.ChampionsCount
-			champsActiveCount += v.ChampionsCount
-		} else if (bginstance == 0) {
-			result.bg1.adventure    := v.current_adventure_id == -1 ? "Map" : v.current_adventure_id
-			result.bg1.area         := v.current_area
-			result.bg1.patron       := v.Patron
-			result.bg1.coreName     := v.core_name
-			result.bg1.coreXP       := v.core_xp
-			result.bg1.coreProgress := v.core_progress
-			result.bg1.champCount   := v.ChampionsCount
-			champsActiveCount += v.ChampionsCount
+			slotKey := "fg"
+		} else if (bginstance < 3) {
 			bginstance += 1
-		} else if (bginstance == 1) {
-			result.bg2.adventure    := v.current_adventure_id == -1 ? "Map" : v.current_adventure_id
-			result.bg2.area         := v.current_area
-			result.bg2.patron       := v.Patron
-			result.bg2.coreName     := v.core_name
-			result.bg2.coreXP       := v.core_xp
-			result.bg2.coreProgress := v.core_progress
-			result.bg2.champCount   := v.ChampionsCount
-			champsActiveCount += v.ChampionsCount
-			bginstance += 1
-		} else if (bginstance == 2) {
-			result.bg3.adventure    := v.current_adventure_id == -1 ? "Map" : v.current_adventure_id
-			result.bg3.area         := v.current_area
-			result.bg3.patron       := v.Patron
-			result.bg3.coreName     := v.core_name
-			result.bg3.coreXP       := v.core_xp
-			result.bg3.coreProgress := v.core_progress
-			result.bg3.champCount   := v.ChampionsCount
-			champsActiveCount += v.ChampionsCount
+			slotKey := bgKeys[bginstance]
+		} else {
+			continue
 		}
+		result[slotKey].adventure    := v.current_adventure_id == -1 ? "Map" : v.current_adventure_id
+		result[slotKey].area         := v.current_area
+		result[slotKey].patron       := v.Patron
+		result[slotKey].coreName     := v.core_name
+		result[slotKey].coreXP       := v.core_xp
+		result[slotKey].coreProgress := v.core_progress
+		result[slotKey].champCount   := v.ChampionsCount
+		champsActiveCount += v.ChampionsCount
 	}
 	result.champsActiveCount := champsActiveCount
 	return result
@@ -691,17 +928,11 @@ ParseTimestampsFromData(currentTime, stats) {
 ; details: UserDetails.details object
 ; currentTGPs, currentSilvers, currentGems, currentLgBounties: inventory counts
 ; totalChamps: total owned champion count
-; Returns: object keyed by patron name (Mirt/Vajra/Strahd/Zariel/Elminster)
+; Returns: object keyed by patron short name (Mirt/Vajra/Strahd/Zariel/Elminster)
 ;   each with: variants, fp, challenges, requires, costs, completed, total
 ;-----------------------------------------------------------------------------
 ParsePatronDataFromDetails(details, currentTGPs, currentSilvers, currentGems, currentLgBounties, totalChamps) {
-	MagList := ["K","M","B","t"]
-	pNameMap := []
-	pNameMap[1] := "Mirt"
-	pNameMap[2] := "Vajra"
-	pNameMap[3] := "Strahd"
-	pNameMap[4] := "Zariel"
-	pNameMap[5] := "Elminster"
+	pNameMap := PatronShortNames
 
 	result := {}
 	for k, v in details.patrons {
@@ -713,63 +944,45 @@ ParsePatronDataFromDetails(details, currentTGPs, currentSilvers, currentGems, cu
 			pData.variants   := "Locked"
 			pData.fp         := "-"
 			pData.challenges := "-"
-			switch v.patron_id {
-				case 1: { ; Mirt
-					pData.requires := details.stats.total_hero_levels "/2000 iLvls, " totalChamps "/20 Champs"
-					pData.costs    := currentTGPs "/3 TGPs, " currentSilvers "/10 Silver"
-					if ((details.stats.total_hero_levels > 1999) && (totalChamps > 19))
-						pData.requires := pData.requires " ✓"
-					if ((currentTGPs > 2) && (currentSilvers > 9))
-						pData.costs := pData.costs " ✓"
+			; Table-driven unlock requirements per patron
+			; Each entry: {statKey, statThreshold, champThreshold, requiresLabel, costs: [{varExpr, threshold, label}]}
+			unlockReqs := {}
+			unlockReqs[1] := {statKey: "total_hero_levels", statThresh: 2000, champThresh: 20
+				, reqLabel: " iLvls", costs: [{val: currentTGPs, thresh: 3, label: "TGPs"}, {val: currentSilvers, thresh: 10, label: "Silver"}]}
+			unlockReqs[2] := {statKey: "completed_adventures_variants_and_patron_variants_c15", statThresh: 15, champThresh: 30
+				, reqLabel: " WD:DH Advs", costs: [{val: currentGems, thresh: 2500, label: "Gems"}, {val: currentSilvers, thresh: 15, label: "Silver"}]}
+			unlockReqs[3] := {statKey: "highest_area_completed_ever_c413", statThresh: 250, champThresh: 40
+				, reqLabel: " Adv 413", costs: [{val: currentLgBounties, thresh: 10, label: "Lg Bounty"}, {val: currentSilvers, thresh: 20, label: "Silver"}]}
+			unlockReqs[4] := {statKey: "highest_area_completed_ever_c873", statThresh: 575, champThresh: 50
+				, reqLabel: " Adv 873", costs: [{val: currentSilvers, thresh: 50, label: "Silver"}]}
+			unlockReqs[5] := {statKey: "highest_area_completed_ever_c873", statThresh: 575, champThresh: 50
+				, reqLabel: " Adv 873", costs: [{val: currentSilvers, thresh: 50, label: "Silver"}]}
+
+			req := unlockReqs[v.patron_id]
+			if IsObject(req) {
+				; Build requires string from stat + champion thresholds
+				statVal := details.stats[req.statKey]
+				if (statVal = "")
+					statVal := "0"
+				DefaultToZero(currentSilvers)
+				DefaultToZero(currentLgBounties)
+				pData.requires := statVal "/" req.statThresh req.reqLabel ", " totalChamps "/" req.champThresh " Champs"
+				if ((statVal + 0 >= req.statThresh) && (totalChamps + 0 >= req.champThresh))
+					pData.requires := pData.requires " ✓"
+
+				; Build costs string from cost items
+				costParts := ""
+				allMet := true
+				for _, c in req.costs {
+					if (costParts != "")
+						costParts .= ", "
+					costParts .= c.val "/" c.thresh " " c.label
+					if (c.val + 0 < c.thresh)
+						allMet := false
 				}
-				case 2: { ; Vajra
-					vajraAdv := details.stats.completed_adventures_variants_and_patron_variants_c15
-					if (vajraAdv = "")
-						vajraAdv := "0"
-					pData.requires := vajraAdv "/15 WD:DH Advs, " totalChamps "/30 Champs"
-					pData.costs    := currentGems "/2500 Gems, " currentSilvers "/15 Silver"
-					if ((vajraAdv > 14) && (totalChamps > 29))
-						pData.requires := pData.requires " ✓"
-					if ((currentGems > 2499) && (currentSilvers > 14))
-						pData.costs := pData.costs " ✓"
-				}
-				case 3: { ; Strahd
-					strahdAdv := details.stats.highest_area_completed_ever_c413
-					if (strahdAdv = "")
-						strahdAdv := "0"
-					if (currentSilvers = "")
-						currentSilvers := "0"
-					if (currentLgBounties = "")
-						currentLgBounties := "0"
-					pData.requires := strahdAdv "/250 Adv 413, " totalChamps "/40 Champs"
-					pData.costs    := currentLgBounties "/10 Lg Bounty, " currentSilvers "/20 Silver"
-					if ((strahdAdv > 249) && (totalChamps > 39))
-						pData.requires := pData.requires " ✓"
-					if ((currentLgBounties > 9) && (currentSilvers > 19))
-						pData.costs := pData.costs " ✓"
-				}
-				case 4: { ; Zariel
-					zarielAdv := details.stats.highest_area_completed_ever_c873
-					if (zarielAdv = "")
-						zarielAdv := "0"
-					pData.requires := zarielAdv "/575 Adv 873, " totalChamps "/50 Champs"
-					pData.costs    := currentSilvers "/50 Silver"
-					if ((zarielAdv > 574) && (totalChamps > 49))
-						pData.requires := pData.requires " ✓"
-					if (currentSilvers > 49)
-						pData.costs := pData.costs " ✓"
-				}
-				case 5: { ; Elminster
-					elminsterAdv := details.stats.highest_area_completed_ever_c873
-					if (elminsterAdv = "")
-						elminsterAdv := "0"
-					pData.requires := elminsterAdv "/575 Adv 873, " totalChamps "/50 Champs"
-					pData.costs    := currentSilvers "/50 Silver"
-					if ((elminsterAdv > 574) && (totalChamps > 49))
-						pData.requires := pData.requires " ✓"
-					if (currentSilvers > 49)
-						pData.costs := pData.costs " ✓"
-				}
+				pData.costs := costParts
+				if (allMet)
+					pData.costs := pData.costs " ✓"
 			}
 		} else {
 			for kk, vv in v.progress_bars {
@@ -785,12 +998,12 @@ ParsePatronDataFromDetails(details, currentTGPs, currentSilvers, currentGems, cu
 			influenceAmt := v.influence_current_amount
 			currencyAmt  := v.currency_current_amount
 			if (influenceAmt > 0) {
-				pData.requires := "Influence: " Format("{:.2f}", influenceAmt / (1000 ** Floor(log(influenceAmt)/3))) MagList[Floor(log(influenceAmt)/3)]
+				pData.requires := "Influence: " FormatMagnitude(influenceAmt)
 			} else {
 				pData.requires := "Influence: 0"
 			}
 			if (currencyAmt > 0) {
-				pData.costs := "Coins: " Format("{:.2f}", currencyAmt / (1000 ** Floor(log(currencyAmt)/3))) MagList[Floor(log(currencyAmt)/3)]
+				pData.costs := "Coins: " FormatMagnitude(currencyAmt)
 			} else {
 				pData.costs := "Coins: 0"
 			}
@@ -944,4 +1157,109 @@ ApplySyncToDict(dict, champDiff, chestDiff, champMaxId, chestMaxId) {
 		dict.max_chest_id := "" chestMaxId
 
 	return dict
+}
+
+;-----------------------------------------------------------------------------
+; ExtractFeatDefinitionMap(featArray, apiChampMap, localChampMap)
+; Feats use "ChampName (FeatName)" format. API returns hero_id + name.
+; Uses apiChampMap first (from same API call), falls back to localChampMap.
+;-----------------------------------------------------------------------------
+ExtractFeatDefinitionMap(featArray, apiChampMap, localChampMap) {
+	result := {}
+	skipped := 0
+	maxId := 0
+
+	for _, def in featArray {
+		if (!IsObject(def)) {
+			skipped += 1
+			continue
+		}
+		if (!def.HasKey("id") || !def.HasKey("name")) {
+			skipped += 1
+			continue
+		}
+
+		idNum := def.id + 0
+		featName := Trim(def.name)
+
+		if (idNum <= 0 || featName = "") {
+			skipped += 1
+			continue
+		}
+
+		; Build display name: "ChampName (FeatName)"
+		heroId := def.HasKey("hero_id") ? (def.hero_id + 0) : 0
+		champName := ""
+		if (heroId > 0) {
+			champName := apiChampMap[heroId]
+			if (champName = "")
+				champName := localChampMap[heroId]
+		}
+
+		if (champName != "")
+			displayName := champName " (" featName ")"
+		else
+			displayName := featName
+
+		result[idNum] := displayName
+		if (idNum > maxId)
+			maxId := idNum
+	}
+
+	return {"items": result, "skipped": skipped, "maxId": maxId}
+}
+
+;-----------------------------------------------------------------------------
+; BuildSyncPreviewTextMulti(sectionDiffs, totalSkipped)
+; sectionDiffs is array of {label: "CHAMPIONS", diff: diffObj}
+;-----------------------------------------------------------------------------
+BuildSyncPreviewTextMulti(sectionDiffs, totalSkipped := 0) {
+	text := "=== Dictionary Sync Preview ===`n"
+
+	for _, section in sectionDiffs {
+		d := section.diff
+		if (d.newCount = 0 && d.changedCount = 0)
+			continue
+
+		text .= "`n" section.label "`n"
+		text .= "  New: " d.newCount "  |  Renamed: " d.changedCount "`n"
+
+		if (d.newCount > 0) {
+			text .= "`n"
+			for _, entry in d.new
+				text .= "  + " entry.id ": " entry.name "`n"
+		}
+		if (d.changedCount > 0) {
+			text .= "`n"
+			for _, entry in d.changed
+				text .= "  ~ " entry.id ": " entry.old_name " -> " entry.new_name "`n"
+		}
+	}
+
+	; Summary of unchanged sections
+	unchangedList := ""
+	for _, section in sectionDiffs {
+		d := section.diff
+		if (d.newCount = 0 && d.changedCount = 0)
+			unchangedList .= (unchangedList ? ", " : "") section.label
+	}
+	if (unchangedList != "")
+		text .= "`nNo changes: " unchangedList
+
+	if (totalSkipped > 0)
+		text .= "`nSkipped malformed API entries: " totalSkipped
+
+	return text
+}
+
+;-----------------------------------------------------------------------------
+; ApplySyncSectionToDict(dict, sectionKey, diff)
+; Generic merge: applies new + changed entries to any dict section
+;-----------------------------------------------------------------------------
+ApplySyncSectionToDict(dict, sectionKey, diff) {
+	for _, entry in diff.new
+		dict[sectionKey][entry.id + 0] := entry.name
+
+	for _, entry in diff.changed
+		dict[sectionKey][entry.id + 0] := entry.new_name
 }

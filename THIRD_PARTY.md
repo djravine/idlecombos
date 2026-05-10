@@ -1,6 +1,6 @@
 # Third-Party Dependencies
 
-> Vendored assets shipped with IdleCombos v3.79
+> Vendored assets shipped with IdleCombos v3.80
 
 All dependencies are vendored (copied into the repository). There is no package manager.
 

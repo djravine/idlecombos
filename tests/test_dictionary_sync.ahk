@@ -246,4 +246,102 @@ class DictionarySyncTests
 		Yunit.Assert(result.patrons[1] = "Mirt", "Patrons should be unchanged")
 		Yunit.Assert(result.campaigns[1] = "Grand Tour", "Campaigns should be unchanged")
 	}
+
+	;=========================================================================
+	; ExtractFeatDefinitionMap tests
+	;=========================================================================
+
+	test_FeatExtract_WithHeroId()
+	{
+		feats := [{"id": 3, "name": "Rally +40%", "hero_id": 1}]
+		champMap := {1: "Bruenor"}
+		result := ExtractFeatDefinitionMap(feats, champMap, {})
+		Yunit.Assert(result.items[3] = "Bruenor (Rally +40%)", "Should format as 'ChampName (FeatName)', got: " result.items[3])
+	}
+
+	test_FeatExtract_FallbackToLocalChamps()
+	{
+		feats := [{"id": 9, "name": "Global DPS +25%", "hero_id": 2}]
+		apiChamps := {}
+		localChamps := {2: "Celeste"}
+		result := ExtractFeatDefinitionMap(feats, apiChamps, localChamps)
+		Yunit.Assert(result.items[9] = "Celeste (Global DPS +25%)", "Should use local champion name as fallback")
+	}
+
+	test_FeatExtract_NoHeroId()
+	{
+		feats := [{"id": 100, "name": "Standalone Feat"}]
+		result := ExtractFeatDefinitionMap(feats, {}, {})
+		Yunit.Assert(result.items[100] = "Standalone Feat", "Should use feat name only without hero_id")
+	}
+
+	test_FeatExtract_UnknownHeroId()
+	{
+		feats := [{"id": 50, "name": "Mystery Feat", "hero_id": 999}]
+		result := ExtractFeatDefinitionMap(feats, {}, {})
+		Yunit.Assert(result.items[50] = "Mystery Feat", "Should use feat name only when hero not found")
+	}
+
+	test_FeatExtract_SkipsMalformed()
+	{
+		feats := [{"id": 0, "name": "Bad"}, {"name": "NoId"}, {"id": 5, "name": "Good", "hero_id": 1}]
+		champMap := {1: "Bruenor"}
+		result := ExtractFeatDefinitionMap(feats, champMap, {})
+		Yunit.Assert(result.skipped = 2, "Should skip 2 malformed entries")
+		Yunit.Assert(result.items[5] = "Bruenor (Good)", "Valid entry should be extracted")
+	}
+
+	;=========================================================================
+	; BuildSyncPreviewTextMulti tests
+	;=========================================================================
+
+	test_PreviewMulti_ShowsOnlyChangedSections()
+	{
+		diffs := []
+		diffs.Push({"label": "CHAMPIONS", "diff": {"new": [{"id": 155, "name": "NewHero"}], "changed": [], "newCount": 1, "changedCount": 0}})
+		diffs.Push({"label": "CHESTS", "diff": {"new": [], "changed": [], "newCount": 0, "changedCount": 0}})
+		diffs.Push({"label": "CAMPAIGNS", "diff": {"new": [], "changed": [], "newCount": 0, "changedCount": 0}})
+		text := BuildSyncPreviewTextMulti(diffs)
+		Yunit.Assert(InStr(text, "CHAMPIONS"), "Should show CHAMPIONS section")
+		Yunit.Assert(!InStr(text, "`nCHESTS`n"), "Should not show CHESTS header as separate section (no changes)")
+		Yunit.Assert(InStr(text, "No changes:"), "Should list unchanged sections")
+	}
+
+	test_PreviewMulti_ShowsSkipped()
+	{
+		diffs := []
+		diffs.Push({"label": "CHAMPS", "diff": {"new": [], "changed": [], "newCount": 0, "changedCount": 0}})
+		text := BuildSyncPreviewTextMulti(diffs, 7)
+		Yunit.Assert(InStr(text, "Skipped malformed API entries: 7"), "Should show skipped count")
+	}
+
+	;=========================================================================
+	; ApplySyncSectionToDict tests
+	;=========================================================================
+
+	test_ApplySection_AddsNewEntries()
+	{
+		dict := {"campaigns": {1: "Grand Tour"}}
+		diff := {"new": [{"id": 30, "name": "New Campaign"}], "changed": []}
+		ApplySyncSectionToDict(dict, "campaigns", diff)
+		Yunit.Assert(dict.campaigns[30] = "New Campaign", "New campaign should be added")
+		Yunit.Assert(dict.campaigns[1] = "Grand Tour", "Existing campaign should be preserved")
+	}
+
+	test_ApplySection_RenamesEntries()
+	{
+		dict := {"patrons": {1: "OldMirt"}}
+		diff := {"new": [], "changed": [{"id": 1, "new_name": "Mirt the Moneylender"}]}
+		ApplySyncSectionToDict(dict, "patrons", diff)
+		Yunit.Assert(dict.patrons[1] = "Mirt the Moneylender", "Patron should be renamed")
+	}
+
+	test_ApplySection_WorksOnFeats()
+	{
+		dict := {"feats": {3: "Bruenor (Rally +40%)"}}
+		diff := {"new": [{"id": 999, "name": "NewChamp (New Feat)"}], "changed": []}
+		ApplySyncSectionToDict(dict, "feats", diff)
+		Yunit.Assert(dict.feats[999] = "NewChamp (New Feat)", "New feat should be added")
+		Yunit.Assert(dict.feats[3] = "Bruenor (Rally +40%)", "Existing feat should be preserved")
+	}
 }

@@ -23,7 +23,7 @@ global CurrentSettings := []
 global SettingsFile := A_Temp "\idlecombos_test_settings.json"
 
 ;Run all test suites (headless - stdout + junit.xml output)
-Yunit.Use(YunitStdout, YunitJUnit).Test(PatronTests, CampaignTests, ChampionTests, ChestTests, CodeParsingTests, SettingsTests, ServerTests, MockServerTests, WRLParsingTests, TimestampTests, DefaultToZeroTests, BrivCalcTests, ParsingTests, DictionarySyncTests)
+Yunit.Use(YunitStdout, YunitJUnit).Test(PatronTests, CampaignTests, ChampionTests, ChestTests, CodeParsingTests, SettingsTests, ServerTests, MockServerTests, WRLParsingTests, TimestampTests, DefaultToZeroTests, BrivCalcTests, ParsingTests, DictionarySyncTests, DPAPITests)
 ExitApp
 
 ;=============================================================================
@@ -38,3 +38,4 @@ ExitApp
 #Include %A_ScriptDir%\test_extracted.ahk
 #Include %A_ScriptDir%\test_parsing.ahk
 #Include %A_ScriptDir%\test_dictionary_sync.ahk
+#Include %A_ScriptDir%\test_dpapi.ahk
