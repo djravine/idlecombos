@@ -99,10 +99,8 @@ global Background3Adventure := ""
 global Background3Area := ""
 global Background3Patron := ""
 global Background3Champions := ""
-global AchievementInfo := ""
 global AchievementGearChamp := ""
 global AchievementNeeds := ""
-global BlessingInfo := ""
 global SummaryDataLoaded := false
 global ChampDetails := ""
 global TotalChamps := 0
@@ -219,6 +217,7 @@ global WebToolUtilitiesFormation := WebToolUtilities "/formation"
 ;GUI globals
 global oMyGUI := ""
 global OutputText := ""
+global hEditLog := 0
 global OutputStatus := "Welcome to IdleCombos v" VersionNumber
 global CurrentTime := ""
 global IsBusy := false
@@ -273,14 +272,14 @@ WM_MOUSEMOVE(wParam, lParam, msg, hwnd) {
 	if (DisableTooltips == 0) {
 		; MouseGetPos, , , , ctrlHWND, 2
 		; ToolTip, % Format("{:d}",ctrlHWND) " - " hwnd
-		global hbreload, hbexit, hbtoggle, hbrefresh, hbsave, hedit1, hddl1, hddl2, hcb01, hcb02, hcb03, hcb04, hcb05, hcb06, hcb07, hcb08, hcb09, hcb10, hcb11, hcb12, hcb13, heditAutoRefresh
+		global hbreload, hbexit, hbtoggle, hbrefresh, hbsave, hedit1, hddl1, hddl2, hcb01, hcb02, hcb03, hcb04, hcb05, hcb06, hcb07, hcb08, hcb09, hcb10, hcb11, hcb12, hcb13, heditAutoRefresh, hEditLog
 		switch (hwnd) {
 			case hbreload: ; Reload
 				ToolTip, % "Reload IdleCombos."
 			case hbexit: ; Exit
 				ToolTip, % "Exit IdleCombos."
 			case hbtoggle: ; Toggle Crash Protection
-				ToolTip, % "Turn Idle Chmapions crash protection on/off."
+				ToolTip, % "Turn Idle Champions crash protection on/off."
 			case hbrefresh: ; Refresh
 				ToolTip, % "Refresh the User Details from the API server."
 			case hbsave: ; Save Settings
@@ -397,11 +396,11 @@ class MyGui {
 
 		Menu, ToolsSubmenu, Add, &Export to CSV, ExportCSV
 
-		Menu, WebToolsSubmenu, Add, &Data Viewer - Kleho, Open_Web_Data_Viewer
-		Menu, WebToolsSubmenu, Add, &Game Viewer - SoulReaver, Open_Web_Game_Viewer
-		Menu, WebToolsSubmenu, Add, Utilities - &ByteGlow, Open_Web_Utilities
-		Menu, WebToolsSubmenu, Add, Utilities - &Modron Core Calc, Open_Web_Utilities_Modron
-		Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Formation
+Menu, WebToolsSubmenu, Add, &Data Viewer - Kleho, Open_Web_Data_Viewer
+Menu, WebToolsSubmenu, Add, &Game Viewer - SoulReaver, Open_Web_Game_Viewer
+Menu, WebToolsSubmenu, Add, Utilities - &ByteGlow, Open_Web_Utilities
+Menu, WebToolsSubmenu, Add, Utilities - &Modron Core Calc, Open_Web_Utilities_Modron
+Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Formation
 		Menu, ToolsSubmenu, Add, &Web Tools, :WebToolsSubmenu
 
 		Menu, IdleMenu, Add, &Tools, :ToolsSubmenu
@@ -522,7 +521,7 @@ class MyGui {
 		Gui, MyWindow:Add, Button, x15 y215 w120 hwndhbsave gSave_Settings, Save Settings
 		
 		Gui, Tab, Log
-		Gui, MyWindow:Add, Edit, x4 y35 w699 h506 vOutputText ReadOnly +Limit -Border, %OutputText%
+		Gui, MyWindow:Add, Edit, x4 y35 w699 h506 hwndhEditLog vOutputText ReadOnly +Limit -Border, %OutputText%
 
 		GuiControl, Focus, SysTabControl321
 
@@ -590,13 +589,18 @@ class MyGui {
 				PersistSettings()
 				SB_SetText("⚠️ Hash decryption failed — please re-enter via Help → Run Setup")
 			} else {
-				; Auto-migrate: if hash was plaintext and DPAPI is available, encrypt it
-				if (!IsEncryptedHash(CurrentSettings.hash) && UserHash != "" && UserHash != "0" && DPAPIAvailable) {
-					CurrentSettings.hash := DPAPIEncrypt(UserHash)
-					PersistSettings()
-					LogFile("Settings migrated: hash encrypted with DPAPI")
-				}
+			; Auto-migrate: if hash was plaintext and DPAPI is available, encrypt it
+			if (!IsEncryptedHash(CurrentSettings.hash) && UserHash != "" && UserHash != "0" && DPAPIAvailable) {
+				CurrentSettings.hash := DPAPIEncrypt(UserHash)
+				PersistSettings()
+				LogFile("Settings migrated: hash encrypted with DPAPI")
+			}
+			if (!DPAPIAvailable && UserHash != "" && UserHash != "0") {
+				LogFile("WARNING: DPAPI unavailable — hash is stored as plaintext")
+				SB_SetText("⚠️ User ID & Hash Ready (DPAPI unavailable — hash unencrypted)")
+			} else {
 				SB_SetText("✅ User ID & Hash Ready")
+			}
 			}
 			InstanceID := CurrentSettings.instance_id
 		} else {
@@ -704,7 +708,8 @@ class MyGui {
 
 		this.Update()
 
-		SendMessage, 0x115, 7, 0, Edit2, A ; Scroll to the bottom of the log
+		DllCall("SendMessage", "Ptr", hEditLog, "UInt", 0xB1, "Ptr", -1, "Ptr", -1) ; EM_SETSEL — caret to end
+		DllCall("SendMessage", "Ptr", hEditLog, "UInt", 0xB7, "Ptr", 0, "Ptr", 0)  ; EM_SCROLLCARET — scroll to caret
 	}
 
 	Show() {
@@ -738,7 +743,10 @@ class MyGui {
 			GuiControl, Enable, BtnToggle
 		}
 		GuiControl, MyWindow:, OutputText, % OutputText, w250 h210
-		Try SendMessage, 0x115, 7, 0, Edit2 ; Scroll to the bottom of the log
+		Try {
+			DllCall("SendMessage", "Ptr", hEditLog, "UInt", 0xB1, "Ptr", -1, "Ptr", -1) ; EM_SETSEL — caret to end
+			DllCall("SendMessage", "Ptr", hEditLog, "UInt", 0xB7, "Ptr", 0, "Ptr", 0)  ; EM_SCROLLCARET — scroll to caret
+		}
 		GuiControl, MyWindow:, CrashProtectStatus, % CrashProtectStatus, w250 h210
 		; Relative time is updated by TimestampTickTimer (1s tick)
 		GuiControl, MyWindow:, LastUpdated, % LastUpdated
@@ -851,7 +859,7 @@ LV_Delete()
 if (SummaryDataLoaded) {
 	if (UserDetails.details.stats.black_viper_total_gems) {
 		v := UserDetails.details.stats.black_viper_total_gems
-		LV_Add("", "Black Viper", "Red Gems", Format("{:.2f}", v / (1000 ** Floor(log(v)/3))) MagList[Floor(log(v)/3)])
+		LV_Add("", "Black Viper", "Red Gems", FormatMagnitude(v))
 	}
 	if (UserDetails.details.stats.total_paid_up_front_gold) {
 		v := UserDetails.details.stats.total_paid_up_front_gold
@@ -863,11 +871,11 @@ if (SummaryDataLoaded) {
 	}
 	if (UserDetails.details.stats.torogar_lifetime_zealot_stacks) {
 		v := UserDetails.details.stats.torogar_lifetime_zealot_stacks
-		LV_Add("", "Torogar", "Zealot Stacks", Format("{:.2f}", v / (1000 ** Floor(log(v)/3))) MagList[Floor(log(v)/3)])
+		LV_Add("", "Torogar", "Zealot Stacks", FormatMagnitude(v))
 	}
 	if (UserDetails.details.stats.dhani_monsters_painted) {
 		v := UserDetails.details.stats.dhani_monsters_painted
-		LV_Add("", "D'hani", "Paints", Format("{:.2f}", v / (1000 ** Floor(log(v)/3))) MagList[Floor(log(v)/3)])
+		LV_Add("", "D'hani", "Paints", FormatMagnitude(v))
 	}
 	if (UserDetails.details.stats.zorbu_lifelong_hits_humanoid || UserDetails.details.stats.zorbu_lifelong_hits_beast || UserDetails.details.stats.zorbu_lifelong_hits_undead || UserDetails.details.stats.zorbu_lifelong_hits_drow) {
 		LV_Add("", "───────", "──────────", "─────────")
@@ -875,7 +883,7 @@ if (SummaryDataLoaded) {
 		for _, z in zList {
 			v := z[2]
 			if (v)
-				LV_Add("", "Zorbu", z[1], Format("{:.2f}", v / (1000 ** Floor(log(v)/3))) MagList[Floor(log(v)/3)])
+				LV_Add("", "Zorbu", z[1], FormatMagnitude(v))
 		}
 	}
 }
@@ -1158,7 +1166,7 @@ RunStyleChoice:
 ; Label: toggle tooltip display on/off
 RunDisableTooltips:
 	{
-		GuiControlGet, DisableTooltips,, % hcbx11
+		GuiControlGet, DisableTooltips,, % hcb11
 		if (DisableTooltips == 1) {
 			ToolTip, % ""
 		}
@@ -1170,6 +1178,7 @@ RunVariantRefresh:
 	{
 		if !EnsureCredentials()
 			return
+		GuiControlGet, patronChoice,, VariantPatronChoice
 		patronMap := BuildPatronDisplayMap()
 		patronid := patronMap[patronChoice]
 		if (patronid = "")
@@ -1183,7 +1192,7 @@ RunVariantRefresh:
 		FileRead, AdventureFile, advdefs.json
 		AdventureNames := JSON.parse(AdventureFile)
 
-		getparams := DummyData "&user_id=" UserID "&hash=" UserHash "&instance_id=" InstanceID
+		getparams := BuildAuthParams()
 		sResult := ServerCall("getcampaigndetails", getparams)
 		campaignresults := JSON.parse(sResult)
 
@@ -1298,7 +1307,7 @@ Crash_Toggle:
 ; Monitor game process and restart on crash (Steam only). Runs on a timer.
 CrashProtect() {
 	loop {
-		if (CrashProtectStatus == "Crash Protect`nDisabled") {
+		if (CrashProtectStatus == "Crash Protect: Disabled") {
 			return
 		}
 		While(Not WinExist("ahk_exe IdleDragons.exe")) {
@@ -1340,7 +1349,6 @@ SkinForm(DLLPath, Param1 = "Apply", SkinName = ""){
 			;Verify DLL hash before loading (supply-chain protection)
 			if (FileExist(DLLPath)) {
 				expectedHash := "9CCF45F05DC84F343D63EBCD96D2C2452257C2582EBE05C2FE317A16D62A3347"
-				objShell := ComObjCreate("Shell.Application")
 			try {
 				RunWait, % "cmd /c certutil -hashfile """ DLLPath """ SHA256 > """ A_Temp "\uskin_hash.txt""", , Hide
 				FileRead, hashOutput, %A_Temp%\uskin_hash.txt
@@ -1428,11 +1436,8 @@ SaveSettings()
 		CurrentSettings.style := StyleSelection
 	} else {
 		CurrentSettings.style := StyleChoice
-		StyleSelection = StyleChoice
-		if (StyleSelection != StyleChoice) {
-			StyleSelection = StyleChoice
-			SetStyle(%StyleSelection%)
-		}
+		StyleSelection := StyleChoice
+		SetStyle(StyleSelection)
 	}
 	PersistSettings()
 	LogFile("Settings have been saved")
@@ -1798,16 +1803,15 @@ Open_Codes:
 				v := StrReplace(v, "`r")
 				v := StrReplace(v, "`n")
 				v := Trim(v)
-				CurrentCode := v
-				sCode := RegExReplace(CurrentCode, "&", Replacement := "%26")
-				sCode := RegExReplace(sCode, "#", Replacement := "%23")
+			CurrentCode := v
+			sCode := UrlEncode(CurrentCode)
 				CodeListFound := InStr(codelistfile, sCode)
 				if (CodeListFound > 0 and RedeemCodeHistorySkip) {
 					codelistcount += 1
 					codelistcodes := codelistcodes sCode "`n"
 				} else {
 					EnsureCredentials()
-					codeparams := DummyData "&user_id=" UserID "&hash=" UserHash "&instance_id=" InstanceID "&code=" sCode
+					codeparams := BuildAuthParams() "&code=" sCode
 					rawresults := ServerCall("redeemcoupon", codeparams)
 					coderesults := JSON.parse(rawresults)
 					rawloot := JSON.stringify(coderesults.loot_details)
@@ -1821,7 +1825,7 @@ Open_Codes:
 							while (InstanceID == 0) {
 								sleep, 2000
 							}
-							codeparams := DummyData "&user_id=" UserID "&hash=" UserHash "&instance_id=" InstanceID "&code=" sCode
+							codeparams := BuildAuthParams() "&code=" sCode
 							rawresults := ServerCall("redeemcoupon", codeparams)
 							coderesults := JSON.parse(rawresults)
 							rawloot := JSON.stringify(coderesults.loot_details)
@@ -1852,7 +1856,7 @@ Open_Codes:
 						if (rawloot.haskey("failure_reason") or !rawloot.haskey("loot_details")) {
 							reruncodescount += 1
 							reruncodes := reruncodes sCode "`n"
-							codeparams := DummyData "&user_id=" UserID "&hash=" UserHash "&instance_id=" InstanceID "&code=" sCode
+							codeparams := BuildAuthParams() "&code=" sCode
 							rawresults := ServerCall("redeemcoupon", codeparams)
 							coderesults := JSON.parse(rawresults)
 							rawloot := JSON.stringify(coderesults.loot_details)
@@ -2012,35 +2016,30 @@ Briv_Calc:
 		return
 	}
 
-; Open SoulReaver game viewer website
+; Open external tool URL in default browser
+OpenWebTool(url) {
+	Run, %url%
+}
+
 Open_Web_Game_Viewer() {
-		Run, %WebToolGameViewer%
-		return
-	}
+	OpenWebTool(WebToolGameViewer)
+}
 
-; Open Kleho data viewer website
 Open_Web_Data_Viewer() {
-		Run, %WebToolDataViewer%
-		return
-	}
+	OpenWebTool(WebToolDataViewer)
+}
 
-; Open ByteGlow utilities website
 Open_Web_Utilities() {
-		Run, %WebToolUtilities%
-		return
-	}
+	OpenWebTool(WebToolUtilities)
+}
 
-; Open formation calculator website
 Open_Web_Utilities_Formation() {
-		Run, %WebToolUtilitiesFormation%
-		return
-	}
+	OpenWebTool(WebToolUtilitiesFormation)
+}
 
-; Open modron core calculator website
 Open_Web_Utilities_Modron() {
-		Run, %WebToolUtilitiesModron%
-		return
-	}
+	OpenWebTool(WebToolUtilitiesModron)
+}
 
 ; Label: clear the application log file
 Clear_Log:
@@ -2114,7 +2113,7 @@ EndBusyOp(statusMsg := "") {
 
 ; Purchase additional chests to meet the user's open request when they don't own enough
 Buy_Extra_Chests(chestid,extracount) {
-	chestparams := DummyData "&user_id=" UserID "&hash=" UserHash "&instance_id=" InstanceID "&chest_type_id=" chestid "&count="
+	chestparams := BuildAuthParams() "&chest_type_id=" chestid "&count="
 	gemsspent := 0
 	while (extracount > 0) {
 		SB_SetText("⌛ " ChestFromID(chestid) " remaining to purchase: " extracount)
@@ -2178,7 +2177,7 @@ _Buy_Chests_Inner(chestid) {
 			if (count = -1)
 				return
 			if (count = "alpha5") {
-				chestparams := DummyData "&user_id=" UserID "&hash=" UserHash "&instance_id=" InstanceID
+				chestparams := BuildAuthParams()
 				rawresults := ServerCall("alphachests", chestparams)
 				MsgBox % rawresults
 				GetUserDetails()
@@ -2208,7 +2207,7 @@ _Buy_Chests_Inner(chestid) {
 			if (count = -1)
 				return
 			if (count = "alpha5") {
-				chestparams := DummyData "&user_id=" UserID "&hash=" UserHash "&instance_id=" InstanceID
+				chestparams := BuildAuthParams()
 				rawresults := ServerCall("alphachests", chestparams)
 				MsgBox % rawresults
 				GetUserDetails()
@@ -2232,7 +2231,7 @@ _Buy_Chests_Inner(chestid) {
 		GetUserDetails()
 		sleep, 2000
 	}
-	chestparams := DummyData "&user_id=" UserID "&hash=" UserHash "&instance_id=" InstanceID "&chest_type_id=" chestid "&count="
+	chestparams := BuildAuthParams() "&chest_type_id=" chestid "&count="
 	gemsspent := 0
 	tokenspent := 0
 	chestsbought := 0
@@ -2863,7 +2862,7 @@ LoadAdventure() {
 		MsgBox % "Invalid patron_id: " patrontoload
 		return
 	}
-	advparams := DummyData "&patron_tier=0&user_id=" UserID "&hash=" UserHash "&instance_id=" InstanceID "&game_instance_id=" ActiveInstance "&adventure_id=" advtoload "&patron_id=" patrontoload
+	advparams := BuildAuthParams() "&patron_tier=0&game_instance_id=" ActiveInstance "&adventure_id=" advtoload "&patron_id=" patrontoload
 	sResult := ServerCall("setcurrentobjective", advparams)
 	GetUserDetails()
 	SB_SetText("✅ Selected adventure has been loaded")
@@ -2930,7 +2929,7 @@ EndAdventureInstance(label, adventure, patron, gameInstanceId) {
 	{
 		return
 	}
-	advparams := DummyData "&user_id=" UserID "&hash=" UserHash "&instance_id=" InstanceID "&game_instance_id=" gameInstanceId
+	advparams := BuildAuthParams() "&game_instance_id=" gameInstanceId
 	sResult := ServerCall("softreset", advparams)
 	GetUserDetails()
 	SB_SetText("✅ " label " adventure has been ended")
@@ -3222,6 +3221,10 @@ FirstRun() {
 	CurrentSettings.user_id_steam := UserIDSteam
 	; Encrypt hash for storage (falls back to plaintext if DPAPI unavailable)
 	CurrentSettings.hash := DPAPIEncrypt(UserHash)
+	if (!DPAPIAvailable && UserHash != "" && UserHash != "0") {
+		LogFile("WARNING: DPAPI unavailable — hash stored as plaintext")
+		SB_SetText("⚠️ DPAPI unavailable — hash stored without encryption")
+	}
 	CurrentSettings.firstrun := 1
 	CurrentSettings.wrlpath := WRLFile
 	PersistSettings()
@@ -3315,15 +3318,8 @@ GetPlayServerFromWRL() {
 			return
 		}
 	}
-	FoundPos1 := InStr(oData, "Error connecting:", 0, -1, 1)
-	if(FoundPos1 != 0){
-		oData1 := SubStr(oData, (FoundPos1 + 17))
-		FoundPos1 := InStr(oData1, "<br/>")
-		sServerError := ""
-		StringLeft, sServerError, oData1, (FoundPos1 - 1)
-		ServerError := sServerError
-		oData := ; Free the memory.
-		oData1 := ; Free the memory.
+	if (!CheckServerCallError(oData)) {
+		oData :=
 		return
 	}
 	if (ServerDetection == 1) {
@@ -3358,7 +3354,7 @@ GetUserDetails(newservername = "") {
 	APIStatus("⌛ Loading Data... Please wait...")
 	Sleep, 10  ; Allow GUI to update status bar before blocking API call
 	; LogFile("Server Name: " playservername)
-	getuserparams := DummyData "&include_free_play_objectives=true&instance_key=1&user_id=" UserID "&hash=" UserHash
+	getuserparams := BuildAuthParams(false) "&include_free_play_objectives=true&instance_key=1"
 	rawdetails := ServerCall("getuserdetails", getuserparams, playservername)
 	; ScrollBox(rawdetails, "p b1 h700 w1000 f{s10, Consolas}", "rawdetails")
 	if ( ServerError != "") {
@@ -3508,7 +3504,6 @@ ParseLootData() {
 	EpicGearCount          := result.epicGearCount
 	BrivSlot4              := result.brivSlot4
 	BrivZone               := result.brivZone
-	; AchievementInfo text no longer used — Summary tab uses StatsLV/BlessingsLV
 }
 
 ; Extract and assign champion ownership count and stat details
@@ -3692,6 +3687,15 @@ APIStatus(msg) {
 	global ShowAPIMessages
 	if (ShowAPIMessages)
 		SB_SetText(msg)
+}
+
+; Build common auth query string (DummyData + user_id + hash + optional instance_id)
+BuildAuthParams(includeInstance := true) {
+	global DummyData, UserID, UserHash, InstanceID
+	params := DummyData "&user_id=" UserID "&hash=" UserHash
+	if (includeInstance)
+		params .= "&instance_id=" InstanceID
+	return params
 }
 
 ; HTTPS POST to game API with retry logic and server redirect handling
@@ -4215,17 +4219,10 @@ UpdateICSetting(settingKey, title, prompt, minVal, maxVal, logName) {
 			return
 	}
 	CurrentICSettings[settingKey] := newVal
-	newicsettings := JSON.stringify(CurrentICSettings)
-	tempFile := ICSettingsFile ".tmp"
-	FileDelete, %tempFile%
-	FileAppend, %newicsettings%, %tempFile%
-	if ErrorLevel {
+	if (!WriteJsonAtomic(ICSettingsFile, CurrentICSettings)) {
 		MsgBox, 16, IC Settings Error, Failed to write settings. Change not saved.
-		FileDelete, %tempFile%
 		return
 	}
-	FileDelete, %ICSettingsFile%
-	FileMove, %tempFile%, %ICSettingsFile%
 	LogFile(logName " changed to " newVal)
 	SB_SetText("✅ " logName " changed to " newVal)
 }
@@ -4296,7 +4293,7 @@ KlehoImage() {
 
 ; Fetch and cache adventure definitions from API for the Variants tab
 AdventureList() {
-	getparams := DummyData "&user_id=" UserID "&hash=" UserHash "&instance_id=" InstanceID
+	getparams := BuildAuthParams()
 	sResult := ServerCall("getcampaigndetails", getparams)
 	campaignresults := JSON.parse(sResult)
 	freeplayids := {}

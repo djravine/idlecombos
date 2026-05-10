@@ -8,8 +8,9 @@
 ;=============================================================================
 ; Set to true by test runners BEFORE including this file.
 ; When true, MsgBox/ExitApp calls in the lib are suppressed.
+global TestMode
 if !TestMode
-	global TestMode := false
+	TestMode := false
 
 ;=============================================================================
 ; DICTIONARY (loaded from idledict.json)
@@ -468,6 +469,14 @@ WriteJsonAtomic(filePath, obj) {
 		FileDelete, %tempFile%
 		return false
 	}
+	; Validate parse-back before replacing target
+	FileRead, verifyText, %tempFile%
+	Try {
+		JSON.parse(verifyText)
+	} catch e {
+		FileDelete, %tempFile%
+		return false
+	}
 	FileDelete, %filePath%
 	FileMove, %tempFile%, %filePath%
 	return true
@@ -555,6 +564,32 @@ RequireKey(obj, keys*) {
 ;=============================================================================
 ; WRL CREDENTIAL PARSING
 ;=============================================================================
+
+;-----------------------------------------------------------------------------
+; UrlEncode(str) - Percent-encode a string for safe use in URL query parameters
+; Encodes all characters except unreserved chars (RFC 3986: A-Z a-z 0-9 - _ . ~)
+; Handles UTF-8 multi-byte characters correctly.
+;-----------------------------------------------------------------------------
+UrlEncode(str) {
+	if (str = "")
+		return ""
+	len := StrPut(str, "UTF-8") - 1
+	VarSetCapacity(buf, len, 0)
+	StrPut(str, &buf, len, "UTF-8")
+	encoded := ""
+	Loop, %len%
+	{
+		byte := NumGet(buf, A_Index - 1, "UChar")
+		ch := Chr(byte)
+		if ch is alnum
+			encoded .= ch
+		else if (ch = "-" || ch = "_" || ch = "." || ch = "~")
+			encoded .= ch
+		else
+			encoded .= "%" Format("{:02X}", byte)
+	}
+	return encoded
+}
 
 ;-----------------------------------------------------------------------------
 ; ParseWRLCredentials(text) - Extract user credentials from WRL file content

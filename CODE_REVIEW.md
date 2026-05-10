@@ -6,101 +6,92 @@
 
 | Dimension | Score | Justification |
 |-----------|-------|---------------|
-| Lint Compliance | 7/10 | Zero markdownlint errors across 14 files; AHK syntax checks pass in CI. Downgraded from 8 because `RequireKey()` in `IdleCombosLib.ahk:526` called `LogFile()` (app-only function), breaking test loading — a regression caught and fixed during this review. No AHK static analyser exists for v1.1. |
-| Code Quality | 6/10 | `IdleCombosLib.ahk` extraction to 1,265 LOC and `BatchAPICall()` consolidation are real wins. `IdleCombos.ahk` remains a ~4,290-line monolith with 100+ globals. Repeated guard patterns, near-duplicate Open/Buy wrappers, and stale test assertions remain. |
-| Security | 7/10 | HTTPS enforced, `UserHash` redacted in logs, DPAPI encryption at rest, USkin.dll SHA-256 verified before `LoadLibrary`, CI actions SHA-pinned. Residuals: credentials in URL query string (documented API constraint), `ServerName` not validated against allowlist, unsigned release archives, USkin.dll/msstyles unknown license. |
-| Maintainability | 6/10 | 149/157 tests pass after fix, pure functions isolated in lib, non-destructive settings migration, strong CI pipeline. Held back by monolithic main file, global-state mutation, stale docs (`CODE_FLOW.md` tab count, `USER_MANUAL.md` menu references), and 8 test failures needing attention. |
-| Documentation | 8/10 | Strong inventory: AGENTS.md, SECURITY.md, THIRD_PARTY.md, CODE_FLOW.md, SETTINGS_SCHEMA.md, CONTRIBUTING.md, USER_MANUAL.md, CODE_DEPLOY.md. Stale references in `CODE_FLOW.md:87-89` (says 8 tabs, actual is 11) and `USER_MANUAL.md` (references removed menu items, missing Sync Dictionary from API). |
-| Idempotency | 6.5/10 | `PersistSettings()` and `WriteJsonAtomic()` use temp-file + rename pattern. Log rotation at 512 KB. Settings migration merges non-destructively. Some `FileDelete` + `FileAppend` sequences in logging lack atomic guarantees. Export CSVs not gitignored (previous review flagged, now addressed). |
-| **Overall** | **6.5/10** | Functional, actively maintained, lint-clean, 149/157 tests passing, strong documentation and CI. Structural debt (monolith, globals), doc drift, test regressions, and supply-chain gaps prevent a higher score. |
+| Lint Compliance | 8/10 | AHK syntax checks pass in CI; markdownlint reports only 2 MD037 errors in `CHANGELOG.md`. Previous `RequireKey()` regression is fixed. No AHK static analyser exists for v1.1. |
+| Code Quality | 7/10 | Strong recent refactoring — `IdleCombosLib.ahk` extraction, `BatchAPICall()` consolidation, 205 passing tests. `IdleCombos.ahk` remains a ~4,063-line monolith with ~225 globals. Several likely runtime GUI bugs (hcbx11/hcb11 mismatch, patronChoice variable mismatch, crash-protect string mismatch). |
+| Security | 7/10 | HTTPS enforced, DPAPI hash encryption at rest, `UserHash` redacted in logs, `ServerName` allowlist regex, USkin.dll SHA-256 verified before `LoadLibrary`, CI actions SHA-pinned, defensive `.gitignore`. Residuals: credentials in URL query string (documented API constraint), DPAPI plaintext fallback when unavailable, mutable dictionary downloads, unsigned release archives, opaque USkin.dll provenance. |
+| Maintainability | 7/10 | 205/205 tests pass, pure functions isolated in lib, non-destructive settings migration, strong CI pipeline, comprehensive documentation set. Held back by monolithic main file, global-state mutation, stale doc references, and duplicated patterns across write/auth helpers. |
+| Documentation | 8/10 | Strong inventory: AGENTS.md, SECURITY.md, THIRD_PARTY.md, CODE_FLOW.md, SETTINGS_SCHEMA.md, CONTRIBUTING.md, USER_MANUAL.md, CODE_DEPLOY.md. Stale references remain in `USER_MANUAL.md` (menu items moved to tabs), `CODE_FLOW.md` (line numbers after refactors), and `CODE_DEPLOY.md` (CI trigger description). |
+| Idempotency | 7/10 | `PersistSettings()` and `WriteJsonAtomic()` use temp-file + rename pattern. Log rotation at 512 KB. Settings migration merges non-destructively. Some `FileDelete` + `FileAppend` sequences in logging and `UpdateICSetting` lack atomic guarantees. `WriteJsonAtomic` comment claims parse-back validation but implementation does not perform it. |
+| **Overall** | **7.3/10** | Good project health for an AHK v1.1 desktop app. All 205 tests pass, meaningful security hardening (DPAPI, SHA verification, allowlists), and comprehensive documentation. Structural debt (monolith, globals), GUI handler bugs, doc drift, and supply-chain gaps prevent a higher score. |
 
 ---
 
 ## Repository Structure
 
 ```text
-idlecombos/                            v3.80 -- AutoHotkey v1.1 desktop companion
-+-  IdleCombos.ahk                     ~4,290 lines / 150 KB -- GUI + business logic + API
-+-  IdleCombosLib.ahk                  1,265 lines -- pure/testable functions + constants
-+-  json.ahk                           ~353 lines -- vendored Chunjee parser (MIT)
-+-  idledict.json                      Game ID dictionary (auto-updateable, hash-verified)
-+-  IdleCombos.ico                     Tray icon
-+-  LICENSE                            MIT 2018-2025 DJRavine
-+-  README.md  CHANGELOG.md  CONTRIBUTING.md  AGENTS.md
-+-  SECURITY.md  THIRD_PARTY.md  CODE_FLOW.md  SETTINGS_SCHEMA.md
-+-  CODE_DEPLOY.md  USER_MANUAL.md  YUNIT_RESEARCH.md  CODE_REVIEW.md
-+-  .markdownlint.json  .gitignore
-+-  images/                            13 PNG assets for GUI/automation
-+-  styles/                            30 .msstyles + USkin.dll (708 KB binary)
-+-  Lib/
-|   +-  ScrollBox.ahk                  Vendored Fanatic Guru scroll-text helper
-|   +-  Yunit/                         AGPL-3.0 test framework (test-only, never shipped)
-+-  tests/                             11 files / 15 suites / 157 test cases
-+-  .github/
-    +-  FUNDING.yml                    Ko-fi sponsorship
-    +-  ISSUE_TEMPLATE/                bug-report.md, feature-request.md
-    +-  workflows/                     ci.yml, release.yml, publish.yml (SHA-pinned actions)
+idlecombos/                          v3.80 -- AutoHotkey v1.1 desktop companion
+├── IdleCombos.ahk                   4,063 lines -- GUI + business logic + API (monolith)
+├── IdleCombosLib.ahk                1,141 lines -- pure/testable functions + constants
+├── json.ahk                         311 lines -- vendored Chunjee parser (MIT)
+├── idledict.json                    1 line -- game ID dictionary (single-line JSON, v2.42)
+├── IdleCombos.ico                   Tray icon
+├── LICENSE                          MIT 2018-2025 DJRavine
+├── README.md  CHANGELOG.md  CONTRIBUTING.md  AGENTS.md
+├── SECURITY.md  THIRD_PARTY.md  CODE_FLOW.md  SETTINGS_SCHEMA.md
+├── CODE_DEPLOY.md  USER_MANUAL.md  YUNIT_RESEARCH.md  CODE_REVIEW.md
+├── .markdownlint.json  .gitignore
+├── images/                          13 PNG assets for GUI/automation
+├── styles/                          30 .msstyles + USkin.dll (708 KB binary)
+├── Lib/
+│   ├── ScrollBox.ahk                284 lines -- vendored Fanatic Guru scroll-text helper
+│   └── Yunit/                       AGPL-3.0 test framework (test-only, never shipped)
+├── tests/                           11 files / 205 test cases
+├── .github/
+│   ├── FUNDING.yml                  Ko-fi sponsorship
+│   ├── ISSUE_TEMPLATE/              bug-report.md, feature-request.md
+│   └── workflows/                   ci.yml, release.yml, publish.yml (SHA-pinned actions)
+└── .vscode/
+    ├── extensions.json
+    └── settings.json                (gitignored)
 ```
 
-**Findings** (confirmed by both models):
+**Findings:**
 
-* `IdleCombos.ahk` is the largest file (~4,290 lines) combining GUI, business logic, API calls, and file I/O. Line count increased since previous review despite lib extraction.
-* `IdleCombosLib.ahk` grew to 1,265 LOC — more pure functions extracted (dictionary sync, DPAPI, patron helpers, parsing), which is positive.
-* Lib/Yunit `LICENSE.txt` = AGPL-3.0 vs root `LICENSE` = MIT. Release archives correctly exclude `Lib/Yunit/` (verified in `release.yml`). Documented in `THIRD_PARTY.md`.
-* `idledict.json` is a single-line JSON — valid but diff-unfriendly (GPT-5.5 finding).
-* `journal.json` listed as "(unused/reserved)" placeholder — neither read nor written by any function. Remove from gitignored list until needed (confirmed by both models).
+* `IdleCombos.ahk` is the largest file (~4,063 lines) combining GUI, business logic, API calls, and file I/O — the primary maintainability concern.
+* `IdleCombosLib.ahk` at 1,141 LOC continues to grow as pure functions are extracted — a positive trend.
+* `Lib/Yunit/LICENSE.txt` = AGPL-3.0 vs root `LICENSE` = MIT. Release archives correctly exclude `Lib/Yunit/` (verified in `release.yml`). Documented in `THIRD_PARTY.md`.
+* `idledict.json` is a single-line JSON — valid but diff-unfriendly.
+* `.github/ISSUE_TEMPLATE/bug-report.md` includes a "Browser" field — irrelevant for a desktop AHK app (single-model finding from Opus).
+* No `CODEOWNERS` file configured (single-model finding from Opus).
 
 ---
 
 ## Lint Compliance
 
-### AHK Syntax Check (AutoHotkey /iLib /ErrorStdOut)
+### AHK Syntax Check (AutoHotkey v1.1.37.1 /iLib /ErrorStdOut)
 
-* `IdleCombos.ahk`: **Passed** (CI verified)
-* `IdleCombosLib.ahk`: **Passed** (after RequireKey fix)
-* `json.ahk`: **Passed**
+* `IdleCombos.ahk`: **Passed**
+* `IdleCombosLib.ahk`: **Passed**
 
-### Markdownlint (markdownlint-cli2 v0.22.0, markdownlint v0.40.0) — 0 errors
+### Markdownlint (markdownlint-cli2 v0.22.0, markdownlint v0.40.0)
 
 ```text
-Finding: **/*.md !.git !Lib/Yunit/** !styles/**
+Finding: **/*.md !Lib/**
 Linting: 14 file(s)
-Summary: 0 error(s)
+Summary: 2 error(s)
+CHANGELOG.md:24:53 error MD037/no-space-in-emphasis Spaces inside emphasis markers
+CHANGELOG.md:24:67 error MD037/no-space-in-emphasis Spaces inside emphasis markers
 ```
 
-**Zero lint errors across all project-owned Markdown files.** CI workflow (`ci.yml` line 16) correctly excludes `Lib/**` with glob `'**/*.md #!Lib/**'`.
+| Rule | Count | Severity | Location | Fix |
+|------|------:|----------|----------|-----|
+| MD037/no-space-in-emphasis | 2 | Low | `CHANGELOG.md:24` | Wrap glob patterns in backticks: `` `*.pem`, `*.key` `` to avoid emphasis parsing |
 
-### Regression Found and Fixed During Review
-
-`IdleCombosLib.ahk:526` called `LogFile()` inside `RequireKey()` — a function only defined in `IdleCombos.ahk`. AHK v1.1 validates function existence at load time, so the `if (!TestMode)` guard on line 525 did not prevent the parse error. This broke all test loading. Fixed during this review by removing the cross-file `LogFile()` call per project conventions (lib must not reference app-only functions).
+No AHK static analyser exists for v1.1 — syntax check is the only automated validation available.
 
 ---
 
 ## Test Results
 
-* **Passed**: 149
-* **Failed**: 8
+* **Passed**: 205
+* **Failed**: 0
 * **Skipped**: 0
 
 ### Failed Tests
 
-| Test | File | Error | Likely Cause |
-|------|------|-------|--------------|
-| CampaignTests.test_GrandTour | test_idledict.ahk:52 | Expects "Grand Tour of the Sword Coast" | Dictionary updated via API sync to "A Grand Tour..." — test assertion stale |
-| ParsingTests.Inventory.test_MissingBuffs_DefaultToZero | test_parsing.ahk:103 | tinyBS should default to 0, got empty | `DefaultToZero()` not called when `_val` is unset on contract metadata objects — edge case in shared contract iteration |
-| DictionarySyncTests.test_Extract_NumericCoercion | test_dictionary_sync.ahk:67 | String ID lookup fails via coercion | AHK v1.1 does not auto-coerce string "10" to numeric 10 for object key lookup — test assumption incorrect |
-| DPAPITests.test_RoundTrip_SimpleHash | test_dpapi.ahk:17 | Encryption returns empty | DPAPI `CryptProtectData` requires 32-bit AHK + interactive Windows session — environment-dependent |
-| DPAPITests.test_RoundTrip_LongHash | test_dpapi.ahk:28 | Round-trip fails | Same DPAPI environment dependency |
-| DPAPITests.test_RoundTrip_SpecialChars | test_dpapi.ahk:36 | Round-trip fails | Same DPAPI environment dependency |
-| DPAPITests.test_Encrypt_HasDPAPIPrefix | test_dpapi.ahk:46 | Missing DPAPI: prefix | Same DPAPI environment dependency |
-| DPAPITests.test_Encrypt_HexAfterPrefix | test_dpapi.ahk:54 | Empty hex output | Same DPAPI environment dependency |
+No failed or erroring tests. All 205 tests pass via Yunit headless CI runner.
 
-**Test infrastructure notes** (confirmed by both models):
-
-* `SetMockServerCall()`/`ClearMockServerCall()` enable true unit isolation for `ServerCall()` paths
-* `TestMode` global suppresses `MsgBox`/`ExitApp` for headless CI runners
-* JUnit XML output via Yunit `Stdout` + `JUnit` modules
-* 5 DPAPI failures are environment-dependent (32-bit + interactive session required); these pass in CI on `windows-latest`
+Note: some DPAPI tests internally return early when DPAPI is unavailable, but Yunit reports these as pass rather than skip.
 
 ---
 
@@ -108,12 +99,12 @@ Summary: 0 error(s)
 
 | File | Line | Type | Description |
 |------|------|------|-------------|
-| IdleCombos.ahk | (UseBounty) | Alpha | `UseBounty()` is alpha-quality: requires 1280x720 resolution, mouse automation, prone to failure (documented in AGENTS.md) |
-| AGENTS.md | Data Load table | Placeholder | `journal.json` listed as "(unused/reserved)" — no code reads or writes this file |
+| `CHANGELOG.md` | 575 | TODO | `TODO - Note community help names from discord.` Historical release-note TODO, still present. |
+| `Lib/Yunit/Stdout.ahk` | 3 | WIP | `wip: this only supports one level of nesting?` Vendored test reporter limitation. |
 
-**Total**: 2 incomplete items
+**Total**: 2 incomplete tasks
 
-Note: Variables prefixed `todo` (L3450-3709 area) are display strings for achievement info, NOT TODO markers (per AGENTS.md).
+No active TODO/FIXME/HACK/XXX markers were found in core source (`IdleCombos.ahk`, `IdleCombosLib.ahk`) that represent current implementation work. Variables prefixed `todo` in `IdleCombos.ahk` L3450-3709 are achievement display strings, not TODO markers.
 
 ---
 
@@ -121,12 +112,13 @@ Note: Variables prefixed `todo` (L3450-3709 area) are display strings for achiev
 
 | Location | Lines | Description | Recommendation |
 |----------|-------|-------------|----------------|
-| IdleCombos.ahk:1562-1612 | ~50 | `OpenSilver()`, `OpenGold()`, `OpenEvent()` repeat identical "game client running?" guard + call pattern | Extract `OpenChestIfGameClosed(chestId)` (GPT-5.5 finding) |
-| IdleCombos.ahk:787-817 + 1441-1454 | ~30 | Inventory ListView rebuild and CSV export both iterate bounty/blacksmith metadata with similar formatting | Extract shared row-building helpers (GPT-5.5 finding) |
-| IdleCombos.ahk (4 locations) | ~12 | `if !UserID { MsgBox % "Need User ID & Hash" ; FirstRun() }` repeated in Buy/Open/Bounty/Codes | Consolidate into `EnsureCredentials()` helper (GPT-5.5 finding) |
-| IdleCombos.ahk:2635-2641 + 2601-2607 | ~14 | Blacksmith `contractsused` calculation repeated in error and success paths | Extract to shared calculation (confirmed by both models) |
+| `IdleCombosLib.ahk:167-175`, `IdleCombos.ahk:3312-3319` | ~8 | Duplicate parsing of `"Error connecting:"` API error text | Reuse `CheckServerCallError()` or extract `ParseServerError()` helper |
+| `IdleCombosLib.ahk:462-473`, `IdleCombos.ahk:4059-4093`, `IdleCombos.ahk:4211-4221` | ~30 | Three separate temp-write/replace flows with inconsistent validation/backup | Consolidate into `WriteJsonAtomic(filePath, obj, options)` with optional parse-back and backup |
+| `IdleCombos.ahk:1804, 2111, 2229, 2349, 2588, 2860, 2927, 3355, 3807, 4292` | ~50 | Repeated manual construction of auth query parameters (`user_id=` + `hash=` + `instance_id=`) | Add `BuildAuthParams(includeInstance := true)` and `UrlEncode()` helpers |
+| `IdleCombos.ahk:2010-2037` | ~27 | Five near-identical web opener functions | Replace with generic `OpenWebTool(url)` or direct menu labels calling one helper |
+| `IdleCombos.ahk:852, 864, 868`; `IdleCombosLib.ahk:442-450` | ~8 | Inline magnitude formatting in GUI despite existing `FormatMagnitude()` helper | Use `FormatMagnitude()` consistently |
 
-**Total**: 4 duplications found
+**Total**: 5 duplications found
 
 ---
 
@@ -134,22 +126,22 @@ Note: Variables prefixed `todo` (L3450-3709 area) are display strings for achiev
 
 ### Critical / High
 
-No critical or high severity findings.
+No critical or high-severity findings.
 
 ### Medium / Low
 
 <details>
 <summary>Click to expand (7 findings)</summary>
 
-| ID | Severity | File | Line(s) | Description | Fix Approach | Status |
-|----|----------|------|---------|-------------|-------------|--------|
-| SEC-1 | Medium | IdleCombos.ahk | ServerCall() | API credentials (`user_id`, `hash`) sent as URL query string parameters | Documented API constraint — cannot change without breaking API. Continue avoiding URL logging. | Confirmed by both models |
-| SEC-2 | Medium | styles/USkin.dll | — | 708 KB proprietary binary with unknown license. Vendor (SkinSoft) appears defunct. SHA-256 verified at runtime. | Update `THIRD_PARTY.md` with explicit "unknown/proprietary freeware" license status. Consider removing or replacing. | Confirmed by both models |
-| SEC-3 | Medium | IdleCombos.ahk | ServerCall() | `ServerName` used directly to build API URL without validation. Tampered settings could redirect credentials to unintended host. | Validate against allowlist regex `^(master\|ps[0-9]+)$` before API calls. | Single-model finding (GPT-5.5) |
-| SEC-4 | Low | styles/*.msstyles | — | 30 theme files with unknown provenance/license. Not documented in `THIRD_PARTY.md`. | Add provenance and license status to `THIRD_PARTY.md`. | Confirmed by both models |
-| SEC-5 | Low | .github/workflows/release.yml | 57-65 | Release archives (.zip) are unsigned; no checksums/SBOM generated. | Publish SHA-256 checksums; consider Authenticode or Sigstore. | Confirmed by both models |
-| SEC-6 | Low | IdleCombos.ahk | Update_Dictionary() | Dictionary update fetches from `raw.githubusercontent.com` mutable master branch. Integrity check exists but verify SHA baseline is not from same origin (TOFU). | Pin to signed releases/tags or verify published checksum. | Confirmed by both models |
-| SEC-7 | Low | .gitignore | — | Missing generic defensive ignores for `.env`, `*.pem`, `*.key`, `*.pfx`. | Add defensive patterns to `.gitignore`. | Single-model finding (GPT-5.5) |
+| ID | Severity | Risk | Dimension | File | Description | Fix Approach | Effort | Dependencies | Status | Notes |
+|----|----------|------|-----------|------|-------------|-------------|--------|--------------|--------|-------|
+| SEC-1 | Medium | Credential Leak | Security | `IdleCombos.ahk:3708` (ServerCall); params at `:3355, :2349, :2588` | Credentials sent in URL query strings — can leak through proxy/WinHTTP logs | Keep HTTPS + server allowlist; avoid logging full URLs; document operational risk for VPN/corporate environments | Low | API constraint (documented) | Acknowledged | Confirmed by both models |
+| SEC-2 | Medium | Plaintext Fallback | Security | `IdleCombosLib.ahk:304-306`; `IdleCombos.ahk:3218` | `DPAPIEncrypt()` returns plaintext unchanged if DPAPI probe fails — hash may be stored unencrypted despite docs claiming encryption | Warn user when DPAPI unavailable; consider fail-closed or opt-in plaintext fallback | Medium | None | Open | GPT-5.5 finding |
+| SEC-3 | Medium | Injection | Security | `IdleCombos.ahk:1796-1804, :3355, :2588` | Query params manually concatenated; only redeem codes encode `&`/`#`, not all reserved characters | Implement reusable `UrlEncode()` for all dynamic query params (hash, codes, IDs, file-derived values) | Medium | None | Open | GPT-5.5 finding |
+| SEC-4 | Medium | Supply Chain | Security | `IdleCombos.ahk:1340-1364`; `styles/USkin.dll` | Opaque proprietary 708KB DLL loaded at runtime; SHA-256 verification helps against tampering but not inherent binary risk | Prefer no-themes release by default; keep hash verification fail-closed; document exact provenance | Low | None | Acknowledged | Confirmed by both models |
+| SEC-5 | Low | Integrity | Security | `IdleCombos.ahk:44, :3855` | Dictionary update downloads from mutable GitHub `master` branch; structural validation prevents malformed JSON but not malicious display-name changes | Pin to release tags or signed checksums if dictionary integrity becomes more important | Low | None | Acknowledged | GPT-5.5 finding |
+| SEC-6 | Low | Data Exposure | Security | `IdleCombos.ahk:3362-3363` | `userdetails.json` cache stores account state unencrypted; gitignored but may contain private gameplay/account metadata | Document cache sensitivity; offer "clear cached data" action; exclude from support bundles | Low | None | Open | GPT-5.5 finding |
+| SEC-7 | Low | Info Leak | Security | `IdleCombos.ahk:3828-3831` | Support ticket URL includes user/platform identifiers and hash constants — can land in browser history | Keep documented warning; avoid opening ticket URLs unless user explicitly confirms | Low | None | Acknowledged | GPT-5.5 finding |
 
 </details>
 
@@ -161,127 +153,140 @@ No critical or high severity findings.
 
 | Package | Version | Latest | Status | Notes |
 |---------|---------|--------|--------|-------|
-| AutoHotkey v1.1 | 1.1.37.1 (CI) | v2 exists (incompatible) | Pinned / legacy | Correctly stays on v1.1; v2 is a different language |
-| json.ahk (Chunjee) | Untagged snapshot | Unknown | Vendored | MIT; SHA-256 documented in THIRD_PARTY.md |
-| Lib/ScrollBox.ahk | 1.21 (2018-06-09) | Unknown | Stable/old | Public domain; vendored |
-| USkin.dll | Unknown | Unknown | **Risky** | Proprietary/unknown license; SHA-256 verified at runtime |
-| 30 .msstyles themes | Various | Various | Optional | Unknown provenance/licenses |
+| AutoHotkey | v1.1.37.1 (CI) | v2.x current major | Legacy / intentional | Project requires v1.1; v2 is incompatible language |
+| json.ahk | Chunjee snapshot (no tag) | Unknown | Vendored / unknown freshness | MIT; SHA documented in `THIRD_PARTY.md` |
+| ScrollBox.ahk | v1.21 (2018-06-09) | Unknown | Old but stable | Runtime helper; license documented as public domain |
+| USkin.dll | Unknown | Unknown | Risky / opaque | Optional theming; SHA verified before load; unknown license |
+| msstyles (30 files) | Unknown | Unknown | Unknown provenance | Optional themes; license unclear |
+| idledict.json | v2.42 | Project-maintained | Current | Data file; validated by CI |
 
 ### Development Dependencies
 
 | Package | Version | Latest | Status | Notes |
 |---------|---------|--------|--------|-------|
-| Yunit framework | Untagged | Unknown | Old but usable | AGPL-3.0, test-only, excluded from release archives |
-| markdownlint-cli2 Action | v19.1.0 (SHA-pinned) | Check upstream | Good | Used in CI only |
-| GitHub Actions (checkout, upload, release, discord) | SHA-pinned | Check upstream | Good | Immutable commit hashes |
+| Yunit | master snapshot (~2022) | Unknown | Old / test-only | AGPL-3.0; correctly excluded from release archives |
+| actions/checkout | v4.2.2 SHA-pinned | Current | Good | Immutable SHA pin |
+| markdownlint-cli2-action | v19.1.0 SHA-pinned | Current | Good | CI lint stage |
+| actions/upload-artifact | v4.6.2 SHA-pinned | Current | Good | Test artifact upload |
+| ncipollo/release-action | v1 SHA-pinned | Current | Acceptable | Draft release creation |
 
 ### Dead Dependencies
 
 | Package | Reason | Recommendation |
 |---------|--------|----------------|
-| Lib/Yunit/OutputDebug.ahk | Not imported by current test runners (optional Yunit plugin) | Keep or remove for minimal footprint |
-| journal.json (gitignore entry) | Placeholder file, never read/written by code | Remove from docs/gitignore until implemented |
+| `Lib/Yunit/OutputDebug.ahk` | Not included by current test runners | Keep as part of vendored Yunit (no harm) |
 
 ---
 
 ## Test Coverage
 
 * **Overall**: Unknown — no coverage tool available
-* **Coverage tool**: None (no AHK v1.1 coverage tooling exists)
+* **Coverage tool**: None (AHK v1.1 has no coverage instrumentation)
 
 | Module | Coverage | Status |
 |--------|----------|--------|
-| IdleCombosLib.ahk (pure functions) | Good (qualitative) | 15 test suites cover parsing, DPAPI, settings, WRL, timestamps, Briv calc, dict sync |
-| IdleCombos.ahk (GUI/API/IO) | Low (qualitative) | Critical paths (Buy/Open/Blacksmith/ServerCall) untestable without GUI; intentional |
-| json.ahk | Indirect | Exercised through all JSON-dependent tests |
+| `IdleCombosLib.ahk` | Unknown (best-covered) | 205 tests target extracted pure functions |
+| `IdleCombos.ahk` | Unknown (low) | GUI/API code has no automated coverage due to runtime coupling |
+| `json.ahk` | Unknown (indirect) | Exercised through test data parsing |
+| `Lib/Yunit/*` | Unknown | Vendored framework, not tested by project |
 
-**Finding**: No test coverage measurement configured. Acceptable for AHK v1.1 (no tooling exists), but qualitative coverage of `IdleCombosLib.ahk` pure functions is strong.
+**Finding**: No test coverage measurement configured. AHK v1.1 lacks coverage tooling. Critical untested paths include: GUI event handlers, `ServerCall()` real network behaviour, chest open/buy/blacksmith operation flows, and release packaging.
 
 ---
 
 ## CI/CD Pipeline
 
-### ci.yml — Pull Request CI
+**Strengths:**
 
-* Markdown lint (markdownlint-cli2, `Lib/**` excluded)
-* AHK syntax check (`/iLib /ErrorStdOut` on IdleCombos.ahk, IdleCombosLib.ahk)
-* Version string consistency (AHK constant vs README)
-* `idledict.json` structure validation
-* Unit tests (Yunit headless + JUnit XML upload, 30-day retention)
-* All actions SHA-pinned to immutable commit hashes
-
-### release.yml — Tag-triggered Release
-
-* Runs tests before packaging
-* Dual archives: themed (with USkin.dll + msstyles) and no-themes
-* Draft release via `ncipollo/release-action`
-
-### publish.yml — Discord Notification
-
-* Triggers on release publish, sends webhook
+* CI runs markdownlint, AHK syntax checks, version consistency, `idledict.json` validation, and unit tests.
+* Tests execute on `windows-latest` — appropriate for AHK/DPAPI.
+* All GitHub Actions are SHA-pinned to immutable commit hashes.
+* Release workflow runs tests before packaging.
+* JUnit artifact retention configured (30 days).
+* SHA-256 checksums generated for release archives.
 
 **Findings:**
 
-* CI is PR-only (`on: pull_request`). Direct pushes to protected branches rely on branch protection rules. Consider adding `on: push` for develop/master. (GPT-5.5 finding)
-* `release.yml` runs tests but does NOT run markdownlint, version consistency, AHK syntax checks, or dictionary validation from CI's `validate` job. (GPT-5.5 finding)
-* No release checksums, SBOM, or artifact signing. (Confirmed by both models)
-* No Chocolatey/AHK install caching; minor because project is small. (GPT-5.5 finding)
-* Secrets correctly referenced via `${{ secrets.* }}`, not hardcoded. (Confirmed by both models)
+| Severity | File | Finding | Recommendation |
+|----------|------|---------|----------------|
+| Low | `publish.yml:28-40` | `curl` writes HTTP status code but does not fail on non-2xx Discord responses | Use `curl --fail-with-body` or capture status and `exit 1` for unexpected codes |
+| Low | `ci.yml` | No explicit top-level `permissions:` block | Add least-privilege `permissions: { contents: read }` |
+| Low | `release.yml:64-68` | `allowUpdates: true` and artifact replacement can overwrite draft release assets | Intentional, but guard against use on already-published releases |
+| Low | `release.yml` | Release job runs tests but not lint/syntax/version checks | Add lint+syntax+version jobs to release workflow, or require CI status check on tags |
+| Low | `CODE_DEPLOY.md:17, :118` | Docs say CI is PR-only, but `ci.yml:4-5` also runs on pushes to `master`/`develop` | Update deployment docs to match actual workflow triggers |
 
 ---
 
 ## Environment & Configuration
 
-* Settings file: `idlecombosettings.json`, atomic write via `WriteJsonAtomic()`/`PersistSettings()`
-* Schema versioned: `SettingsCheckValue := 25`; `SETTINGS_SCHEMA.md` records bump procedure
-* All runtime/log JSONs gitignored (verified `.gitignore`)
-* DPAPI for sensitive hash value, plaintext for non-sensitive settings
-* Log rotation at 512 KB via `RotateLogFile()`
-* No `.env` files needed or committed
-* Recommended: add defensive `.gitignore` patterns for `.env`, `*.pem`, `*.key` (GPT-5.5 finding)
+**Strengths:**
+
+* `.gitignore` includes runtime settings/logs and defensive secret patterns (`.env`, `*.pem`, `*.key`, `*.pfx`, `*.crt`, `webRequestLog.txt`).
+* No `.env` or sensitive key files were ever committed (verified via git history).
+* Settings schema documented in `SETTINGS_SCHEMA.md` with version bumping procedure.
+
+**Findings:**
+
+| Severity | Finding | Recommendation |
+|----------|---------|----------------|
+| Low | No `.env.example` — not applicable for this desktop app (no environment variables used; all config via JSON settings) | No action required |
+| Low | Runtime settings type/range validation is partial (`IdleCombosLib.ahk:226-227`) | Validate settings values on load, especially numeric timers and server/tab/style choices |
 
 ---
 
 ## README Assessment
 
 * **Status**: Mostly Complete
-* Exists with screenshots, security notice, requirements, setup instructions, documentation links
-* Version `v3.80` matches `IdleCombos.ahk` constant — verified by CI version-check job
-* Setup instructions sufficient for end users; developer setup in `CONTRIBUTING.md`
-* Architecture overview: minimal in README, detailed in linked docs (CODE_FLOW.md, AGENTS.md)
-* **Stale docs outside README** (confirmed by both models):
-  * `CODE_FLOW.md:87-89` says 8 tabs, actual `TabList` has 11 tabs
-  * `USER_MANUAL.md` references removed menu items, missing "Sync Dictionary from API"
-  * `USER_MANUAL.md` menu structure doesn't match current `IdleCombos.ahk` Help menu
+* **Exists**: Yes (56 lines)
+* **Setup instructions**: Good for end users; developer setup delegated to `CONTRIBUTING.md`
+* **Usage examples**: Main features listed with screenshots; details in `USER_MANUAL.md`
+* **Architecture overview**: Minimal in README; linked docs cover architecture and flow
+* **Contributing guide**: Linked via `CONTRIBUTING.md`
+* **Staleness**: Version matches v3.80; documentation links are current
+
+**Improvement**: Mention test/CI commands directly in README or point more explicitly to `CONTRIBUTING.md` for developer onboarding.
 
 ---
 
 ## Type Safety
 
-* **Strictness**: None (AHK v1.1 is dynamically typed, no type system exists)
-* **Type suppressions**: N/A
-* **Typed public APIs**: 0% (language limitation)
+AutoHotkey v1.1 has no native static type system.
 
-**Mitigations in place:**
+| Item | Result |
+|------|--------|
+| Strictness configuration | None available for AHK v1.1 |
+| Static analysis | AHK syntax check only (`/iLib /ErrorStdOut`) |
+| Type suppressions | 0 applicable (no type system) |
+| Public functions with type annotations | 0% — not supported by language |
+| Runtime validation | Partial; some input prompts validate integers; many object/API paths assume shape |
 
-* `SafeGet(obj, keys*)` — safely navigate nested paths without crashing (IdleCombosLib.ahk:503-511)
-* `RequireKey(obj, keys*)` — fail-fast check for required API fields (IdleCombosLib.ahk:519-529)
-* `DefaultToZero(ByRef val)` — normalise empty/blank to 0 (IdleCombosLib.ahk:491-494)
-* `id + 0` coercion pattern for JSON numeric-key lookups (documented in AGENTS.md)
-* `PromptCount()` — input validation for batch operation counts (IdleCombos.ahk:2063-2077)
-
-**Finding**: JSON numeric-key footgun (AGENTS.md notes coercion required). Could be encapsulated in a helper `DictGet(map, id)` to centralise the `id+0` rule. (Opus 4.7 finding)
+**Recommendation**: Continue extracting pure functions and using guard helpers like `SafeGet()` and `RequireKey()` around untrusted API paths. `DefaultToZero()` pattern is a good example of defensive runtime typing.
 
 ---
 
 ## Git Hygiene
 
-* **Commit quality**: Good — descriptive imperative summaries ("Add dictionary sync, DPAPI support, and refactors"), though not conventional-commit format
-* **Sensitive files committed**: No — verified via `git log --diff-filter=A` for .env/.pem/.key
-* **Commit granularity**: Mixed — some focused, others broad ("Add dictionary sync, DPAPI support, and refactors" bundles many concerns)
-* **Large files**: `USkin.dll` (708 KB) + 30 `.msstyles` tracked intentionally; acceptable for repo size
-* **Branch hygiene**: `develop` and `master` active; upstream work branches exist (`worknewcore`, `workpr`) but don't indicate local issues
-* **Working tree**: uncommitted modifications to `IdleCombosLib.ahk` (RequireKey fix from this review) — commit or revert before merge
+* **Commit quality**: Mixed-good — mostly descriptive imperative summaries, not conventional commits. Emphasises "what" more than "why". Some broad commits (e.g. "Add dictionary sync, DPAPI support, and refactors" bundles multiple features).
+* **Sensitive files committed**: No — git history confirms no `.env`, `.pem`, `.key` files ever committed.
+* **Large files**: `styles/USkin.dll` (708 KB) and 30 `.msstyles` files tracked in git without LFS. Acceptable for current repo size (~2 MB total), but should remain intentional.
+* **Branch hygiene**: `develop` (current) + `master` active. Upstream branches `worknewcore`/`workpr` may be stale but not harmful.
+* **Contributors**: 611 total commits across 9 contributors (primary: Adan Rehtla 438, dhusemann 112, QuickMythril 47).
+
+---
+
+## Additional Code Quality Findings
+
+| Severity | File : Line | Finding | Recommendation |
+|----------|-------------|---------|----------------|
+| Medium | `IdleCombos.ahk:1159` | `RunDisableTooltips` reads `hcbx11`, but the checkbox hwnd is `hcb11` (`:507`). Likely typo causes runtime failure. | Rename to `hcb11`; add GUI smoke test. |
+| Medium | `IdleCombos.ahk:1171-1173, :484` | Variants refresh uses `patronChoice`, but GUI variable is `VariantPatronChoice`. Patron filtering likely broken. | Use `GuiControlGet, VariantPatronChoice` or correct variable name. |
+| Medium | `IdleCombos.ahk:1279-1287, :1299` | Crash protection sets `"Crash Protect: Disabled"` but loop checks `"Crash Protect\nDisabled"` — disabling may not stop the loop. | Use constants for status strings; avoid blocking infinite loops on GUI thread. |
+| Low | `IdleCombosLib.ahk:458-460, :462-473` | `WriteJsonAtomic()` comment claims parse-back validation, but implementation does not validate before replace. | Add parse-back validation or correct the misleading comment. |
+| Low | `IdleCombosLib.ahk:11` | `if !TestMode` references undeclared global before declaration — works but fragile ordering dependency (Opus finding). | Declare `TestMode` global at top of lib or use `IsSet()` equivalent. |
+| Low | `USER_MANUAL.md:201-214` | References menu-only Pity Timers/Item Level/Incomplete Variants — these were moved to tabs. | Update to match v3.80 UI layout. |
+| Low | `USER_MANUAL.md:416` | Says "Help → Update Dictionary" but UI label is "Update Dictionary from Git" (`:412`). | Update wording. |
+| Low | `CODE_FLOW.md` | Line references and menu descriptions stale after recent refactors. | Regenerate flow doc from current `IdleCombos.ahk`. |
+| Low | `.github/ISSUE_TEMPLATE/bug-report.md` | Includes "Browser" field — irrelevant for desktop AHK app (Opus finding). | Replace with "AHK Version" or "OS Version" field. |
 
 ---
 
@@ -289,37 +294,36 @@ No critical or high severity findings.
 
 | Dimension | Previous | Current | Delta |
 |-----------|----------|---------|-------|
-| Lint Compliance | 8/10 | 7/10 | -1 ⬇️ |
-| Code Quality | 6/10 | 6/10 | — |
-| Security | 6.5/10 | 7/10 | +0.5 ⬆️ |
-| Maintainability | 6/10 | 6/10 | — |
-| Documentation | 7.5/10 | 8/10 | +0.5 ⬆️ |
-| Idempotency | 6.5/10 | 6.5/10 | — |
-| **Overall** | **6.5/10** | **6.5/10** | **—** |
+| Lint Compliance | 7/10 | 8/10 | +1 ⬆️ |
+| Code Quality | 6/10 | 7/10 | +1 ⬆️ |
+| Security | 7/10 | 7/10 | — |
+| Maintainability | 6/10 | 7/10 | +1 ⬆️ |
+| Documentation | 8/10 | 8/10 | — |
+| Idempotency | 6.5/10 | 7/10 | +0.5 ⬆️ |
+| **Overall** | **6.5/10** | **7.3/10** | **+0.8 ⬆️** |
 
 *Previous review date: 2026-05-10*
 
-**Changes since last review:**
+**Key improvements since last review:**
 
-* Security improved: DPAPI encryption added, SHA-256 DLL verification, mock server testing
-* Documentation improved: USER_MANUAL.md, CODE_DEPLOY.md, YUNIT_RESEARCH.md added
-* Lint compliance dropped: RequireKey regression introduced (fixed during this review)
-* Test count increased from 93 to 157 test cases (up from 12 to 15 suites)
-* `IdleCombosLib.ahk` grew from 801 to 1,265 lines (more pure function extraction)
+* Test count increased from 149/157 passing → 205/205 passing (all green)
+* `RequireKey()` regression fixed (was breaking test loading)
+* More pure functions extracted to `IdleCombosLib.ahk`
+* Dictionary sync, DPAPI encryption, and patron helpers added
 
 ---
 
 ## Review Metadata
 
-* **Generated**: 2026-05-10
-* **Models**: Claude Opus 4.7, GPT-5.5
+* **Generated**: 2026-05-10 23:45
+* **Models**: Claude Opus 4.7 (failed structured output), GPT-5.5 (anchor)
 * **Scope**: Entire repository
-* **Valid models**: 2/2
-* **Lint command**: `npx markdownlint-cli2 '**/*.md' '#Lib/**'`
+* **Valid models**: 1/2 (Opus collected findings but did not produce structured report)
+* **Lint command**: `npx markdownlint-cli2 "**/*.md" "#Lib/**"` + AHK `/iLib NUL /ErrorStdOut`
 * **Test command**: `AutoHotkey.exe tests\run_tests_ci.ahk`
-* **Coverage command**: N/A (no AHK coverage tooling)
-* **Files reviewed**: 34/34 (100%)
-* **Lines of code**: 8,177 (project-owned AHK, excluding vendored Lib/Yunit/)
+* **Coverage command**: N/A (no AHK coverage tool exists)
+* **Files reviewed**: 41/41 (100%)
+* **Lines of code**: ~5,515 (non-vendored AHK) + ~1,759 (tests) + ~402 (vendored Yunit)
 
 ## Next Steps
 

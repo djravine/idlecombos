@@ -198,10 +198,8 @@ Sidebar buttons are disabled during bulk operations (buying/opening chests, appl
 | **Chests** | |
 | Buy Silver / Gold / Event | Purchase chests with gems or event tokens |
 | Open Silver / Gold / Event | Open owned chests (game client must be closed) |
-| Pity Timers | Show gold chest pity timer info |
 | **Blacksmith** | |
 | Use Tiny / Small / Medium / Large / Huge | Apply blacksmith contracts to a champion |
-| Item Level Report | Show gear item levels for all champions |
 | Active Patron Feats | List feats active under current patron |
 | **Bounty (Alpha)** | |
 | Use Tiny / Small / Medium / Large | Apply bounty contracts (requires 1280x720, mouse automation) |
@@ -210,11 +208,18 @@ Sidebar buttons are disabled during bulk operations (buying/opening chests, appl
 | Load New Adv | Start a new adventure via API |
 | End Current / Background 1-3 Adv | End adventures via API |
 | Kleho Image | Open Kleho adventure image |
-| Incomplete Variants | List variants not yet completed |
 | Update Adventure List | Refresh adventure definitions from API |
 | **Briv Stack Calculator** | Calculate skip probabilities and stack times |
 | **Export to CSV** | Save inventory and patron data to CSV file |
 | **Web Tools** | Open external community tools in browser |
+
+**Tab-based features** (moved from menus in v3.80):
+
+| Tab | Description |
+|-----|-------------|
+| Pity Timers | Champions grouped by chests-until-epic |
+| Item Levels | Gear iLvl report with core/event averages, highest/lowest, shinies |
+| Incomplete Variants | Patron-filterable adventure completion tracker with in-tab refresh |
 
 ### Help
 
@@ -413,7 +418,7 @@ On startup, if a cached `userdetails.json` exists and is less than 1 hour old, t
 
 The app's champion, chest, and campaign name data comes from `idledict.json`. To get the latest definitions:
 
-1. Go to **Help → Update Dictionary**
+1. Go to **Help → Update Dictionary from Git**
 2. The file is downloaded from GitHub, validated, and replaced locally
 3. The app reloads with updated names
 

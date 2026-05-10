@@ -25,7 +25,7 @@ jobs:
             exit 0
           fi
 
-          curl -s -o /dev/null -w "%{http_code}" \
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "Content-Type: application/json" \
             -d "{
               \"embeds\": [{
@@ -37,4 +37,9 @@ jobs:
                 }
               }]
             }" \
-            "$DISCORD_WEBHOOK"
+            "$DISCORD_WEBHOOK")
+
+          if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
+            echo "::error::Discord webhook failed with HTTP $HTTP_STATUS"
+            exit 1
+          fi

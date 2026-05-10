@@ -14,7 +14,7 @@ Three GitHub Actions workflows form the pipeline:
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| `ci.yml` | PRs to `master`/`develop` | Lint, AHK syntax check, unit tests, version consistency |
+| `ci.yml` | PRs and pushes to `master`/`develop` | Lint, AHK syntax check, unit tests, version consistency |
 | `release.yml` | Tag push matching `v*` | Package dual archives, create draft release |
 | `publish.yml` | Release published (draft → public) | Send Discord notification |
 
@@ -115,7 +115,7 @@ idlecombos-vX.YZ/
 
 ## CI Pipeline Detail
 
-`ci.yml` runs three parallel jobs on every PR:
+`ci.yml` runs three parallel jobs on every PR and push to `master`/`develop`:
 
 ### lint (ubuntu-latest)
 

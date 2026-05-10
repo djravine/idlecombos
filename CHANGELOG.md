@@ -8,6 +8,27 @@ To all the Idle Dragoneers who inspired and assisted me!
 
 ## 3.80
 
+* Fix RunDisableTooltips reading wrong hwnd variable (`hcbx11` → `hcb11`) — tooltip toggle was broken
+* Fix Variants tab using undefined `patronChoice` — add GuiControlGet to read `VariantPatronChoice` DDL
+* Fix CrashProtect timer checking wrong status string (`Crash Protect\nDisabled` → `Crash Protect: Disabled`) — disable was not stopping the loop
+* Fix DPAPI silent plaintext fallback — warn user via log and status bar when DPAPI is unavailable
+* Add UrlEncode() helper (RFC 3986) and apply to redeem code path — replaces partial `&`/`#`-only encoding
+* Fix CHANGELOG.md markdownlint MD037 errors — wrap glob patterns in backticks
+* Add WriteJsonAtomic() parse-back validation — comment claimed it, now implementation matches
+* Fix TestMode global declaration — explicit `global TestMode` before conditional set (removes fragile ordering)
+* Deduplicate error parsing in GetPlayServerFromWRL — reuse CheckServerCallError() instead of inline copy
+* Refactor UpdateICSetting to use WriteJsonAtomic() — removes inline temp-write/replace duplicate
+* Add BuildAuthParams() helper — consolidates 12 repeated auth query string constructions
+* Consolidate 5 web opener functions into thin wrappers calling shared OpenWebTool()
+* Fix champion stats (Black Viper, Torogar, D'hani, Zorbu) missing magnitude suffixes — use FormatMagnitude()
+* Update USER_MANUAL.md — move Pity Timers/Item Levels/Incomplete Variants from menu to tab section; fix dictionary menu label
+* Fix CODE_DEPLOY.md — CI trigger description now mentions push (not just PRs)
+* Fix bug-report.md issue template — replace Browser field with AHK Version and IdleCombos Version
+* Fix publish.yml — curl now fails on non-2xx Discord webhook responses
+* Add ci.yml least-privilege permissions block (`contents: read`)
+* Add lint, syntax check, and version validation to release.yml (was tests-only)
+* Fix Log tab not scrolling to bottom — `Edit2` ClassNN was stale after AutoRefresh edit added; use hwnd + DllCall(EM_SETSEL/EM_SCROLLCARET) instead
+* Update CODE_FLOW.md — 61 stale line references updated to match current source; remove Pity Timers from Chests menu (now a tab); version v3.78 → v3.80
 * Fix DPAPI graceful fallback — probe round-trip at startup, skip encryption when unavailable (hash stored as plaintext instead of being wiped)
 * Fix DPAPI decryption failure clearing UserID and auto-clearing stale encrypted hash from settings
 * Fix CheckAchievements showing misleading Todo items when data is empty/loading (guard on highest_level_gear)
@@ -21,7 +42,7 @@ To all the Idle Dragoneers who inspired and assisted me!
 * Add DPAPI test environment guards — skip encrypt/round-trip tests when CryptProtectData unavailable
 * Add ServerName allowlist validation in ServerCall() — reject names not matching `^(master|ps[0-9]+)$`
 * Add SHA-256 checksums (SHA256SUMS.txt) to release workflow artifacts
-* Add defensive .gitignore patterns for .env, *.pem, *.key, *.pfx, *.crt, webRequestLog.txt
+* Add defensive .gitignore patterns for `.env`, `*.pem`, `*.key`, `*.pfx`, `*.crt`, `webRequestLog.txt`
 * Add DictGet() helper for numeric-coerced dictionary lookups
 * Add OpenChestIfGameClosed() shared guard for silver/gold/event chest opening
 * Add EnsureCredentials() helper — replaces 6 repeated "Need User ID & Hash" blocks
