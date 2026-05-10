@@ -22,10 +22,10 @@ Three GitHub Actions workflows form the pipeline:
 
 Before tagging a release, complete these steps on `develop`:
 
-- [ ] All changes committed and pushed
-- [ ] CI passing on `develop` (lint + syntax + tests)
-- [ ] `CHANGELOG.md` updated with new version section at top
-- [ ] Version bumped in **all three** locations (CI enforces match):
+* [ ] All changes committed and pushed
+* [ ] CI passing on `develop` (lint + syntax + tests)
+* [ ] `CHANGELOG.md` updated with new version section at top
+* [ ] Version bumped in **all three** locations (CI enforces match):
 
 | File | Location | Format |
 |------|----------|--------|
@@ -33,8 +33,8 @@ Before tagging a release, complete these steps on `develop`:
 | `README.md` | Line 5 | `**vX.YZ**` |
 | `CHANGELOG.md` | Top section | `## X.YZ` |
 
-- [ ] `SettingsCheckValue` incremented in `IdleCombosLib.ahk` if new settings keys were added (see [SETTINGS_SCHEMA.md](SETTINGS_SCHEMA.md))
-- [ ] `idledict.json` updated if champions/chests were added (bump `MaxChampID`/`MaxChestID`)
+* [ ] `SettingsCheckValue` incremented in `IdleCombosLib.ahk` if new settings keys were added (see [SETTINGS_SCHEMA.md](SETTINGS_SCHEMA.md))
+* [ ] `idledict.json` updated if champions/chests were added (bump `MaxChampID`/`MaxChestID`)
 
 ## Release Steps
 
@@ -157,7 +157,7 @@ git tag -d v3.78
 git push origin :refs/tags/v3.78
 ```
 
-3. **Fix** on `develop`, merge to `master`, re-tag
+1. **Fix** on `develop`, merge to `master`, re-tag
 
 Release archives are replaceable (`allowUpdates: true` in `release.yml`), so re-tagging the same version will overwrite the existing draft assets.
 
