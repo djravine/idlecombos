@@ -1192,14 +1192,14 @@ ParsePatronDataFromDetails(details, currentTGPs, currentSilvers, currentGems, cu
 			influenceAmt := v.influence_current_amount
 			currencyAmt  := v.currency_current_amount
 			if (influenceAmt > 0) {
-				pData.requires := "Influence: " FormatMagnitude(influenceAmt)
+				pData.requires := FormatMagnitude(influenceAmt)
 			} else {
-				pData.requires := "Influence: 0"
+				pData.requires := "0"
 			}
 			if (currencyAmt > 0) {
-				pData.costs := "Coins: " FormatMagnitude(currencyAmt)
+				pData.costs := FormatMagnitude(currencyAmt)
 			} else {
-				pData.costs := "Coins: 0"
+				pData.costs := "0"
 			}
 		}
 		result[pName] := pData
