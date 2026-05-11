@@ -7,6 +7,7 @@ Companion App for Idle Champions, written in [AHK](https://www.autohotkey.com/).
 ![Summary](images/screenshot-summary.png)
 ![Adventures](images/screenshot-adventure.png)
 ![Inventory](images/screenshot-inventory.png)
+![Patrons](images/screenshot-patrons.png)
 ![Settings](images/screenshot-settings.png)
 
 ## Important Notes

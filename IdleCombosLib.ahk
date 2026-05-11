@@ -132,6 +132,26 @@ BuildChestDropdownList() {
 }
 
 ;-----------------------------------------------------------------------------
+; FormatDuration(seconds) - Format seconds into "Xd Yh Zm" string
+; Returns: formatted duration string, omitting zero components
+;-----------------------------------------------------------------------------
+FormatDuration(seconds) {
+	seconds := seconds + 0
+	if (seconds <= 0)
+		return "—"
+	d := Floor(seconds / 86400)
+	h := Floor(Mod(seconds, 86400) / 3600)
+	m := Floor(Mod(seconds, 3600) / 60)
+	result := ""
+	if (d > 0)
+		result .= d "d "
+	if (h > 0 || d > 0)
+		result .= h "h "
+	result .= m "m"
+	return result
+}
+
+;-----------------------------------------------------------------------------
 ; AdvFromID(id) - Look up adventure name from advdefs.json cache
 ; Returns: adventure name if found, or the raw ID as string if not
 ;-----------------------------------------------------------------------------
@@ -1133,24 +1153,39 @@ ParsePatronDataFromDetails(details, currentTGPs, currentSilvers, currentGems, cu
 		pName := pNameMap[v.patron_id]
 		if !pName
 			continue
-		pData := {variants: "", fp: "", challenges: "", requires: "", costs: "", completed: "", total: ""}
+		pData := {variants: "", fp: "", challenges: "", requires: "", champs: "", costs: "", completed: "", total: "", unlocked: false}
 		if v.unlocked == False {
 			pData.variants   := "Locked"
 			pData.fp         := "-"
 			pData.challenges := "-"
 			; Table-driven unlock requirements per patron
 			; Each entry: {statKey, statThreshold, champThreshold, requiresLabel, costs: [{varExpr, threshold, label}]}
+			; Ensure cost values are numeric before building requirements
+			DefaultToZero(currentSilvers)
+			DefaultToZero(currentLgBounties)
+			DefaultToZero(currentTGPs)
+			DefaultToZero(currentGems)
+
+			; Build reqLabels with adventure/campaign names
+			reqLabel1 := " iLvls"
+			reqLabel2 := " " campaignFromID(15) " Advs"
+			advName413 := AdvFromID(413)
+			advName873 := AdvFromID(873)
+			reqLabel3 := " in " advName413 " (413)"
+			reqLabel4 := " in " advName873 " (873)"
+			reqLabel5 := " in " advName873 " (873)"
+
 			unlockReqs := {}
 			unlockReqs[1] := {statKey: "total_hero_levels", statThresh: 2000, champThresh: 20
-				, reqLabel: " iLvls", costs: [{val: currentTGPs, thresh: 3, label: "TGPs"}, {val: currentSilvers, thresh: 10, label: "Silver"}]}
+				, reqLabel: reqLabel1, costs: [{val: currentTGPs, thresh: 3, label: "TGPs"}, {val: currentSilvers, thresh: 10, label: "Silver"}]}
 			unlockReqs[2] := {statKey: "completed_adventures_variants_and_patron_variants_c15", statThresh: 15, champThresh: 30
-				, reqLabel: " WD:DH Advs", costs: [{val: currentGems, thresh: 2500, label: "Gems"}, {val: currentSilvers, thresh: 15, label: "Silver"}]}
+				, reqLabel: reqLabel2, costs: [{val: currentGems, thresh: 2500, label: "Gems"}, {val: currentSilvers, thresh: 15, label: "Silver"}]}
 			unlockReqs[3] := {statKey: "highest_area_completed_ever_c413", statThresh: 250, champThresh: 40
-				, reqLabel: " Adv 413", costs: [{val: currentLgBounties, thresh: 10, label: "Lg Bounty"}, {val: currentSilvers, thresh: 20, label: "Silver"}]}
+				, reqLabel: reqLabel3, costs: [{val: currentLgBounties, thresh: 10, label: "Lg Bounty"}, {val: currentSilvers, thresh: 20, label: "Silver"}]}
 			unlockReqs[4] := {statKey: "highest_area_completed_ever_c873", statThresh: 575, champThresh: 50
-				, reqLabel: " Adv 873", costs: [{val: currentSilvers, thresh: 50, label: "Silver"}]}
+				, reqLabel: reqLabel4, costs: [{val: currentSilvers, thresh: 50, label: "Silver"}]}
 			unlockReqs[5] := {statKey: "highest_area_completed_ever_c873", statThresh: 575, champThresh: 50
-				, reqLabel: " Adv 873", costs: [{val: currentSilvers, thresh: 50, label: "Silver"}]}
+				, reqLabel: reqLabel5, costs: [{val: currentSilvers, thresh: 50, label: "Silver"}]}
 
 			req := unlockReqs[v.patron_id]
 			if IsObject(req) {
@@ -1158,11 +1193,10 @@ ParsePatronDataFromDetails(details, currentTGPs, currentSilvers, currentGems, cu
 				statVal := details.stats[req.statKey]
 				if (statVal = "")
 					statVal := "0"
-				DefaultToZero(currentSilvers)
-				DefaultToZero(currentLgBounties)
-				pData.requires := statVal "/" req.statThresh req.reqLabel ", " totalChamps "/" req.champThresh " Champs"
-				if ((statVal + 0 >= req.statThresh) && (totalChamps + 0 >= req.champThresh))
-					pData.requires := pData.requires " ✓"
+				pData.requires := statVal "/" req.statThresh req.reqLabel
+				pData.requiresMet := (statVal + 0 >= req.statThresh)
+				pData.champs := totalChamps "/" req.champThresh " Champs"
+				pData.champsMet := (totalChamps + 0 >= req.champThresh)
 
 				; Build costs string from cost items
 				costParts := ""
@@ -1175,10 +1209,10 @@ ParsePatronDataFromDetails(details, currentTGPs, currentSilvers, currentGems, cu
 						allMet := false
 				}
 				pData.costs := costParts
-				if (allMet)
-					pData.costs := pData.costs " ✓"
+				pData.costsMet := allMet
 			}
 		} else {
+			pData.unlocked := true
 			for kk, vv in v.progress_bars {
 				switch vv.id {
 					case "variants_completed":

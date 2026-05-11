@@ -197,6 +197,11 @@ global MirtFPCurrency := ""
 global MirtChallenges := ""
 global MirtRequires := ""
 global MirtCosts := ""
+global MirtUnlocked := false
+global MirtChamps := ""
+global MirtRequiresMet := false
+global MirtChampsMet := false
+global MirtCostsMet := false
 global VajraVariants := ""
 global VajraCompleted := ""
 global VajraVariantTotal := ""
@@ -204,6 +209,11 @@ global VajraFPCurrency := ""
 global VajraChallenges := ""
 global VajraRequires := ""
 global VajraCosts := ""
+global VajraUnlocked := false
+global VajraChamps := ""
+global VajraRequiresMet := false
+global VajraChampsMet := false
+global VajraCostsMet := false
 global StrahdVariants := ""
 global StrahdCompleted := ""
 global StrahdVariantTotal := ""
@@ -211,6 +221,11 @@ global StrahdFPCurrency := ""
 global StrahdChallenges := ""
 global StrahdRequires := ""
 global StrahdCosts := ""
+global StrahdUnlocked := false
+global StrahdChamps := ""
+global StrahdRequiresMet := false
+global StrahdChampsMet := false
+global StrahdCostsMet := false
 global ZarielVariants := ""
 global ZarielCompleted := ""
 global ZarielVariantTotal := ""
@@ -218,6 +233,11 @@ global ZarielFPCurrency := ""
 global ZarielChallenges := ""
 global ZarielRequires := ""
 global ZarielCosts := ""
+global ZarielUnlocked := false
+global ZarielChamps := ""
+global ZarielRequiresMet := false
+global ZarielChampsMet := false
+global ZarielCostsMet := false
 global ElminsterVariants := ""
 global ElminsterCompleted := ""
 global ElminsterVariantTotal := ""
@@ -225,6 +245,11 @@ global ElminsterFPCurrency := ""
 global ElminsterChallenges := ""
 global ElminsterRequires := ""
 global ElminsterCosts := ""
+global ElminsterUnlocked := false
+global ElminsterChamps := ""
+global ElminsterRequiresMet := false
+global ElminsterChampsMet := false
+global ElminsterCostsMet := false
 
 ;Event globals (main event from events_details.active_events)
 global EventID := ""
@@ -232,6 +257,7 @@ global EventName := ""
 global EventDesc := ""
 global EventTokenName := ""
 global EventTokens := ""
+global EventTime := ""
 global EventHeroIDs := ""
 global EventChestIDs := ""
 global EventHeroes := ""
@@ -245,6 +271,7 @@ global MiniEventDesc := ""
 global MiniEventTokens := ""
 global MiniEventHeroes := ""
 global MiniEventChests := ""
+global MiniEventTime := ""
 
 ;Web Tools globals
 global WebToolGithub := "https://github.com/djravine/idlecombos"
@@ -263,7 +290,7 @@ global hEditLog := 0
 global OutputStatus := "Welcome to IdleCombos v" VersionNumber
 global CurrentTime := ""
 global IsBusy := false
-global CrashProtectStatus := "Crash Protect: Disabled"
+global CrashProtectStatus := "Disabled"
 global CrashCount := 0
 global LastUpdated := "No data loaded"
 global LastBSChamp := ""
@@ -485,12 +512,17 @@ Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Form
 		row_y := row_y + 25
 		row_y := row_y + 25
 
-		Gui, MyWindow:Add, Text, x710 y78 vCrashProtectStatus, % CrashProtectStatus
-		Gui, MyWindow:Add, Button, x710 y95 w135 hwndhbtoggle vBtnToggle gCrash_Toggle, Toggle
+		Gui, MyWindow:Add, GroupBox, x708 y60 w149 h45 vSidebarGBPlatform, Platform
+		Gui, MyWindow:Add, Text, x716 y78 w133 +Center vPlatformValue, Not Configured
 
-		Gui, MyWindow:Add, Text, x710 y160 w135 vLastUpdatedTitle, Data Timestamp:
-		Gui, MyWindow:Add, Text, x710 y180 w135 h30 vLastUpdated, % LastUpdated
-		Gui, MyWindow:Add, Button, x710 y212 w135 hwndhbrefresh vBtnUpdate gUpdate_Clicked, Update
+		Gui, MyWindow:Add, GroupBox, x708 y120 w149 h75 vSidebarGBCrash, Crash Protect
+		Gui, MyWindow:Add, Text, x716 y140 w133 h16 +Center vCrashProtectStatus cCC0000, Disabled
+		Gui, MyWindow:Add, Button, x716 y160 w133 hwndhbtoggle vBtnToggle gCrash_Toggle, Toggle
+
+		Gui, MyWindow:Add, GroupBox, x708 y200 w149 h95 vSidebarGBData, Data Timestamp
+		Gui, MyWindow:Add, Text, x716 y218 w133 h16 +Center vLastUpdated, % LastUpdated
+		Gui, MyWindow:Add, Button, x716 y260 w133 hwndhbrefresh vBtnUpdate gUpdate_Clicked, Update
+		Gui, MyWindow:Add, Text, x716 y238 w133 h16 +Center +BackgroundTrans vLastUpdatedTimer,
 
 		Gui, Tab, Summary
 		Gui, MyWindow:Add, GroupBox, x4 y35 w306 h506 vSummaryGBAccount, Account
@@ -628,103 +660,120 @@ Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Form
 		Gui, MyWindow:Add, Button, x+4 yp w90 gShowBlacksmithMenu, Blacksmith
 		Gui, MyWindow:Add, Button, x+4 yp w100 gShowBountyMenu, Bounty (Alpha)
 		; 2×2 grid: top=Gems+Chests, bottom=Bounties+Blacksmith
-		Gui, MyWindow:Add, GroupBox, x4 y58 w340 h194 vInvGBGems, Gems
-		Gui, MyWindow:Add, ListView, x8 y74 w332 h174 vInvGemsLV hwndInvGemsHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Item|Count|Details
-		Gui, MyWindow:Add, GroupBox, x348 y58 w340 h194 vInvGBChests, Chests
-		Gui, MyWindow:Add, ListView, x352 y74 w332 h174 vInvChestsLV hwndInvChestsHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Chest|Count|Details
-		Gui, MyWindow:Add, GroupBox, x4 y152 w340 h390 vInvGBBounty, Bounty Contracts
-		Gui, MyWindow:Add, ListView, x8 y190 w332 h348 vInvBountyLV hwndInvBountyHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Contract|Count|Details
-		Gui, MyWindow:Add, GroupBox, x348 y152 w340 h390 vInvGBBS, Blacksmith Contracts
-		Gui, MyWindow:Add, ListView, x352 y190 w332 h348 vInvBSLV hwndInvBSHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Contract|Count|Details
+		Gui, MyWindow:Add, GroupBox, x4 y58 w340 h95 vInvGBGems, Gems
+		Gui, MyWindow:Add, ListView, x8 y74 w332 h75 vInvGemsLV hwndInvGemsHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Item|Count|Details
+		Gui, MyWindow:Add, GroupBox, x348 y58 w340 h95 vInvGBChests, Chests
+		Gui, MyWindow:Add, ListView, x352 y74 w332 h75 vInvChestsLV hwndInvChestsHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Chest|Count|Details
+		Gui, MyWindow:Add, GroupBox, x4 y158 w340 h384 vInvGBBounty, Bounty Contracts
+		Gui, MyWindow:Add, ListView, x8 y174 w332 h364 vInvBountyLV hwndInvBountyHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Contract|Count|Details
+		Gui, MyWindow:Add, GroupBox, x348 y158 w340 h384 vInvGBBS, Blacksmith Contracts
+		Gui, MyWindow:Add, ListView, x352 y174 w332 h364 vInvBSLV hwndInvBSHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Contract|Count|Details
 
 		Gui, Tab, Patrons
 		; 2×3 contact card grid: portrait left, text right
 		; Col1 x=4 w=340, Col2 x=348 w=340 | Box h=110 | Portrait 80×80
 
-		Gui, MyWindow:Add, GroupBox, x4 y35 w340 h110 vPatronGB1, Mirt the Moneylender
-		Gui, MyWindow:Add, Picture, x12 y51 w80 h-1 vPat1Pic, %A_ScriptDir%\images\patron_1.png
-		Gui, MyWindow:Add, Text, x100 y51 w55, Variants:
-		Gui, MyWindow:Add, Text, x155 y51 w80 vPat1Variants, —
-		Gui, MyWindow:Add, Text, x240 y51 w50, Done:
-		Gui, MyWindow:Add, Text, x290 y51 w46 vPat1Completed, —
-		Gui, MyWindow:Add, Text, x100 y67 w55, FP:
-		Gui, MyWindow:Add, Text, x155 y67 w80 vPat1FP, —
-		Gui, MyWindow:Add, Text, x240 y67 w50, Challs:
-		Gui, MyWindow:Add, Text, x290 y67 w46 vPat1Challenges, —
-		Gui, MyWindow:Add, Text, x100 y83 w55, Influence:
-		Gui, MyWindow:Add, Text, x155 y83 w181 vPat1Requires, —
-		Gui, MyWindow:Add, Text, x100 y99 w55, Coins:
-		Gui, MyWindow:Add, Text, x155 y99 w181 vPat1Costs, —
+			Gui, MyWindow:Add, GroupBox, x4 y35 w340 h116 vPatronGB1, Mirt the Moneylender
+			Gui, MyWindow:Add, Picture, x12 y51 w80 h-1 vPat1Pic, %A_ScriptDir%\images\patron_1.png
+			Gui, MyWindow:Add, Text, x100 y51 w55 vPat1Lbl1, Variants:
+			Gui, MyWindow:Add, Text, x155 y51 w80 vPat1Variants, —
+			Gui, MyWindow:Add, Text, x240 y51 w50 vPat1Lbl2, Done:
+			Gui, MyWindow:Add, Text, x290 y51 w46 vPat1Completed, —
+			Gui, MyWindow:Add, Text, x100 y67 w55 vPat1Lbl3, FP:
+			Gui, MyWindow:Add, Text, x155 y67 w80 vPat1FP, —
+			Gui, MyWindow:Add, Text, x240 y67 w50 vPat1Lbl4, Challs:
+			Gui, MyWindow:Add, Text, x290 y67 w46 vPat1Challenges, —
+			Gui, MyWindow:Add, Text, x100 y83 w236 vPat1Lbl5, Influence:
+			Gui, MyWindow:Add, Text, x155 y83 w181 vPat1Requires, —
+			Gui, MyWindow:Add, Text, x100 y99 w236 vPat1Lbl6, Coins:
+			Gui, MyWindow:Add, Text, x155 y99 w181 vPat1Costs, —
+			Gui, MyWindow:Add, Text, x100 y115 w236 vPat1Row5,
 
-		Gui, MyWindow:Add, GroupBox, x348 y35 w340 h110 vPatronGB2, Vajra Safahr
-		Gui, MyWindow:Add, Picture, x356 y51 w80 h-1 vPat2Pic, %A_ScriptDir%\images\patron_2.png
-		Gui, MyWindow:Add, Text, x444 y51 w55, Variants:
-		Gui, MyWindow:Add, Text, x499 y51 w80 vPat2Variants, —
-		Gui, MyWindow:Add, Text, x584 y51 w50, Done:
-		Gui, MyWindow:Add, Text, x634 y51 w46 vPat2Completed, —
-		Gui, MyWindow:Add, Text, x444 y67 w55, FP:
-		Gui, MyWindow:Add, Text, x499 y67 w80 vPat2FP, —
-		Gui, MyWindow:Add, Text, x584 y67 w50, Challs:
-		Gui, MyWindow:Add, Text, x634 y67 w46 vPat2Challenges, —
-		Gui, MyWindow:Add, Text, x444 y83 w55, Influence:
-		Gui, MyWindow:Add, Text, x499 y83 w181 vPat2Requires, —
-		Gui, MyWindow:Add, Text, x444 y99 w55, Coins:
-		Gui, MyWindow:Add, Text, x499 y99 w181 vPat2Costs, —
+			Gui, MyWindow:Add, GroupBox, x348 y35 w340 h116 vPatronGB2, Vajra Safahr
+			Gui, MyWindow:Add, Picture, x356 y51 w80 h-1 vPat2Pic, %A_ScriptDir%\images\patron_2.png
+			Gui, MyWindow:Add, Text, x444 y51 w55 vPat2Lbl1, Variants:
+			Gui, MyWindow:Add, Text, x499 y51 w80 vPat2Variants, —
+			Gui, MyWindow:Add, Text, x584 y51 w50 vPat2Lbl2, Done:
+			Gui, MyWindow:Add, Text, x634 y51 w46 vPat2Completed, —
+			Gui, MyWindow:Add, Text, x444 y67 w55 vPat2Lbl3, FP:
+			Gui, MyWindow:Add, Text, x499 y67 w80 vPat2FP, —
+			Gui, MyWindow:Add, Text, x584 y67 w50 vPat2Lbl4, Challs:
+			Gui, MyWindow:Add, Text, x634 y67 w46 vPat2Challenges, —
+			Gui, MyWindow:Add, Text, x444 y83 w236 vPat2Lbl5, Influence:
+			Gui, MyWindow:Add, Text, x499 y83 w181 vPat2Requires, —
+			Gui, MyWindow:Add, Text, x444 y99 w236 vPat2Lbl6, Coins:
+			Gui, MyWindow:Add, Text, x499 y99 w181 vPat2Costs, —
+			Gui, MyWindow:Add, Text, x444 y115 w236 vPat2Row5,
 
-		Gui, MyWindow:Add, GroupBox, x4 y149 w340 h110 vPatronGB3, Strahd von Zarovich
-		Gui, MyWindow:Add, Picture, x12 y165 w80 h-1 vPat3Pic, %A_ScriptDir%\images\patron_3.png
-		Gui, MyWindow:Add, Text, x100 y165 w55, Variants:
-		Gui, MyWindow:Add, Text, x155 y165 w80 vPat3Variants, —
-		Gui, MyWindow:Add, Text, x240 y165 w50, Done:
-		Gui, MyWindow:Add, Text, x290 y165 w46 vPat3Completed, —
-		Gui, MyWindow:Add, Text, x100 y181 w55, FP:
-		Gui, MyWindow:Add, Text, x155 y181 w80 vPat3FP, —
-		Gui, MyWindow:Add, Text, x240 y181 w50, Challs:
-		Gui, MyWindow:Add, Text, x290 y181 w46 vPat3Challenges, —
-		Gui, MyWindow:Add, Text, x100 y197 w55, Influence:
-		Gui, MyWindow:Add, Text, x155 y197 w181 vPat3Requires, —
-		Gui, MyWindow:Add, Text, x100 y213 w55, Coins:
-		Gui, MyWindow:Add, Text, x155 y213 w181 vPat3Costs, —
+		Gui, MyWindow:Add, GroupBox, x4 y155 w340 h116 vPatronGB3, Strahd von Zarovich
+		Gui, MyWindow:Add, Picture, x12 y171 w80 h-1 vPat3Pic, %A_ScriptDir%\images\patron_3.png
+		Gui, MyWindow:Add, Text, x100 y171 w55 vPat3Lbl1, Variants:
+		Gui, MyWindow:Add, Text, x155 y171 w80 vPat3Variants, —
+		Gui, MyWindow:Add, Text, x240 y171 w50 vPat3Lbl2, Done:
+		Gui, MyWindow:Add, Text, x290 y171 w46 vPat3Completed, —
+		Gui, MyWindow:Add, Text, x100 y187 w55 vPat3Lbl3, FP:
+		Gui, MyWindow:Add, Text, x155 y187 w80 vPat3FP, —
+		Gui, MyWindow:Add, Text, x240 y187 w50 vPat3Lbl4, Challs:
+		Gui, MyWindow:Add, Text, x290 y187 w46 vPat3Challenges, —
+		Gui, MyWindow:Add, Text, x100 y203 w236 vPat3Lbl5, Influence:
+		Gui, MyWindow:Add, Text, x155 y203 w181 vPat3Requires, —
+		Gui, MyWindow:Add, Text, x100 y219 w236 vPat3Lbl6, Coins:
+		Gui, MyWindow:Add, Text, x155 y219 w181 vPat3Costs, —
+		Gui, MyWindow:Add, Text, x100 y235 w236 vPat3Row5,
 
-		Gui, MyWindow:Add, GroupBox, x348 y149 w340 h110 vPatronGB4, Zariel
-		Gui, MyWindow:Add, Picture, x356 y165 w80 h-1 vPat4Pic, %A_ScriptDir%\images\patron_4.png
-		Gui, MyWindow:Add, Text, x444 y165 w55, Variants:
-		Gui, MyWindow:Add, Text, x499 y165 w80 vPat4Variants, —
-		Gui, MyWindow:Add, Text, x584 y165 w50, Done:
-		Gui, MyWindow:Add, Text, x634 y165 w46 vPat4Completed, —
-		Gui, MyWindow:Add, Text, x444 y181 w55, FP:
-		Gui, MyWindow:Add, Text, x499 y181 w80 vPat4FP, —
-		Gui, MyWindow:Add, Text, x584 y181 w50, Challs:
-		Gui, MyWindow:Add, Text, x634 y181 w46 vPat4Challenges, —
-		Gui, MyWindow:Add, Text, x444 y197 w55, Influence:
-		Gui, MyWindow:Add, Text, x499 y197 w181 vPat4Requires, —
-		Gui, MyWindow:Add, Text, x444 y213 w55, Coins:
-		Gui, MyWindow:Add, Text, x499 y213 w181 vPat4Costs, —
+		Gui, MyWindow:Add, GroupBox, x348 y155 w340 h116 vPatronGB4, Zariel
+		Gui, MyWindow:Add, Picture, x356 y171 w80 h-1 vPat4Pic, %A_ScriptDir%\images\patron_4.png
+		Gui, MyWindow:Add, Text, x444 y171 w55 vPat4Lbl1, Variants:
+		Gui, MyWindow:Add, Text, x499 y171 w80 vPat4Variants, —
+		Gui, MyWindow:Add, Text, x584 y171 w50 vPat4Lbl2, Done:
+		Gui, MyWindow:Add, Text, x634 y171 w46 vPat4Completed, —
+		Gui, MyWindow:Add, Text, x444 y187 w55 vPat4Lbl3, FP:
+		Gui, MyWindow:Add, Text, x499 y187 w80 vPat4FP, —
+		Gui, MyWindow:Add, Text, x584 y187 w50 vPat4Lbl4, Challs:
+		Gui, MyWindow:Add, Text, x634 y187 w46 vPat4Challenges, —
+		Gui, MyWindow:Add, Text, x444 y203 w236 vPat4Lbl5, Influence:
+		Gui, MyWindow:Add, Text, x499 y203 w181 vPat4Requires, —
+		Gui, MyWindow:Add, Text, x444 y219 w236 vPat4Lbl6, Coins:
+		Gui, MyWindow:Add, Text, x499 y219 w181 vPat4Costs, —
+		Gui, MyWindow:Add, Text, x444 y235 w236 vPat4Row5,
 
-		Gui, MyWindow:Add, GroupBox, x4 y263 w340 h110 vPatronGB5, Elminster
-		Gui, MyWindow:Add, Picture, x12 y279 w80 h-1 vPat5Pic, %A_ScriptDir%\images\patron_5.png
-		Gui, MyWindow:Add, Text, x100 y279 w55, Variants:
-		Gui, MyWindow:Add, Text, x155 y279 w80 vPat5Variants, —
-		Gui, MyWindow:Add, Text, x240 y279 w50, Done:
-		Gui, MyWindow:Add, Text, x290 y279 w46 vPat5Completed, —
-		Gui, MyWindow:Add, Text, x100 y295 w55, FP:
-		Gui, MyWindow:Add, Text, x155 y295 w80 vPat5FP, —
-		Gui, MyWindow:Add, Text, x240 y295 w50, Challs:
-		Gui, MyWindow:Add, Text, x290 y295 w46 vPat5Challenges, —
-		Gui, MyWindow:Add, Text, x100 y311 w55, Influence:
-		Gui, MyWindow:Add, Text, x155 y311 w181 vPat5Requires, —
-		Gui, MyWindow:Add, Text, x100 y327 w55, Coins:
-		Gui, MyWindow:Add, Text, x155 y327 w181 vPat5Costs, —
+			Gui, MyWindow:Add, GroupBox, x4 y275 w340 h116 vPatronGB5, Elminster
+			Gui, MyWindow:Add, Picture, x12 y291 w80 h-1 vPat5Pic, %A_ScriptDir%\images\patron_5.png
+			Gui, MyWindow:Add, Text, x100 y291 w55 vPat5Lbl1, Variants:
+			Gui, MyWindow:Add, Text, x155 y291 w80 vPat5Variants, —
+			Gui, MyWindow:Add, Text, x240 y291 w50 vPat5Lbl2, Done:
+			Gui, MyWindow:Add, Text, x290 y291 w46 vPat5Completed, —
+			Gui, MyWindow:Add, Text, x100 y307 w55 vPat5Lbl3, FP:
+			Gui, MyWindow:Add, Text, x155 y307 w80 vPat5FP, —
+			Gui, MyWindow:Add, Text, x240 y307 w50 vPat5Lbl4, Challs:
+			Gui, MyWindow:Add, Text, x290 y307 w46 vPat5Challenges, —
+			Gui, MyWindow:Add, Text, x100 y323 w236 vPat5Lbl5, Influence:
+			Gui, MyWindow:Add, Text, x155 y323 w181 vPat5Requires, —
+			Gui, MyWindow:Add, Text, x100 y339 w236 vPat5Lbl6, Coins:
+			Gui, MyWindow:Add, Text, x155 y339 w181 vPat5Costs, —
+			Gui, MyWindow:Add, Text, x100 y355 w236 vPat5Row5,
 
-		Gui, MyWindow:Add, GroupBox, x348 y263 w340 h110 vPatronGB6, Patron 6
-		Gui, MyWindow:Add, Picture, x356 y279 w80 h-1 vPat6Pic, %A_ScriptDir%\images\patron_6.png
-		Gui, MyWindow:Add, Text, x444 y299 w200 vPat6Val c808080, Empty Slot
+			Gui, MyWindow:Add, GroupBox, x348 y275 w340 h116 vPatronGB6, Patron 6
+			Gui, MyWindow:Add, Picture, x356 y291 w80 h-1 vPat6Pic, %A_ScriptDir%\images\patron_6.png
+			Gui, MyWindow:Add, Text, x444 y329 w200 vPat6Val c808080, Empty Slot
+			Gui, MyWindow:Add, Text, x444 y355 w236 vPat6Row5,
 
 		Gui, Tab, Champions
 		Gui, MyWindow:Add, ListView, x4 y35 w600 h506 vChampionsLV hwndChampionsHwnd +Grid +ReadOnly -Multi +NoSortHdr, Champion|Stat|Value
 
 		Gui, Tab, Pity Timers
-		Gui, MyWindow:Add, ListView, x4 y35 w600 h506 vPityLV hwndPityHwnd +Grid +ReadOnly -Multi +NoSortHdr, Chests Until Epic|Champions
+		; 2 columns × 5 rows, one GroupBox per chest count (1-10)
+		Loop, 10 {
+			col := Mod(A_Index - 1, 2)
+			row := Floor((A_Index - 1) / 2)
+			gx := 4 + col * 344
+			gy := 35 + row * 73
+			tx := gx + 8
+			ty := gy + 14
+			chestLabel := A_Index = 1 ? "1 Chest" : A_Index " Chests"
+			Gui, MyWindow:Add, GroupBox, x%gx% y%gy% w340 h70 vPityGB%A_Index%, %chestLabel% Until Epic
+			Gui, MyWindow:Add, Text, x%tx% y%ty% w324 h52 vPityText%A_Index%, —
+		}
 
 		Gui, Tab, Item Levels
 		Gui, MyWindow:Add, ListView, x4 y35 w600 h506 vItemLevelsLV hwndItemLevelsHwnd +Grid +ReadOnly -Multi +NoSortHdr, Category|Stat|Value
@@ -737,7 +786,31 @@ Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Form
 		Gui, MyWindow:Add, ListView, x4 y60 w600 h481 vVariantsLV hwndVariantsHwnd +Grid +ReadOnly -Multi +NoSortHdr, Campaign|Incomplete Adventure IDs
 
 		Gui, Tab, Event
-		Gui, MyWindow:Add, ListView, x4 y35 w600 h506 vEventLV hwndEventHwnd +Grid +ReadOnly -Multi +NoSortHdr, Detail|Value
+		Gui, MyWindow:Add, GroupBox, x4 y35 w681 h179 vEventGBMain, Main Event
+		Gui, MyWindow:Add, Text, x12 y53 w55, Event:
+		Gui, MyWindow:Add, Text, x67 y53 w280 vEvtMainName, —
+		Gui, MyWindow:Add, Text, x350 y53 w327 vEvtMainTime, —
+		Gui, MyWindow:Add, Text, x12 y69 w55, Desc:
+		Gui, MyWindow:Add, Text, x67 y69 w610 h56 vEvtMainDesc, —
+		Gui, MyWindow:Add, Text, x12 y129 w55, Tokens:
+		Gui, MyWindow:Add, Text, x67 y129 w610 vEvtMainTokens, —
+		Gui, MyWindow:Add, Text, x12 y145 w55, Heroes:
+		Gui, MyWindow:Add, Text, x67 y145 w610 h28 vEvtMainHeroes, —
+		Gui, MyWindow:Add, Text, x12 y177 w55, Chests:
+		Gui, MyWindow:Add, Text, x67 y177 w610 h14 vEvtMainChests, —
+
+		Gui, MyWindow:Add, GroupBox, x4 y213 w681 h179 vEventGBMini, Mini Event
+		Gui, MyWindow:Add, Text, x12 y233 w55, Event:
+		Gui, MyWindow:Add, Text, x67 y233 w280 vEvtMiniName, —
+		Gui, MyWindow:Add, Text, x350 y233 w327 vEvtMiniTime, —
+		Gui, MyWindow:Add, Text, x12 y249 w55, Desc:
+		Gui, MyWindow:Add, Text, x67 y249 w610 h56 vEvtMiniDesc, —
+		Gui, MyWindow:Add, Text, x12 y309 w55, Tokens:
+		Gui, MyWindow:Add, Text, x67 y309 w610 vEvtMiniTokens, —
+		Gui, MyWindow:Add, Text, x12 y325 w55, Heroes:
+		Gui, MyWindow:Add, Text, x67 y325 w610 h28 vEvtMiniHeroes, —
+		Gui, MyWindow:Add, Text, x12 y357 w55, Chests:
+		Gui, MyWindow:Add, Text, x67 y357 w610 h14 vEvtMiniChests, —
 
 		Gui, Tab, Settings
 		Gui, MyWindow:Add, Text, x15 y37 w85, Server Name:
@@ -1009,8 +1082,12 @@ Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Form
 			DllCall("SendMessage", "Ptr", hEditLog, "UInt", 0xB7, "Ptr", 0, "Ptr", 0)  ; EM_SCROLLCARET — scroll to caret
 		}
 		GuiControl, MyWindow:, CrashProtectStatus, % CrashProtectStatus, w250 h210
-		; Relative time is updated by TimestampTickTimer (1s tick)
+		; Platform info
+		platformText := GamePlatform != "" ? GamePlatform : "Not Configured"
+		GuiControl, MyWindow:, PlatformValue, % platformText
+		; Timestamp + timer — force h16 after content change to prevent auto-resize covering timer
 		GuiControl, MyWindow:, LastUpdated, % LastUpdated
+		GuiControl, Move, LastUpdated, h16
 
 		;Summary — Account
 		Gui, MyWindow:Default
@@ -1171,13 +1248,51 @@ Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Form
 			patIdx += 1
 			pShort := PatronShortNames[pid]
 			pDisplay := PatronFromID(pid)
+			pUnlockedVar := pShort "Unlocked"
+			isUnlocked := %pUnlockedVar%
 			GuiControl, MyWindow:, PatronGB%patIdx%, % pDisplay
-			GuiControl, MyWindow:, Pat%patIdx%Variants, % %pShort%Variants
-			GuiControl, MyWindow:, Pat%patIdx%Completed, % %pShort%Completed
-			GuiControl, MyWindow:, Pat%patIdx%FP, % %pShort%FPCurrency
-			GuiControl, MyWindow:, Pat%patIdx%Challenges, % %pShort%Challenges
-			GuiControl, MyWindow:, Pat%patIdx%Requires, % %pShort%Requires
-			GuiControl, MyWindow:, Pat%patIdx%Costs, % %pShort%Costs
+			if (isUnlocked) {
+				GuiControl, MyWindow:, Pat%patIdx%Lbl1, Variants:
+				GuiControl, MyWindow:, Pat%patIdx%Variants, % %pShort%Variants
+				GuiControl, MyWindow:, Pat%patIdx%Lbl2, Done:
+				GuiControl, MyWindow:, Pat%patIdx%Completed, % %pShort%Completed
+				GuiControl, MyWindow:, Pat%patIdx%Lbl3, FP:
+				GuiControl, MyWindow:, Pat%patIdx%FP, % %pShort%FPCurrency
+				GuiControl, MyWindow:, Pat%patIdx%Lbl4, Challs:
+				GuiControl, MyWindow:, Pat%patIdx%Challenges, % %pShort%Challenges
+				GuiControl, MyWindow:, Pat%patIdx%Lbl5, Influence:
+				GuiControl, +c000000, Pat%patIdx%Requires
+				GuiControl, MyWindow:, Pat%patIdx%Requires, % %pShort%Requires
+				GuiControl, MyWindow:, Pat%patIdx%Lbl6, Coins:
+				GuiControl, +c000000, Pat%patIdx%Costs
+				GuiControl, MyWindow:, Pat%patIdx%Costs, % %pShort%Costs
+				GuiControl, +c000000, Pat%patIdx%Row5
+				GuiControl, MyWindow:, Pat%patIdx%Row5,
+			} else {
+				pChampsVar := pShort "Champs"
+				pReqMetVar := pShort "RequiresMet"
+				pChampsMetVar := pShort "ChampsMet"
+				pCostsMetVar := pShort "CostsMet"
+				GuiControl, MyWindow:, Pat%patIdx%Lbl1, Status:
+				GuiControl, MyWindow:, Pat%patIdx%Variants, Locked
+				GuiControl, MyWindow:, Pat%patIdx%Lbl2,
+				GuiControl, MyWindow:, Pat%patIdx%Completed,
+				GuiControl, MyWindow:, Pat%patIdx%Lbl3, Requires:
+				GuiControl, MyWindow:, Pat%patIdx%FP,
+				GuiControl, MyWindow:, Pat%patIdx%Lbl4,
+				GuiControl, MyWindow:, Pat%patIdx%Challenges,
+				costsColor := %pCostsMetVar% ? "009900" : "CC0000"
+				GuiControl, +c%costsColor%, Pat%patIdx%Requires
+				GuiControl, MyWindow:, Pat%patIdx%Lbl5, Costs:
+				GuiControl, MyWindow:, Pat%patIdx%Requires, % %pShort%Costs
+				champsColor := %pChampsMetVar% ? "009900" : "CC0000"
+				GuiControl, +c%champsColor%, Pat%patIdx%Costs
+				GuiControl, MyWindow:, Pat%patIdx%Lbl6, Champs:
+				GuiControl, MyWindow:, Pat%patIdx%Costs, % %pChampsVar%
+				reqColor := %pReqMetVar% ? "009900" : "CC0000"
+				GuiControl, +c%reqColor%, Pat%patIdx%Row5
+				GuiControl, MyWindow:, Pat%patIdx%Row5, % %pShort%Requires
+			}
 		}
 
 ;Champions
@@ -1220,8 +1335,6 @@ Loop % LV_GetCount("Col")
 
 		;Pity Timers
 		Gui, MyWindow:Default
-		Gui, ListView, PityLV
-		LV_Delete()
 		if (SummaryDataLoaded && UserDetails.details.stats) {
 			pityjsonoutput := "{"
 			jsoncount := 0
@@ -1260,15 +1373,13 @@ Loop % LV_GetCount("Col")
 						default: currentchamp += 1
 					}
 				}
-				if (champlist != "") {
+				if (champlist != "")
 					StringTrimRight, champlist, champlist, 2
-					LV_Add("", chestsforepic, champlist)
-				}
+				displayText := champlist != "" ? champlist : "—"
+				GuiControl, MyWindow:, PityText%chestsforepic%, % displayText
 				chestsforepic += 1
 			}
 		}
-		Loop % LV_GetCount("Col")
-			LV_ModifyCol(A_Index, "AutoHdr")
 
 		;Item Levels
 		Gui, MyWindow:Default
@@ -1354,98 +1465,39 @@ Loop % LV_GetCount("Col")
 		Loop % LV_GetCount("Col")
 			LV_ModifyCol(A_Index, "AutoHdr")
 
-		;Event
+		;Event — update GroupBoxes
 		Gui, MyWindow:Default
-		Gui, ListView, EventLV
-		LV_Delete()
-		if (EventID != 0 && MiniEventID != 0 && EventID != MiniEventID) {
-			; ── Both main event and mini-event active ──
-			mainName := EventName != "" ? EventName : "Event " EventID
-			LV_Add("", "Type", "Main Event")
-			LV_Add("", "Event", mainName)
-			LV_Add("", "Event ID", EventID)
-			LV_Add("", EventTokenName, EventTokens)
-			LV_Add("", "───────────", "───────────────────────────")
-			Loop, Parse, EventHeroes, `,
-			{
-				hero := Trim(A_LoopField)
-				if (hero != "")
-					LV_Add("", "Hero", hero)
-			}
-			LV_Add("", "───────────", "───────────────────────────")
-			Loop, Parse, EventChests, `,
-			{
-				chest := Trim(A_LoopField)
-				if (chest != "")
-					LV_Add("", "Chest", chest)
-			}
-			LV_Add("", "═══════════", "═══════════════════════════")
-			LV_Add("", "Type", "Mini Event")
-			LV_Add("", "Event", MiniEventName)
-			LV_Add("", "Event ID", MiniEventID)
-			LV_Add("", "Description", MiniEventDesc)
-			LV_Add("", "Mini Tokens", MiniEventTokens)
-			LV_Add("", "───────────", "───────────────────────────")
-			Loop, Parse, MiniEventHeroes, `,
-			{
-				hero := Trim(A_LoopField)
-				if (hero != "")
-					LV_Add("", "Hero", hero)
-			}
-			LV_Add("", "───────────", "───────────────────────────")
-			Loop, Parse, MiniEventChests, `,
-			{
-				chest := Trim(A_LoopField)
-				if (chest != "")
-					LV_Add("", "Chest", chest)
-			}
-		} else if (MiniEventID != 0) {
-			; ── Mini-event only (or mini promoted to primary) ──
-			LV_Add("", "Type", "Mini Event")
-			LV_Add("", "Event", MiniEventName)
-			LV_Add("", "Event ID", MiniEventID)
-			LV_Add("", "Description", MiniEventDesc)
-			LV_Add("", "Mini Tokens", MiniEventTokens)
-			LV_Add("", "───────────", "───────────────────────────")
-			Loop, Parse, MiniEventHeroes, `,
-			{
-				hero := Trim(A_LoopField)
-				if (hero != "")
-					LV_Add("", "Hero", hero)
-			}
-			LV_Add("", "───────────", "───────────────────────────")
-			Loop, Parse, MiniEventChests, `,
-			{
-				chest := Trim(A_LoopField)
-				if (chest != "")
-					LV_Add("", "Chest", chest)
-			}
-		} else if (EventID != 0) {
-			; ── Main event only (no mini-event) ──
-			mainName := EventName != "" ? EventName : "Event " EventID
-			LV_Add("", "Type", "Main Event")
-			LV_Add("", "Event", mainName)
-			LV_Add("", "Event ID", EventID)
-			LV_Add("", EventTokenName, EventTokens)
-			LV_Add("", "───────────", "───────────────────────────")
-			Loop, Parse, EventHeroes, `,
-			{
-				hero := Trim(A_LoopField)
-				if (hero != "")
-					LV_Add("", "Hero", hero)
-			}
-			LV_Add("", "───────────", "───────────────────────────")
-			Loop, Parse, EventChests, `,
-			{
-				chest := Trim(A_LoopField)
-				if (chest != "")
-					LV_Add("", "Chest", chest)
-			}
+		if (EventID != 0) {
+			mainName := EventName != "" ? EventName " (" EventID ")" : "Event " EventID
+			GuiControl, MyWindow:, EvtMainName, % mainName
+			GuiControl, MyWindow:, EvtMainTime, % EventTime
+			GuiControl, MyWindow:, EvtMainDesc, % EventDesc
+			GuiControl, MyWindow:, EvtMainTokens, % EventTokens " " EventTokenName
+			GuiControl, MyWindow:, EvtMainHeroes, % EventHeroes
+			GuiControl, MyWindow:, EvtMainChests, % EventChests
 		} else {
-			LV_Add("", "Status", EventDesc)
+			GuiControl, MyWindow:, EvtMainName, No Event Active
+			GuiControl, MyWindow:, EvtMainTime, —
+			GuiControl, MyWindow:, EvtMainDesc, —
+			GuiControl, MyWindow:, EvtMainTokens, —
+			GuiControl, MyWindow:, EvtMainHeroes, —
+			GuiControl, MyWindow:, EvtMainChests, —
 		}
-		Loop % LV_GetCount("Col")
-			LV_ModifyCol(A_Index, "AutoHdr")
+		if (MiniEventID != 0) {
+			GuiControl, MyWindow:, EvtMiniName, % MiniEventName " (" MiniEventID ")"
+			GuiControl, MyWindow:, EvtMiniTime, % MiniEventTime
+			GuiControl, MyWindow:, EvtMiniDesc, % MiniEventDesc
+			GuiControl, MyWindow:, EvtMiniTokens, % MiniEventTokens " Tokens"
+			GuiControl, MyWindow:, EvtMiniHeroes, % MiniEventHeroes
+			GuiControl, MyWindow:, EvtMiniChests, % MiniEventChests
+		} else {
+			GuiControl, MyWindow:, EvtMiniName, No Mini Event Active
+			GuiControl, MyWindow:, EvtMiniTime, —
+			GuiControl, MyWindow:, EvtMiniDesc, —
+			GuiControl, MyWindow:, EvtMiniTokens, —
+			GuiControl, MyWindow:, EvtMiniHeroes, —
+			GuiControl, MyWindow:, EvtMiniChests, —
+		}
 
 		;Refresh active tab column fill
 
@@ -1506,22 +1558,42 @@ MyWindowGuiSize(GuiHwnd, EventInfo, Width, Height) {
 
 
 
+	; Inventory — 2×2 GroupBox grid
+	invHalfW := Floor(tabW / 2) - 4
+	invTopY := 35
+	invTopH := 130
+	invBotH := tabH - invTopH - 9
+	invBotY := invTopY + invTopH + 5
+	invCol2X := invHalfW + 8
+	GuiControl, MoveDraw, InvGBGems,    % "x4 y" . invTopY . " w" . invHalfW . " h" . invTopH
+	GuiControl, MoveDraw, InvGemsLV,    % "x8 y" . (invTopY + 16) . " w" . (invHalfW - 8) . " h" . (invTopH - 20)
+	GuiControl, MoveDraw, InvGBChests,  % "x" . invCol2X . " y" . invTopY . " w" . invHalfW . " h" . invTopH
+	GuiControl, MoveDraw, InvChestsLV,  % "x" . (invCol2X + 4) . " y" . (invTopY + 16) . " w" . (invHalfW - 8) . " h" . (invTopH - 20)
+	GuiControl, MoveDraw, InvGBBounty,  % "y" . invBotY . " w" . invHalfW . " h" . invBotH
+	GuiControl, MoveDraw, InvBountyLV,  % "y" . (invBotY + 16) . " w" . (invHalfW - 8) . " h" . (invBotH - 22)
+	GuiControl, MoveDraw, InvGBBS,      % "x" . invCol2X . " y" . invBotY . " w" . invHalfW . " h" . invBotH
+	GuiControl, MoveDraw, InvBSLV,      % "x" . (invCol2X + 4) . " y" . (invBotY + 16) . " w" . (invHalfW - 8) . " h" . (invBotH - 22)
+
 	GuiControl, MoveDraw, ChampionsLV,  % "w" . tabW . " h" . tabH
-	GuiControl, MoveDraw, PityLV,       % "w" . tabW . " h" . tabH
 	GuiControl, MoveDraw, ItemLevelsLV, % "w" . tabW . " h" . tabH
 	GuiControl, MoveDraw, VariantsLV,   % "w" . tabW . " h" . (tabH - 25)
-	GuiControl, MoveDraw, EventLV,      % "w" . tabW . " h" . tabH
 
 	GuiControl, MoveDraw, OutputText, % "x4" . " w" . tabW . " h" . (Height - 65)
 
 	GuiControl, MoveDraw, Group1, % "x" . (Width - 155) . " h" . (Height - 25)
 	GuiControl, MoveDraw, BtnReload, % "x" . (Width - 145)
 	GuiControl, MoveDraw, BtnExit, % "x" . (Width - 75)
-	GuiControl, MoveDraw, CrashProtectStatus, % "x" . (Width - 145)
-	GuiControl, MoveDraw, BtnToggle, % "x" . (Width - 145)
-	GuiControl, MoveDraw, LastUpdatedTitle, % "x" . (Width - 145)
-	GuiControl, MoveDraw, LastUpdated, % "x" . (Width - 145)
-	GuiControl, MoveDraw, BtnUpdate, % "x" . (Width - 145)
+	sideX := Width - 152
+	sideInX := Width - 144
+	GuiControl, MoveDraw, SidebarGBPlatform, % "x" . sideX
+	GuiControl, MoveDraw, PlatformValue, % "x" . sideInX
+	GuiControl, MoveDraw, SidebarGBCrash, % "x" . sideX
+	GuiControl, MoveDraw, CrashProtectStatus, % "x" . sideInX
+	GuiControl, MoveDraw, BtnToggle, % "x" . sideInX
+	GuiControl, MoveDraw, SidebarGBData, % "x" . sideX
+	GuiControl, MoveDraw, LastUpdated, % "x" . sideInX
+	GuiControl, MoveDraw, LastUpdatedTimer, % "x" . sideInX
+	GuiControl, MoveDraw, BtnUpdate, % "x" . sideInX
 	
 	SB_SetParts(Width - 155)
 	GuiControl, MoveDraw, StatusBar
@@ -1718,23 +1790,28 @@ SetupPickerGuiClose:
 ; Label: toggle crash protection monitoring on/off
 Crash_Toggle:
 	{
-		msgbox, % CrashProtectStatus
 		switch CrashProtectStatus {
-			case "Crash Protect: Disabled": {
-				CrashProtectStatus := "Crash Protect: Enabled"
+			case "Disabled": {
+				CrashProtectStatus := "Enabled"
+				GuiControl, +c009900, CrashProtectStatus
 				oMyGUI.Update()
 				SB_SetText("✅ Crash Protect has been enabled!")
-				CrashProtect()
+				SetTimer, CrashProtectStart, -1
 			}
-			case "Crash Protect: Enabled": {
-				CrashProtectStatus := "Crash Protect: Disabled"
+			case "Enabled": {
+				CrashProtectStatus := "Disabled"
+				GuiControl, +cCC0000, CrashProtectStatus
 				CrashCount := 0
 				oMyGUI.Update()
 				SB_SetText("✅ Crash Protect has been disabled")
 			}
 		}
-		return
 	}
+	return
+
+CrashProtectStart:
+	CrashProtect()
+	return
 
 ; Monitor game process and restart on crash (Steam only). Runs on a timer.
 ; Uses WinWait with timeout instead of fixed sleep to avoid launching multiple
@@ -1744,7 +1821,7 @@ CrashProtect() {
 	maxAttempts := 3
 	attempts := 0
 	loop {
-		if (CrashProtectStatus == "Crash Protect: Disabled")
+		if (CrashProtectStatus == "Disabled")
 			return
 		if (WinExist("ahk_exe IdleDragons.exe")) {
 			; Game is running — reset attempt counter
@@ -1755,9 +1832,10 @@ CrashProtect() {
 		; Game not running — attempt restart
 		attempts += 1
 		if (attempts > maxAttempts) {
-			CrashProtectStatus := "Crash Protect: Disabled"
+			CrashProtectStatus := "Disabled"
 			SB_SetText("❌ Crash Protect: gave up after " maxAttempts " failed attempts")
 			LogFile("Crash Protect: stopped after " maxAttempts " consecutive restart failures")
+			GuiControl, +cCC0000, CrashProtectStatus
 			GuiControl, MyWindow:, CrashProtectStatus, % CrashProtectStatus
 			return
 		}
@@ -1971,7 +2049,7 @@ TimestampTickTimer:
 			relTime := Floor(diff / 3600) "h " Floor(Mod(diff, 3600) / 60) "m ago"
 		else
 			relTime := Floor(diff / 86400) "d " Floor(Mod(diff, 86400) / 3600) "h ago"
-		GuiControl, MyWindow:, LastUpdated, % LastUpdated "`n(" relTime ")"
+		GuiControl, MyWindow:, LastUpdatedTimer, % "(" relTime ")"
 	}
 	return
 
@@ -4293,6 +4371,11 @@ ParsePatronData() {
 		pCostsVar      := pName "Costs"
 		pCompletedVar  := pName "Completed"
 		pVarTotalVar   := pName "VariantTotal"
+		pUnlockedVar   := pName "Unlocked"
+		pChampsVar     := pName "Champs"
+		pReqMetVar     := pName "RequiresMet"
+		pChampsMetVar  := pName "ChampsMet"
+		pCostsMetVar   := pName "CostsMet"
 		%pVariantsVar%   := pData.variants
 		%pFPVar%         := pData.fp
 		%pChallengesVar% := pData.challenges
@@ -4300,6 +4383,11 @@ ParsePatronData() {
 		%pCostsVar%      := pData.costs
 		%pCompletedVar%  := pData.completed
 		%pVarTotalVar%   := pData.total
+		%pUnlockedVar%   := pData.unlocked
+		%pChampsVar%     := pData.champs
+		%pReqMetVar%     := pData.requiresMet
+		%pChampsMetVar%  := pData.champsMet
+		%pCostsMetVar%   := pData.costsMet
 	}
 }
 
@@ -4347,10 +4435,12 @@ ColorPatronProgress(name, variants, fpCurrency, challenges, completed, variantTo
 
 ; Extract and display achievement requirements in the Summary tab
 CheckAchievements() {
+	global SummaryDataLoaded
 	APIStatus("⌛ Parsing Data - Achievements... Please wait...")
+	SummaryDataLoaded := true
 	AchievementNeeds := ""
 	AchievementGearChamp := ""
-	; Skip if data appears empty/unloaded (prevents misleading Todo items from zero-data)
+	; Skip achievement parsing if data appears empty/unloaded
 	if (!UserDetails.details.stats.highest_level_gear)
 		return
 	; Find which champion holds the highest gear
@@ -4420,7 +4510,6 @@ CheckAchievements() {
 		if (needs != "")
 			AchievementNeeds .= "Krydle needs:" needs "`n"
 	}
-	SummaryDataLoaded := true
 }
 
 ; Placeholder for blessing data (now handled in Update)
@@ -4460,6 +4549,9 @@ CheckEvents() {
 		if (IsObject(evd.active_events)) {
 			for i, ae in evd.active_events {
 				EventID := ae.event_id + 0
+				; Build event time string
+				totalTime := (ae.time_since_start + 0) + (ae.time_until_end + 0)
+				EventTime := FormatDuration(totalTime) " (remaining: " FormatDuration(ae.time_until_end) ")"
 				; Look up event name and token name from defines
 				if (IsObject(UserDetails.defines) && IsObject(UserDetails.defines.event_v2_defines)) {
 					for di, def in UserDetails.defines.event_v2_defines {
@@ -4529,6 +4621,7 @@ CheckEvents() {
 			MiniEventName := ed.name
 			MiniEventDesc := ed.description
 			MiniEventTokens := ed.user_data.event_tokens + 0
+			MiniEventTime := FormatDuration(ed.total_duration) " (remaining: " FormatDuration(ed.end_purchases_in) ")"
 			; Heroes
 			heroCount := 0
 			MiniEventHeroes := ""

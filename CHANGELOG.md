@@ -11,6 +11,13 @@ To all the Idle Dragoneers who inspired and assisted me!
 * Redesign Adventures tab — replace ListView with 2×3 grid of GroupBox cards showing adventure name, patron, area, core, reset, champions, XP, and progress bar per party slot; custom party names in titles; BG5/BG6 placeholders for future slots
 * Redesign Summary tab — split into Account and Blessings GroupBoxes with separate ListViews; add Fully Equipped, Total Hero Levels, Unique Adventures, Free Plays, Boss Defeats, Monster Kills stats
 * Redesign Inventory tab — split into 4 GroupBoxes (Gems, Chests, Bounty Contracts, Blacksmith Contracts) in a 2×2 grid layout; format Spent Gems with magnitude suffix
+* Redesign Patrons tab — GroupBox contact cards with portrait images; conditional locked/unlocked display with color-coded requirements (green=met, red=unmet); adventure names in unlock requirements; 5 rows for locked patrons (Status, Requires, Costs, Champs, adventure stat)
+* Redesign Event tab — split into Main Event and Mini Event GroupBoxes; event name with ID, description (4 lines), time display with remaining duration, token count with currency name, heroes and chests as comma-separated values; add `FormatDuration()` helper
+* Sidebar — GroupBoxes for Platform, Crash Protect (color-coded green/red toggle via SetTimer), and Data Timestamp with live timer
+* Fix Summary tab not loading — add explicit `global SummaryDataLoaded` in `CheckAchievements()`, set before early return
+* Add folder browser fallback (locate IdleDragons.exe) when game auto-detection fails
+* Replace setup wizard with platform picker GUI; support platform switching; move Run Setup to File menu
+* Merge credential prompts into single dialog with platform-specific instructions
 * Move Adventure Manager actions from Tools menu to button bar in Adventures tab
 * Move Chests, Blacksmith, and Bounty submenus from Tools menu to popup buttons in Inventory tab
 * Redesign `PromptCount()` — replace plain `InputBox` with slider, synced number spinbox, and Max button for all bulk operations
