@@ -6,6 +6,8 @@ To all the Idle Dragoneers who inspired and assisted me!
 
 ------
 
+## 3.83
+
 ## 3.82
 
 * Redesign Adventures tab — replace ListView with 2×3 grid of GroupBox cards showing adventure name, patron, area, core, reset, champions, XP, and progress bar per party slot; custom party names in titles; BG5/BG6 placeholders for future slots
