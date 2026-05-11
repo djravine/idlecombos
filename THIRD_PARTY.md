@@ -65,7 +65,7 @@ Developers who clone the repo receive Yunit under its own AGPL-3.0 terms for tes
 * **Source**: Maintained by project contributors
 * **License**: MIT (same as project)
 * **SHA-256**: `80C964B1294F4DA3747ABFDD495ECFBB1C1CF4DAB652D53B651DA63CFBD39E14`
-* **Notes**: ID-to-name mappings for champions, chests, campaigns, patrons, and feats. Can be auto-updated from GitHub via Tools menu.
+* **Notes**: ID-to-name mappings for champions, chests, campaigns, patrons, and feats. Can be auto-updated from GitHub via Help menu or synced from game API.
 
 ## Verification
 

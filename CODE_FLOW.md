@@ -69,16 +69,19 @@
 │       Launch Game, Update UserDetails                        │
 │       Detect Game (Epic/Steam/Standalone/Console)            │
 │       Reload, Exit                                           │
-│     Tools menu:                                              │
-│       Chests (Buy/Open Silver/Gold/Event)                    │
-│       Blacksmith (Tiny→Huge contracts, Gear Report, Feats)   │
-│       Bounty (Tiny→Large contracts) [Alpha]                  │
-│       Redeem Codes, Adventure Manager                        │
-│       Briv Stack Calculator, Web Tools                       │
-│     Help menu:                                               │
-│       Run Setup, Clear Log, Update Dictionary                │
-│       List User Details/Champ IDs/Chest IDs/Hotkeys          │
-│       About, Github, Discord, Support Ticket                 │
+│     File menu:                                                │
+│       Run Setup / Change Platform, Detect Game (per-platform) │
+│       Launch Game Client, Update UserDetails                  │
+│     Tools menu:                                               │
+│       Redeem Codes, Briv Stack Calculator                     │
+│       Export to CSV, Web Tools                                │
+│     Help menu:                                                │
+│       Clear Log, Update Dictionary, Sync Dictionary from API  │
+│       List User Details/Champ IDs/Chest IDs/Hotkeys           │
+│       About, Github, Discord, Support Ticket                  │
+│     Tab buttons:                                              │
+│       Adventures: Load/End/Kleho/Update List                  │
+│       Inventory: Chests/Blacksmith/Bounty (popup submenus)    │
 │                                                              │
 │  3. Build GUI controls (L429-527)              [<100ms]      │
 │     StatusBar (bottom)                                       │
