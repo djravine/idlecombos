@@ -493,7 +493,10 @@ Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Form
 		Gui, MyWindow:Add, Button, x710 y212 w135 hwndhbrefresh vBtnUpdate gUpdate_Clicked, Update
 
 		Gui, Tab, Summary
-		Gui, MyWindow:Add, ListView, x4 y35 w600 h506 vSummaryLV hwndSummaryHwnd +Grid +ReadOnly -Multi +NoSortHdr, Category|Stat|Value|Details
+		Gui, MyWindow:Add, GroupBox, x4 y35 w306 h506 vSummaryGBAccount, Account
+		Gui, MyWindow:Add, ListView, x8 y51 w298 h486 vSummaryAccountLV hwndSummaryAccountHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Stat|Value|Details
+		Gui, MyWindow:Add, GroupBox, x314 y35 w374 h506 vSummaryGBBless, Blessings
+		Gui, MyWindow:Add, ListView, x318 y51 w366 h486 vSummaryBlessLV hwndSummaryBlessHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200 -HScroll, Blessing|Multiplier|Source
 		LV_ModifyCol(1, 80)
 		LV_ModifyCol(2, 170)
 		LV_ModifyCol(3, 170)
@@ -624,7 +627,15 @@ Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Form
 		Gui, MyWindow:Add, Button, x4 y34 w80 gShowChestsMenu, Chests
 		Gui, MyWindow:Add, Button, x+4 yp w90 gShowBlacksmithMenu, Blacksmith
 		Gui, MyWindow:Add, Button, x+4 yp w100 gShowBountyMenu, Bounty (Alpha)
-		Gui, MyWindow:Add, ListView, x4 y60 w600 h481 vInventoryLV hwndInventoryHwnd +Grid +ReadOnly -Multi +NoSortHdr, Item|Count|Details
+		; 2×2 grid: top=Gems+Chests, bottom=Bounties+Blacksmith
+		Gui, MyWindow:Add, GroupBox, x4 y58 w340 h154 vInvGBGems, Gems
+		Gui, MyWindow:Add, ListView, x8 y74 w332 h134 vInvGemsLV hwndInvGemsHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Item|Count|Details
+		Gui, MyWindow:Add, GroupBox, x348 y58 w340 h154 vInvGBChests, Chests
+		Gui, MyWindow:Add, ListView, x352 y74 w332 h134 vInvChestsLV hwndInvChestsHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Chest|Count|Details
+		Gui, MyWindow:Add, GroupBox, x4 y172 w340 h370 vInvGBBounty, Bounty Contracts
+		Gui, MyWindow:Add, ListView, x8 y190 w332 h348 vInvBountyLV hwndInvBountyHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Contract|Count|Details
+		Gui, MyWindow:Add, GroupBox, x348 y172 w340 h370 vInvGBBS, Blacksmith Contracts
+		Gui, MyWindow:Add, ListView, x352 y190 w332 h348 vInvBSLV hwndInvBSHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Contract|Count|Details
 
 		Gui, Tab, Patrons
 		Gui, MyWindow:Add, ListView, x4 y35 w600 h506 vPatronsLV hwndPatronsHwnd +Grid +ReadOnly -Multi +NoSortHdr, Patron|Variants|Completed|FP Currency|Challenges|Influence / Requires|Coins / Costs
@@ -921,50 +932,63 @@ Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Form
 		; Relative time is updated by TimestampTickTimer (1s tick)
 		GuiControl, MyWindow:, LastUpdated, % LastUpdated
 
-		;Summary
+		;Summary — Account
 		Gui, MyWindow:Default
-		Gui, ListView, SummaryLV
+		Gui, ListView, SummaryAccountLV
 		LV_Delete()
 		if (!UserID || UserID == 0) {
-			LV_Add("", "", "Setup Required", "Use File → Run Setup", "Configure your game client to get started")
+			LV_Add("", "Setup Required", "Use File → Run Setup", "Configure your game client")
 		} else if (!SummaryDataLoaded) {
 			if (GetDetailsonStart == "1")
-				LV_Add("", "", "Loading", "Fetching user data...", "Please wait")
+				LV_Add("", "Loading", "Fetching user data...", "Please wait")
 			else
-				LV_Add("", "", "Ready", "User ID & Hash configured", "Press Update to load user data")
+				LV_Add("", "Ready", "User ID & Hash configured", "Press Update to load")
 		} else {
-			LV_Add("", "Account", "Highest Gear Level", UserDetails.details.stats.highest_level_gear, AchievementGearChamp)
-			LV_Add("", "Account", "Champions Unlocked", ChampionsUnlockedCount, "")
-			LV_Add("", "Account", "Champions Active", ChampionsActiveCount, "Across all instances")
-			LV_Add("", "Account", "Familiars", FamiliarsUnlockedCount, "")
-			LV_Add("", "Account", "Costumes", CostumesUnlockedCount, "")
-			LV_Add("", "Account", "Epic Gear", EpicGearCount, "")
+			LV_Add("", "Highest Gear Level", UserDetails.details.stats.highest_level_gear, AchievementGearChamp)
+			LV_Add("", "Champions Unlocked", ChampionsUnlockedCount, "")
+			LV_Add("", "Champions Active", ChampionsActiveCount, "Across all instances")
+			LV_Add("", "Fully Equipped", UserDetails.details.stats.champions_fully_equipped, "of " ChampionsUnlockedCount " unlocked")
+			LV_Add("", "Familiars", FamiliarsUnlockedCount, "")
+			LV_Add("", "Costumes", CostumesUnlockedCount, "")
+			LV_Add("", "Epic Gear", EpicGearCount, "")
+			LV_Add("", "Total Hero Levels", FormatMagnitude(UserDetails.details.stats.total_hero_levels), "")
+			LV_Add("", "Unique Adventures", UserDetails.details.stats.unique_adventures_completed, "")
+			LV_Add("", "Free Plays", FormatMagnitude(UserDetails.details.stats.free_plays_completed), "")
+			LV_Add("", "Boss Defeats (Resets)", FormatMagnitude(UserDetails.details.stats.boss_defeats), "")
+			LV_Add("", "Monster Kills", FormatMagnitude(UserDetails.details.stats.monster_kills), "")
 			if (AchievementNeeds != "") {
-				LV_Add("", "────────", "───────────────────", "─────────", "───────────────")
 				Loop, Parse, AchievementNeeds, `n
 				{
 					if (A_LoopField != "")
-						LV_Add("", "Todo", A_LoopField, "", "Incomplete")
+						LV_Add("", A_LoopField, "", "Incomplete")
 				}
 			}
-			LV_Add("", "────────", "───────────────────", "─────────", "───────────────")
-			if (EpicGearCount && UserDetails.details.reset_upgrade_levels.44)
-				LV_Add("", "Blessing", "Slow and Steady (Helm)", "x" Round((1.02 ** EpicGearCount), 2), EpicGearCount " epics")
-			if (ChampionsUnlockedCount && UserDetails.details.reset_upgrade_levels.72)
-				LV_Add("", "Blessing", "Familiar Faces (Helm)", "x" Round((1.02 ** ChampionsUnlockedCount), 2), ChampionsUnlockedCount " champions")
-			if (ChampionsActiveCount && UserDetails.details.reset_upgrade_levels.76)
-				LV_Add("", "Blessing", "Splitting the Party (Helm)", "x" Round((1.02 ** ChampionsActiveCount), 2), ChampionsActiveCount " active")
-			if (UserDetails.details.reset_upgrade_levels.56) {
-				vetAdvs := UserDetails.details.stats.completed_adventures_variants_and_patron_variants_c22
-				LV_Add("", "Blessing", "Veterans of Avernus (Tiamat)", "x" Round(1 + (0.1 * vetAdvs), 2), vetAdvs " adventures")
-			}
-			if (CostumesUnlockedCount && UserDetails.details.reset_upgrade_levels.88)
-				LV_Add("", "Blessing", "Costume Party (Auril)", "x" Round((1.20 ** CostumesUnlockedCount), 2), CostumesUnlockedCount " skins")
-			if (FamiliarsUnlockedCount && UserDetails.details.reset_upgrade_levels.108)
-				LV_Add("", "Blessing", "Familiar Stakes (Corellon)", "x" Round((1.20 ** FamiliarsUnlockedCount), 2), FamiliarsUnlockedCount " familiars")
 		}
 		Loop % LV_GetCount("Col")
 			LV_ModifyCol(A_Index, "AutoHdr")
+
+		;Summary — Blessings
+		Gui, ListView, SummaryBlessLV
+		LV_Delete()
+		if (SummaryDataLoaded) {
+			if (EpicGearCount && UserDetails.details.reset_upgrade_levels.44)
+				LV_Add("", "Slow and Steady (Helm)", "x" Round((1.02 ** EpicGearCount), 2), EpicGearCount " epics")
+			if (ChampionsUnlockedCount && UserDetails.details.reset_upgrade_levels.72)
+				LV_Add("", "Familiar Faces (Helm)", "x" Round((1.02 ** ChampionsUnlockedCount), 2), ChampionsUnlockedCount " champions")
+			if (ChampionsActiveCount && UserDetails.details.reset_upgrade_levels.76)
+				LV_Add("", "Splitting the Party (Helm)", "x" Round((1.02 ** ChampionsActiveCount), 2), ChampionsActiveCount " active")
+			if (UserDetails.details.reset_upgrade_levels.56) {
+				vetAdvs := UserDetails.details.stats.completed_adventures_variants_and_patron_variants_c22
+				LV_Add("", "Veterans of Avernus (Tiamat)", "x" Round(1 + (0.1 * vetAdvs), 2), vetAdvs " adventures")
+			}
+			if (CostumesUnlockedCount && UserDetails.details.reset_upgrade_levels.88)
+				LV_Add("", "Costume Party (Auril)", "x" Round((1.20 ** CostumesUnlockedCount), 2), CostumesUnlockedCount " skins")
+			if (FamiliarsUnlockedCount && UserDetails.details.reset_upgrade_levels.108)
+				LV_Add("", "Familiar Stakes (Corellon)", "x" Round((1.20 ** FamiliarsUnlockedCount), 2), FamiliarsUnlockedCount " familiars")
+		}
+		LV_ModifyCol(1, 160)
+		LV_ModifyCol(2, "AutoHdr")
+		LV_ModifyCol(3, "AutoHdr")
 
 		;Adventures — update GroupBox cards
 		fgTitle := FGCustomName != "" ? "Foreground - " FGCustomName : "Foreground"
@@ -1016,38 +1040,49 @@ Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Form
 		GuiControl, , Adv4ProgBar, % BG3CoreProgressPct
 		GuiControl, MyWindow:, Adv4ProgText, % BG3CoreProgress
 
-		;Inventory
-Gui, MyWindow:Default
-Gui, ListView, InventoryLV
-LV_Delete()
-; Currency
-LV_Add("", "Gems",              CurrentGems,         Floor(CurrentGems/50) " Silver or " Floor(CurrentGems/500) " Gold")
-LV_Add("", "Spent Gems",        SpentGems,           "")
-LV_Add("", "───────────",       "─────",             "───────────────────────────")
-; Chests
-LV_Add("", "Gold Chests",       CurrentGolds,        GoldPity)
-LV_Add("", "Silver Chests",     CurrentSilvers,      "")
-LV_Add("", "Time Gate Pieces",  CurrentTGPs,         Floor(CurrentTGPs/6) " Time Gates | Next: " NextTGPDrop)
-LV_Add("", "───────────",       "─────",             "───────────────────────────")
-; Bounty Contracts — labels and multipliers from shared BountyContracts constant
-tokencount := 0
-for _, bc in BountyContracts {
-	varName := bc.var
-	LV_Add("", bc.name " Bounties", %varName%, bc.mult " " bc.unit " Each")
-	tokencount += %varName% * bc.mult
-}
-LV_Add("", "Total Bounty Tokens", tokencount, Round(tokencount/2500, 2) " Free Plays")
-LV_Add("", "───────────",       "─────",             "───────────────────────────")
-; Blacksmith Contracts — labels and multipliers from shared BlacksmithContracts constant
-bsLevels := 0
-for _, bs in BlacksmithContracts {
-	varName := bs.var
-	LV_Add("", bs.name " Blacksmiths", %varName%, bs.mult " " bs.unit " Each")
-	bsLevels += %varName% * bs.mult
-}
-LV_Add("", "Total Item Levels", bsLevels, "")
-Loop % LV_GetCount("Col")
-	LV_ModifyCol(A_Index, "AutoHdr")
+		;Inventory — Gems
+		Gui, MyWindow:Default
+		Gui, ListView, InvGemsLV
+		LV_Delete()
+		LV_Add("", "Gems", CurrentGems, Floor(CurrentGems/50) " Silver or " Floor(CurrentGems/500) " Gold")
+		LV_Add("", "Spent Gems", FormatMagnitude(SpentGems), "")
+		Loop % LV_GetCount("Col")
+			LV_ModifyCol(A_Index, "AutoHdr")
+
+		;Inventory — Chests
+		Gui, ListView, InvChestsLV
+		LV_Delete()
+		LV_Add("", "Gold Chests", CurrentGolds, GoldPity)
+		LV_Add("", "Silver Chests", CurrentSilvers, "")
+		LV_Add("", "Time Gate Pieces", CurrentTGPs, Floor(CurrentTGPs/6) " Time Gates | Next: " NextTGPDrop)
+		Loop % LV_GetCount("Col")
+			LV_ModifyCol(A_Index, "AutoHdr")
+
+		;Inventory — Bounty Contracts
+		Gui, ListView, InvBountyLV
+		LV_Delete()
+		tokencount := 0
+		for _, bc in BountyContracts {
+			varName := bc.var
+			LV_Add("", bc.name " Bounties", %varName%, bc.mult " " bc.unit " Each")
+			tokencount += %varName% * bc.mult
+		}
+		LV_Add("", "Total Bounty Tokens", tokencount, Round(tokencount/2500, 2) " Free Plays")
+		Loop % LV_GetCount("Col")
+			LV_ModifyCol(A_Index, "AutoHdr")
+
+		;Inventory — Blacksmith Contracts
+		Gui, ListView, InvBSLV
+		LV_Delete()
+		bsLevels := 0
+		for _, bs in BlacksmithContracts {
+			varName := bs.var
+			LV_Add("", bs.name " Blacksmiths", %varName%, bs.mult " " bs.unit " Each")
+			bsLevels += %varName% * bs.mult
+		}
+		LV_Add("", "Total Item Levels", bsLevels, "")
+		Loop % LV_GetCount("Col")
+			LV_ModifyCol(A_Index, "AutoHdr")
 
 ;Patrons — display names from dict, variable data via short-name prefix
 Gui, MyWindow:Default
@@ -1377,11 +1412,30 @@ MyWindowGuiSize(GuiHwnd, EventInfo, Width, Height) {
 
 	tabW := Width - 161
 	tabH := Height - 59
-	GuiControl, MoveDraw, SummaryLV, % "w" . tabW . " h" . tabH
+	acctW := Floor(tabW * 0.45)
+	blessW := tabW - acctW - 4
+	blessX := acctW + 8
+	GuiControl, MoveDraw, SummaryGBAccount,  % "w" . acctW . " h" . tabH
+	GuiControl, MoveDraw, SummaryAccountLV,  % "w" . (acctW - 8) . " h" . (tabH - 20)
+	GuiControl, MoveDraw, SummaryGBBless,    % "x" . blessX . " w" . blessW . " h" . tabH
+	GuiControl, MoveDraw, SummaryBlessLV,    % "x" . (blessX + 4) . " w" . (blessW - 8) . " h" . (tabH - 20)
 
 
 	GuiControl, MoveDraw, PatronsLV,    % "w" . tabW . " h" . tabH
-	GuiControl, MoveDraw, InventoryLV,  % "w" . tabW . " h" . (tabH - 25)
+	; Inventory — 2×2 GroupBox grid
+	invHalfW := Floor(tabW / 2) - 4
+	invTopH := 154
+	invBotH := tabH - invTopH - 4
+	invBotY := 58 + invTopH
+	invCol2X := invHalfW + 8
+	GuiControl, MoveDraw, InvGBGems,    % "w" . invHalfW . " h" . invTopH
+	GuiControl, MoveDraw, InvGemsLV,    % "w" . (invHalfW - 8) . " h" . (invTopH - 20)
+	GuiControl, MoveDraw, InvGBChests,  % "x" . invCol2X . " w" . invHalfW . " h" . invTopH
+	GuiControl, MoveDraw, InvChestsLV,  % "x" . (invCol2X + 4) . " w" . (invHalfW - 8) . " h" . (invTopH - 20)
+	GuiControl, MoveDraw, InvGBBounty,  % "y" . invBotY . " w" . invHalfW . " h" . invBotH
+	GuiControl, MoveDraw, InvBountyLV,  % "y" . (invBotY + 16) . " w" . (invHalfW - 8) . " h" . (invBotH - 22)
+	GuiControl, MoveDraw, InvGBBS,      % "x" . invCol2X . " y" . invBotY . " w" . invHalfW . " h" . invBotH
+	GuiControl, MoveDraw, InvBSLV,      % "x" . (invCol2X + 4) . " y" . (invBotY + 16) . " w" . (invHalfW - 8) . " h" . (invBotH - 22)
 	GuiControl, MoveDraw, ChampionsLV,  % "w" . tabW . " h" . tabH
 	GuiControl, MoveDraw, PityLV,       % "w" . tabW . " h" . tabH
 	GuiControl, MoveDraw, ItemLevelsLV, % "w" . tabW . " h" . tabH
