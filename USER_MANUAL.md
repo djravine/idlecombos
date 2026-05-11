@@ -39,14 +39,12 @@ The app forces 32-bit mode at startup (required for WinHttp COM). If your system
 
 On first launch the setup wizard runs automatically:
 
-1. **Game Detection** — the app scans for your Idle Champions installation:
-   * Epic Games (checks `LauncherInstalled.dat`)
-   * Steam (checks default `C:\Program Files (x86)\Steam\steamapps\common\IdleChampions\`)
-   * Standalone (checks `C:\Program Files (x86)\Idle Champions\`)
-2. **WRL File** — if a `webRequestLog.txt` is found in the app folder or game directory, you are prompted to extract credentials from it
-3. **Credentials** — your `user_id` and `hash` are saved to `idlecombosettings.json` (local only, never sent anywhere except the official game API)
+1. **Platform Selection** — a picker GUI with four buttons: Epic Games, Steam, Standalone, Console/Manual
+2. **Game Detection** — the app scans for your Idle Champions installation at the default path. If not found, you can browse for `IdleDragons.exe` manually
+3. **WRL File** — if a `webRequestLog.txt` is found in the game directory, credentials are extracted automatically
+4. **Credentials** — your `user_id` and `hash` are saved to `idlecombosettings.json` (local only, never sent anywhere except the official game API)
 
-If auto-detection fails, you can manually enter your credentials or re-run setup later via **Help → Run Setup**.
+If auto-detection fails, you can manually enter your credentials. Re-run setup or switch platforms via **File → Run Setup / Change Platform**.
 
 ## Interface Overview
 
@@ -56,6 +54,7 @@ The app window is divided into three areas:
 ┌─────────────────────────────────────────┬────────────────┐
 │  Tab Content Area                       │  Sidebar       │
 │  (Summary, Adventures, Inventory, etc.) │  [Reload][Exit]│
+│                                         │  Platform      │
 │                                         │  Crash Protect │
 │                                         │  Data Timestamp│
 │                                         │  [Update]      │

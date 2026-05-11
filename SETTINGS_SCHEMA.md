@@ -4,12 +4,14 @@
 
 `SettingsCheckValue` (defined in `IdleCombosLib.ahk`) is compared against the count of keys in `idlecombosettings.json` at startup. When they differ, new default keys are merged into existing settings without overwriting user values.
 
-## Current Value: 25
+## Current Value: 38
 
 ## Schema History
 
 | Value | Version | Keys Added | Notes |
 |-------|---------|------------|-------|
+| 38 | v3.82 | `lastadvid`, `lastpatronid`, `lastchestid` | Persist last-used adventure, patron, chest picker selections |
+| 35 | v3.82 | `lastbschamp`, `lastbstncount`, `lastbssmcount`, `lastbsmdcount`, `lastbslgcount`, `lastbshgcount`, `lastbountytncount`, `lastbountysmcount`, `lastbountymdcount`, `lastbountylgcount` | Persist blacksmith champion + counts, bounty counts across sessions |
 | 25 | v3.80 | `showapimessages` | Toggle verbose API/parsing progress in status bar |
 | 24 | v3.80 | `autorefreshminutes` | Auto-refresh user details interval (0=off) |
 | 23 | v3.78 | `redeemcodehistoryskip` | Skip previously redeemed codes |
@@ -21,7 +23,7 @@
 
 *Note: Earlier versions used a destructive reset (delete + recreate) when the count mismatched. v3.78 introduced non-destructive key merging.*
 
-## Current Keys (25 total)
+## Current Keys (38 total)
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
@@ -36,6 +38,19 @@
 | `getdetailsonstart` | int | 0 | Fetch user details on app launch |
 | `hash` | str | 0 | API authentication hash |
 | `instance_id` | str | 0 | Game session instance ID |
+| `lastadvid` | int | 0 | Last-used adventure ID for picker pre-selection |
+| `lastbountytncount` | int | 0 | Last-used Tiny Bounty count |
+| `lastbountysmcount` | int | 0 | Last-used Small Bounty count |
+| `lastbountymdcount` | int | 0 | Last-used Medium Bounty count |
+| `lastbountylgcount` | int | 0 | Last-used Large Bounty count |
+| `lastbschamp` | int | 0 | Last-used Blacksmith champion ID |
+| `lastbstncount` | int | 0 | Last-used Tiny Blacksmith count |
+| `lastbssmcount` | int | 0 | Last-used Small Blacksmith count |
+| `lastbsmdcount` | int | 0 | Last-used Medium Blacksmith count |
+| `lastbslgcount` | int | 0 | Last-used Large Blacksmith count |
+| `lastbshgcount` | int | 0 | Last-used Huge Blacksmith count |
+| `lastchestid` | int | 0 | Last-used chest ID for picker pre-selection |
+| `lastpatronid` | int | 0 | Last-used patron ID for picker pre-selection |
 | `launchgameonstart` | int | 0 | Launch game client on app start |
 | `loadgameclient` | int | 0 | Platform: 0=none, 1=Epic, 2=Steam, 3=Standalone, 4=Console |
 | `logenabled` | int | 0 | Write activity to idlecombolog.txt |
