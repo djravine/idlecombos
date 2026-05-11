@@ -3700,7 +3700,8 @@ PromptCredentials() {
 	Gui, CredPrompt:Add, Text, w360, % "  3. Your user_id and hash are shown there"
 	Gui, CredPrompt:Add, Text, w360 y+10, How to find these (PC with webRequestLog):
 	Gui, CredPrompt:Add, Text, w360, % "  1. Launch the game and play for a minute"
-	Gui, CredPrompt:Add, Text, w360, % "  2. Open webRequestLog.txt from the game folder"
+	Gui, CredPrompt:Add, Text, w360, % "  2. Open webRequestLog.txt from your game folder:"
+	Gui, CredPrompt:Add, Text, w360 c808080, % "     ...\IdleDragons_Data\StreamingAssets\downloaded_files\"
 	Gui, CredPrompt:Add, Text, w360, % "  3. Search for 'user_id=' and 'hash=' in the URL"
 	Gui, CredPrompt:Add, Text, w60 y+15, user_id:
 	Gui, CredPrompt:Add, Edit, vCredUserID x+5 yp w290, % UserID
