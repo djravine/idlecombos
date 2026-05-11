@@ -443,7 +443,7 @@ Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Form
 
 		Menu, IdleMenu, Add, &Tools, :ToolsSubmenu
 
-		Menu, HelpSubmenu, Add, &Run Setup, FirstRun
+		Menu, HelpSubmenu, Add, &Run Setup / Change Platform, FirstRun
 		Menu, HelpSubmenu, Add
 		Menu, HelpSubmenu, Add, Clear &Log, Clear_Log
 		Menu, HelpSubmenu, Add, Clear Redeem Code H&istory, Redeem_Codes_History_Clear
@@ -1690,6 +1690,29 @@ ShowBlacksmithMenu:
 
 ShowBountyMenu:
 	Menu, BountySubmenu, Show
+	return
+
+; Labels: Setup platform picker buttons
+SetupPickEpic:
+	SetupPlatformChoice := "epic"
+	SetupDone := true
+	return
+SetupPickSteam:
+	SetupPlatformChoice := "steam"
+	SetupDone := true
+	return
+SetupPickStandalone:
+	SetupPlatformChoice := "standalone"
+	SetupDone := true
+	return
+SetupPickConsole:
+	SetupPlatformChoice := "console"
+	SetupDone := true
+	return
+SetupPickCancel:
+SetupPickerGuiClose:
+	SetupPlatformChoice := ""
+	SetupDone := true
 	return
 
 ; Label: toggle crash protection monitoring on/off
@@ -3909,62 +3932,42 @@ setGameInstallConsole( manual = false) {
 
 ; Initial setup wizard — detect game, extract credentials from WRL or manual input
 FirstRun() {
-	; Step 1: Ask which platform the game is installed on
-	; Skip if platform already detected (1=Epic, 2=Steam, 3=Standalone, 4=Console)
-	if (LoadGameClient >= 1 && LoadGameClient <= 4) {
-		; Platform already set — skip to credentials
-	} else {
-		MsgBox, 3, IdleCombos Setup, % "Detect game install from Epic Games?`n`n(Click Yes for Epic, No to try other platforms, Cancel to enter credentials manually)"
-		IfMsgBox, Yes
-		{
-			if (setGameInstallEpic(false)) {
-				MsgBox, % "Epic Games install found at:`n" GameInstallDir
-			} else {
-				MsgBox, 4, IdleCombos Setup, Epic Games install not found.`nWould you like to locate the folder manually?
-				IfMsgBox, Yes
-				{
-					setGameInstallEpic(true)
-				}
-			}
-		}
-		IfMsgBox, No
-		{
-			MsgBox, 3, IdleCombos Setup, % "Detect game install from Steam?`n`n(Click Yes for Steam, No to try Standalone)"
-			IfMsgBox, Yes
-			{
-				if (setGameInstallSteam(false)) {
-					MsgBox, % "Steam install found at:`n" GameInstallDir
-				} else {
-					MsgBox, 4, IdleCombos Setup, Steam install not found.`nWould you like to locate the folder manually?
-					IfMsgBox, Yes
-					{
-						setGameInstallSteam(true)
-					}
-				}
-			}
-			IfMsgBox, No
-			{
-				MsgBox, 4, IdleCombos Setup, % "Detect Standalone install?"
-				IfMsgBox, Yes
-				{
-					if (setGameInstallStandalone(false)) {
-						MsgBox, % "Standalone install found at:`n" GameInstallDir
-					} else {
-						MsgBox, Standalone install not found. You can enter credentials manually.
-					}
-				}
-				IfMsgBox, No
-				{
-					; Console / manual entry path
-					LoadGameClient := 4
-				}
-			}
-		}
-		IfMsgBox, Cancel
-		{
-			; Skip to manual credential entry below
+	; Reset platform so detection runs fresh
+	LoadGameClient := 0
+
+	; Step 1: Platform picker GUI
+	global SetupPlatformChoice, SetupDone
+	SetupPlatformChoice := ""
+	SetupDone := false
+
+	Gui, SetupPicker:New, +AlwaysOnTop +ToolWindow, IdleCombos Setup
+	Gui, SetupPicker:Add, Text, w280, Select your game platform:
+	Gui, SetupPicker:Add, Button, w280 h30 gSetupPickEpic, Epic Games
+	Gui, SetupPicker:Add, Button, w280 h30 gSetupPickSteam, Steam
+	Gui, SetupPicker:Add, Button, w280 h30 gSetupPickStandalone, Standalone
+	Gui, SetupPicker:Add, Button, w280 h30 gSetupPickConsole, Console / Manual Entry
+	Gui, SetupPicker:Add, Button, w280 h30 gSetupPickCancel, Cancel
+	Gui, SetupPicker:Show, AutoSize Center
+	while (!SetupDone)
+		Sleep, 50
+	Gui, SetupPicker:Destroy
+
+	if (SetupPlatformChoice = "")
+		return
+
+	; Step 1b: Run detection for chosen platform
+	switch SetupPlatformChoice {
+		case "epic":
+			if (!setGameInstallEpic(true))
+				return
+		case "steam":
+			if (!setGameInstallSteam(true))
+				return
+		case "standalone":
+			if (!setGameInstallStandalone(true))
+				return
+		case "console":
 			LoadGameClient := 4
-		}
 	}
 
 	; Step 2: Get credentials
@@ -3977,34 +3980,11 @@ FirstRun() {
 		if ErrorLevel
 			return
 		LogFile("User ID: " UserID " & Hash: [REDACTED] manually entered")
-	} else {
-		; Platform detected — try reading credentials from WRL
-		if (WRLFile != "" && FileExist(WRLFile)) {
-			GetIdFromWRL()
-			LogFile("Platform: " GamePlatform)
-			LogFile("User ID: " UserID " & Hash: [REDACTED] detected in WRL")
-			GetPlayServerFromWRL()
-		} else {
-			MsgBox, 4, , Could not find webRequestLog.txt automatically.`nChoose install directory manually?
-			IfMsgBox, Yes
-			{
-				FileSelectFile, WRLFile, 1, webRequestLog.txt, Select webRequestLog file, webRequestLog.txt
-				if ErrorLevel
-					return
-				GetIdFromWRL()
-				GameInstallDir := SubStr(WRLFile, 1, -67)
-				GameClient := GameInstallDir "IdleDragons.exe"
-			} else {
-				InputBox, UserID, user_id, Please enter your "user_id" value., , 250, 125
-				if ErrorLevel
-					return
-				InputBox, UserHash, hash, Please enter your "hash" value., , 250, 125
-				if ErrorLevel
-					return
-				LogFile("User ID: " UserID " & Hash: [REDACTED] manually entered")
-			}
-		}
+	} else if (LoadGameClient == 0) {
+		; Detection failed / cancelled
+		return
 	}
+	; If platform detected (1-3), credentials handled by detectCredentialsAndSave in tryDetectPlatform
 
 	; Step 3: Save credentials
 	CurrentSettings.user_id := UserID
@@ -4017,6 +3997,7 @@ FirstRun() {
 		SB_SetText("⚠️ DPAPI unavailable — hash stored without encryption")
 	}
 	CurrentSettings.firstrun := 1
+	CurrentSettings.loadgameclient := LoadGameClient
 	CurrentSettings.wrlpath := WRLFile
 	PersistSettings()
 	LogFile("IdleCombos Setup Completed")
