@@ -8,6 +8,9 @@ To all the Idle Dragoneers who inspired and assisted me!
 
 ## 3.82
 
+* Move Adventure Manager actions (Load, End FG/BG, Kleho, Update List) from Tools menu to button bar in Adventures tab
+* Move Chests, Blacksmith, and Bounty submenus from Tools menu to popup buttons in Inventory tab header
+
 * Redesign `PromptCount()` - replace plain `InputBox` with a modern custom GUI featuring a slider, synced number spinbox, and "Max" button for all bulk chest/contract operations
 
 * Fix Crash Protect launching multiple game copies — replaced tight `Sleep 10s` loop with `WinWait` (120s timeout) so it waits for the game to actually start before retrying; gives up after 3 consecutive failures instead of looping forever

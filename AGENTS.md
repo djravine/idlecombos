@@ -115,7 +115,7 @@ idlecombos/
 * **GUI**: Single window, tab-based (11 tabs). `Gui, MyWindow:Add` pattern.
 * **Theming**: USkin.dll loaded at runtime for msstyles application. `SkinForm()`.
 * **32-bit forced**: `RunWith(32)` at startup - required for COM/WinHttp.
-* **File encoding**: IdleCombos.ahk MUST have UTF-8 BOM (`EF BB BF`) — required for emoji in GUI. Use `:=` (expression) not `=` (legacy) for string assignments in library functions.
+* **File encoding**: IdleCombos.ahk MUST have UTF-8 BOM (`EF BB BF`) — required for emoji in GUI. Use `:=` (expression) not `=` (legacy) for string assignments in library functions. **CRITICAL**: When writing to this file via scripts or tools, ALWAYS preserve the BOM. PowerShell `Set-Content -Encoding UTF8` does NOT write a BOM in PS7+. Use `[System.IO.File]::WriteAllBytes()` with `@(0xEF, 0xBB, 0xBF)` prefix, or verify BOM after any automated write. Loss of BOM causes all emoji and special characters (em dashes, checkmarks) to render as `â€"` / `Ã¢` garbage.
 * **Testable code**: Pure functions go in `IdleCombosLib.ahk` (included by both app and tests). Functions that call `ServerCall()` must stay in `IdleCombos.ahk` (not available in test context).
 * **TestMode**: `IdleCombosLib.ahk` checks `TestMode` global. Test runners set `TestMode := true` before including the lib to suppress MsgBox/ExitApp.
 * **IsBusy guard**: Long-running operations (Buy_Chests, Open_Chests, UseBlacksmith) use `BeginBusyOp()`/`EndBusyOp()` for entry/exit. Prevents hotkey reentrancy.

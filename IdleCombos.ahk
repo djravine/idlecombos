@@ -83,22 +83,22 @@ global UserHash := 0
 global InstanceID := 0
 global UserDetails := []
 global ActiveInstance := 0
-global CurrentAdventure := ""
-global CurrentArea := ""
-global CurrentPatron := ""
-global CurrentChampions := ""
-global BackgroundAdventure := ""
-global BackgroundArea := ""
-global BackgroundPatron := ""
-global BackgroundChampions := ""
-global Background2Adventure := ""
-global Background2Area := ""
-global Background2Patron := ""
-global Background2Champions := ""
-global Background3Adventure := ""
-global Background3Area := ""
-global Background3Patron := ""
-global Background3Champions := ""
+global FGAdventure := ""
+global FGArea := ""
+global FGPatron := ""
+global FGChampions := ""
+global BGAdventure := ""
+global BGArea := ""
+global BGPatron := ""
+global BGChampions := ""
+global BG2Adventure := ""
+global BG2Area := ""
+global BG2Patron := ""
+global BG2Champions := ""
+global BG3Adventure := ""
+global BG3Area := ""
+global BG3Patron := ""
+global BG3Champions := ""
 global AchievementGearChamp := ""
 global AchievementNeeds := ""
 global SummaryDataLoaded := false
@@ -144,18 +144,50 @@ global BrivSlot4 := 0
 global BrivZone := 0
 
 ;Modron globals
+global FGCustomName := ""
 global FGCoreName := ""
+global FGCoreReset := ""
 global FGCoreXP := ""
 global FGCoreProgress := ""
+global FGCoreProgressPct := 0
+global BGCustomName := ""
 global BGCoreName := ""
+global BGCoreReset := ""
 global BGCoreXP := ""
 global BGCoreProgress := ""
+global BGCoreProgressPct := 0
+global BG2CustomName := ""
 global BG2CoreName := ""
+global BG2CoreReset := ""
 global BG2CoreXP := ""
 global BG2CoreProgress := ""
+global BG2CoreProgressPct := 0
+global BG3CustomName := ""
 global BG3CoreName := ""
+global BG3CoreReset := ""
 global BG3CoreXP := ""
 global BG3CoreProgress := ""
+global BG3CoreProgressPct := 0
+global BG4CustomName := ""
+global BG4Adventure := ""
+global BG4Patron := ""
+global BG4Area := ""
+global BG4Champions := ""
+global BG4CoreName := ""
+global BG4CoreReset := ""
+global BG4CoreXP := ""
+global BG4CoreProgress := ""
+global BG4CoreProgressPct := 0
+global BG5CustomName := ""
+global BG5Adventure := ""
+global BG5Patron := ""
+global BG5Area := ""
+global BG5Champions := ""
+global BG5CoreName := ""
+global BG5CoreReset := ""
+global BG5CoreXP := ""
+global BG5CoreProgress := ""
+global BG5CoreProgressPct := 0
 
 ;Patron globals
 global MirtVariants := ""
@@ -383,7 +415,6 @@ class MyGui {
 		Menu, ChestsSubmenu, Add, Open S&ilver, Open_Silver
 		Menu, ChestsSubmenu, Add, Open G&old, Open_Gold
 		Menu, ChestsSubmenu, Add, Open E&vent, Open_Event
-		Menu, ToolsSubmenu, Add, &Chests, :ChestsSubmenu
 
 		Menu, BlacksmithSubmenu, Add, Use &Tiny Contracts, Tiny_Blacksmith
 		Menu, BlacksmithSubmenu, Add, Use &Small Contracts, Sm_Blacksmith
@@ -391,24 +422,13 @@ class MyGui {
 		Menu, BlacksmithSubmenu, Add, Use &Large Contracts, Lg_Blacksmith
 		Menu, BlacksmithSubmenu, Add, Use &Huge Contracts, Hg_Blacksmith
 		Menu, BlacksmithSubmenu, Add, &Active Patron Feats, PatronFeats
-		Menu, ToolsSubmenu, Add, &Blacksmith, :BlacksmithSubmenu
 
 		Menu, BountySubmenu, Add, Use &Tiny Contracts, Tiny_Bounty
 		Menu, BountySubmenu, Add, Use &Small Contracts, Sm_Bounty
 		Menu, BountySubmenu, Add, Use &Medium Contracts, Med_Bounty
 		Menu, BountySubmenu, Add, Use &Large Contracts, Lg_Bounty
-		Menu, ToolsSubmenu, Add, B&ounty (Alpha Feature), :BountySubmenu
 
 		Menu, ToolsSubmenu, Add, &Redeem Codes, Open_Codes
-
-		Menu, AdvSubmenu, Add, &Load New Adv, LoadAdventure
-		Menu, AdvSubmenu, Add, &End Current Adv, EndAdventure
-		Menu, AdvSubmenu, Add, End Background Adv, EndBGAdventure
-		Menu, AdvSubmenu, Add, End Background2 Adv, EndBG2Adventure
-		Menu, AdvSubmenu, Add, End Background3 Adv, EndBG3Adventure
-		Menu, AdvSubmenu, Add, &Kleho Image, KlehoImage
-		Menu, AdvSubmenu, Add, Update Adventure List, AdventureList
-		Menu, ToolsSubmenu, Add, &Adventure Manager, :AdvSubmenu
 
 		Menu, ToolsSubmenu, Add, Briv &Stack Calculator, Briv_Calc
 
@@ -480,10 +500,131 @@ Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Form
 		LV_ModifyCol(4, 230)
 
 		Gui, Tab, Adventures
-		Gui, MyWindow:Add, ListView, x4 y35 w600 h506 vAdventuresLV hwndAdventuresHwnd +Grid +ReadOnly -Multi +NoSortHdr, Instance|Adventure|Patron|Area|Champions|Core|XP|Progress
+		Gui, MyWindow:Add, Button, x4 y34 w70 gLoadAdventure, Load New
+		Gui, MyWindow:Add, Button, x+4 yp w70 gEndAdventure, End FG
+		Gui, MyWindow:Add, Button, x+4 yp w65 gEndBGAdventure, End BG1
+		Gui, MyWindow:Add, Button, x+4 yp w65 gEndBG2Adventure, End BG2
+		Gui, MyWindow:Add, Button, x+4 yp w65 gEndBG3Adventure, End BG3
+		Gui, MyWindow:Add, Button, x+4 yp w55 gKlehoImage, Kleho
+		Gui, MyWindow:Add, Button, x+4 yp w80 gAdventureList, Update List
+		; ── Party slot GroupBoxes (2 cols × 3 rows) ──
+		; Col 1: x=4 w=335, Col 2: x=343 w=335 | Row gap=4 | Box h=110
+		; Row 1 y=58, Row 2 y=172, Row 3 y=286
+		; Inner: label w=50, val1 start=+54, mid-col offset=+235
+
+		Gui, MyWindow:Add, GroupBox, x4 y58 w340 h110 vAdvGB1, Foreground
+		Gui, MyWindow:Add, Text, x12 y74 w50, Adv:
+		Gui, MyWindow:Add, Text, x58 y74 w272 vAdv1Val, —
+		Gui, MyWindow:Add, Text, x12 y90 w50, Patron:
+		Gui, MyWindow:Add, Text, x58 y90 w130 vAdv1Patron, —
+		Gui, MyWindow:Add, Text, x238 y90 w35, Area:
+		Gui, MyWindow:Add, Text, x274 y90 w65 vAdv1Area, —
+		Gui, MyWindow:Add, Text, x12 y106 w50, Core:
+		Gui, MyWindow:Add, Text, x58 y106 w130 vAdv1Core, —
+		Gui, MyWindow:Add, Text, x238 y106 w35, Reset:
+		Gui, MyWindow:Add, Text, x273 y106 w57 vAdv1Reset, —
+		Gui, MyWindow:Add, Text, x12 y122 w50, Champs:
+		Gui, MyWindow:Add, Text, x58 y122 w40 vAdv1Champs, —
+		Gui, MyWindow:Add, Text, x110 y122 w22, XP:
+		Gui, MyWindow:Add, Text, x132 y122 w202 vAdv1XP, —
+		Gui, MyWindow:Add, Progress, x12 y140 w324 h16 Range0-100 vAdv1ProgBar, 0
+		Gui, MyWindow:Add, Text, x12 y141 w324 h14 +BackgroundTrans +Center vAdv1ProgText, —
+
+		Gui, MyWindow:Add, GroupBox, x348 y58 w340 h110 vAdvGB2, Background 1
+		Gui, MyWindow:Add, Text, x356 y74 w50, Adv:
+		Gui, MyWindow:Add, Text, x402 y74 w272 vAdv2Val, —
+		Gui, MyWindow:Add, Text, x356 y90 w50, Patron:
+		Gui, MyWindow:Add, Text, x402 y90 w130 vAdv2Patron, —
+		Gui, MyWindow:Add, Text, x574 y90 w35, Area:
+		Gui, MyWindow:Add, Text, x609 y90 w57 vAdv2Area, —
+		Gui, MyWindow:Add, Text, x356 y106 w50, Core:
+		Gui, MyWindow:Add, Text, x402 y106 w130 vAdv2Core, —
+		Gui, MyWindow:Add, Text, x574 y106 w35, Reset:
+		Gui, MyWindow:Add, Text, x609 y106 w57 vAdv2Reset, —
+		Gui, MyWindow:Add, Text, x356 y122 w50, Champs:
+		Gui, MyWindow:Add, Text, x402 y122 w40 vAdv2Champs, —
+		Gui, MyWindow:Add, Text, x454 y122 w22, XP:
+		Gui, MyWindow:Add, Text, x476 y122 w202 vAdv2XP, —
+		Gui, MyWindow:Add, Progress, x356 y140 w324 h16 Range0-100 vAdv2ProgBar, 0
+		Gui, MyWindow:Add, Text, x356 y141 w324 h14 +BackgroundTrans +Center vAdv2ProgText, —
+
+		Gui, MyWindow:Add, GroupBox, x4 y172 w340 h110 vAdvGB3, Background 2
+		Gui, MyWindow:Add, Text, x12 y188 w50, Adv:
+		Gui, MyWindow:Add, Text, x58 y188 w272 vAdv3Val, —
+		Gui, MyWindow:Add, Text, x12 y204 w50, Patron:
+		Gui, MyWindow:Add, Text, x58 y204 w130 vAdv3Patron, —
+		Gui, MyWindow:Add, Text, x238 y204 w35, Area:
+		Gui, MyWindow:Add, Text, x274 y204 w65 vAdv3Area, —
+		Gui, MyWindow:Add, Text, x12 y220 w50, Core:
+		Gui, MyWindow:Add, Text, x58 y220 w130 vAdv3Core, —
+		Gui, MyWindow:Add, Text, x238 y220 w35, Reset:
+		Gui, MyWindow:Add, Text, x273 y220 w57 vAdv3Reset, —
+		Gui, MyWindow:Add, Text, x12 y236 w50, Champs:
+		Gui, MyWindow:Add, Text, x58 y236 w40 vAdv3Champs, —
+		Gui, MyWindow:Add, Text, x110 y236 w22, XP:
+		Gui, MyWindow:Add, Text, x132 y236 w202 vAdv3XP, —
+		Gui, MyWindow:Add, Progress, x12 y254 w324 h16 Range0-100 vAdv3ProgBar, 0
+		Gui, MyWindow:Add, Text, x12 y255 w324 h14 +BackgroundTrans +Center vAdv3ProgText, —
+
+		Gui, MyWindow:Add, GroupBox, x348 y172 w340 h110 vAdvGB4, Background 3
+		Gui, MyWindow:Add, Text, x356 y188 w50, Adv:
+		Gui, MyWindow:Add, Text, x402 y188 w272 vAdv4Val, —
+		Gui, MyWindow:Add, Text, x356 y204 w50, Patron:
+		Gui, MyWindow:Add, Text, x402 y204 w130 vAdv4Patron, —
+		Gui, MyWindow:Add, Text, x574 y204 w35, Area:
+		Gui, MyWindow:Add, Text, x609 y204 w57 vAdv4Area, —
+		Gui, MyWindow:Add, Text, x356 y220 w50, Core:
+		Gui, MyWindow:Add, Text, x402 y220 w130 vAdv4Core, —
+		Gui, MyWindow:Add, Text, x574 y220 w35, Reset:
+		Gui, MyWindow:Add, Text, x609 y220 w57 vAdv4Reset, —
+		Gui, MyWindow:Add, Text, x356 y236 w50, Champs:
+		Gui, MyWindow:Add, Text, x402 y236 w40 vAdv4Champs, —
+		Gui, MyWindow:Add, Text, x454 y236 w22, XP:
+		Gui, MyWindow:Add, Text, x476 y236 w202 vAdv4XP, —
+		Gui, MyWindow:Add, Progress, x356 y254 w324 h16 Range0-100 vAdv4ProgBar, 0
+		Gui, MyWindow:Add, Text, x356 y255 w324 h14 +BackgroundTrans +Center vAdv4ProgText, —
+
+		Gui, MyWindow:Add, GroupBox, x4 y286 w340 h110 vAdvGB5, Background 5
+		Gui, MyWindow:Add, Text, x12 y302 w50, Adv:
+		Gui, MyWindow:Add, Text, x58 y302 w272 vAdv5Val, —
+		Gui, MyWindow:Add, Text, x12 y318 w50, Patron:
+		Gui, MyWindow:Add, Text, x58 y318 w130 vAdv5Patron, —
+		Gui, MyWindow:Add, Text, x238 y318 w35, Area:
+		Gui, MyWindow:Add, Text, x274 y318 w65 vAdv5Area, —
+		Gui, MyWindow:Add, Text, x12 y334 w50, Core:
+		Gui, MyWindow:Add, Text, x58 y334 w130 vAdv5Core, —
+		Gui, MyWindow:Add, Text, x238 y334 w35, Reset:
+		Gui, MyWindow:Add, Text, x273 y334 w57 vAdv5Reset, —
+		Gui, MyWindow:Add, Text, x12 y350 w50, Champs:
+		Gui, MyWindow:Add, Text, x58 y350 w40 vAdv5Champs, —
+		Gui, MyWindow:Add, Text, x110 y350 w22, XP:
+		Gui, MyWindow:Add, Text, x132 y350 w202 vAdv5XP, —
+		Gui, MyWindow:Add, Progress, x12 y368 w324 h16 Range0-100 vAdv5ProgBar, 0
+		Gui, MyWindow:Add, Text, x12 y369 w324 h14 +BackgroundTrans +Center vAdv5ProgText, —
+
+		Gui, MyWindow:Add, GroupBox, x348 y286 w340 h110 vAdvGB6, Background 6
+		Gui, MyWindow:Add, Text, x356 y302 w50, Adv:
+		Gui, MyWindow:Add, Text, x402 y302 w272 vAdv6Val, —
+		Gui, MyWindow:Add, Text, x356 y318 w50, Patron:
+		Gui, MyWindow:Add, Text, x402 y318 w130 vAdv6Patron, —
+		Gui, MyWindow:Add, Text, x574 y318 w35, Area:
+		Gui, MyWindow:Add, Text, x609 y318 w57 vAdv6Area, —
+		Gui, MyWindow:Add, Text, x356 y334 w50, Core:
+		Gui, MyWindow:Add, Text, x402 y334 w130 vAdv6Core, —
+		Gui, MyWindow:Add, Text, x574 y334 w35, Reset:
+		Gui, MyWindow:Add, Text, x609 y334 w57 vAdv6Reset, —
+		Gui, MyWindow:Add, Text, x356 y350 w50, Champs:
+		Gui, MyWindow:Add, Text, x402 y350 w40 vAdv6Champs, —
+		Gui, MyWindow:Add, Text, x454 y350 w22, XP:
+		Gui, MyWindow:Add, Text, x476 y350 w202 vAdv6XP, —
+		Gui, MyWindow:Add, Progress, x356 y368 w324 h16 Range0-100 vAdv6ProgBar, 0
+		Gui, MyWindow:Add, Text, x356 y369 w324 h14 +BackgroundTrans +Center vAdv6ProgText, —
 
 		Gui, Tab, Inventory
-		Gui, MyWindow:Add, ListView, x4 y35 w600 h506 vInventoryLV hwndInventoryHwnd +Grid +ReadOnly -Multi +NoSortHdr, Item|Count|Details
+		Gui, MyWindow:Add, Button, x4 y34 w80 gShowChestsMenu, Chests
+		Gui, MyWindow:Add, Button, x+4 yp w90 gShowBlacksmithMenu, Blacksmith
+		Gui, MyWindow:Add, Button, x+4 yp w100 gShowBountyMenu, Bounty (Alpha)
+		Gui, MyWindow:Add, ListView, x4 y60 w600 h481 vInventoryLV hwndInventoryHwnd +Grid +ReadOnly -Multi +NoSortHdr, Item|Count|Details
 
 		Gui, Tab, Patrons
 		Gui, MyWindow:Add, ListView, x4 y35 w600 h506 vPatronsLV hwndPatronsHwnd +Grid +ReadOnly -Multi +NoSortHdr, Patron|Variants|Completed|FP Currency|Challenges|Influence / Requires|Coins / Costs
@@ -825,18 +966,57 @@ Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Form
 		Loop % LV_GetCount("Col")
 			LV_ModifyCol(A_Index, "AutoHdr")
 
-		;Adventures
-		Gui, MyWindow:Default
-		Gui, ListView, AdventuresLV
-		LV_Delete()
-		LV_Add("", "Foreground",    CurrentAdventure,     CurrentPatron,     CurrentArea,     CurrentChampions,     FGCoreName,  FGCoreXP,  FGCoreProgress)
-		LV_Add("", "Background 1",  BackgroundAdventure,  BackgroundPatron,  BackgroundArea,  BackgroundChampions,  BGCoreName,  BGCoreXP,  BGCoreProgress)
-		LV_Add("", "Background 2",  Background2Adventure, Background2Patron, Background2Area, Background2Champions, BG2CoreName, BG2CoreXP, BG2CoreProgress)
-		LV_Add("", "Background 3",  Background3Adventure, Background3Patron, Background3Area, Background3Champions, BG3CoreName, BG3CoreXP, BG3CoreProgress)
-		Loop % LV_GetCount("Col")
-			LV_ModifyCol(A_Index, "AutoHdr")
+		;Adventures — update GroupBox cards
+		fgTitle := FGCustomName != "" ? "Foreground - " FGCustomName : "Foreground"
+		bg1Title := BGCustomName != "" ? "Background 1 - " BGCustomName : "Background 1"
+		bg2Title := BG2CustomName != "" ? "Background 2 - " BG2CustomName : "Background 2"
+		bg3Title := BG3CustomName != "" ? "Background 3 - " BG3CustomName : "Background 3"
+		GuiControl, MyWindow:, AdvGB1, % fgTitle
+		GuiControl, MyWindow:, AdvGB2, % bg1Title
+		GuiControl, MyWindow:, AdvGB3, % bg2Title
+		GuiControl, MyWindow:, AdvGB4, % bg3Title
 
-;Inventory
+		GuiControl, MyWindow:, Adv1Val, % AdvFromID(FGAdventure) " (" FGAdventure ")"
+		GuiControl, MyWindow:, Adv1Patron, % FGPatron
+		GuiControl, MyWindow:, Adv1Core, % FGCoreName
+		GuiControl, MyWindow:, Adv1Area, % FGArea
+		GuiControl, MyWindow:, Adv1Reset, % FGCoreReset
+		GuiControl, MyWindow:, Adv1Champs, % FGChampions
+		GuiControl, MyWindow:, Adv1XP, % FGCoreXP
+		GuiControl, , Adv1ProgBar, % FGCoreProgressPct
+		GuiControl, MyWindow:, Adv1ProgText, % FGCoreProgress
+
+		GuiControl, MyWindow:, Adv2Val, % AdvFromID(BGAdventure) " (" BGAdventure ")"
+		GuiControl, MyWindow:, Adv2Patron, % BGPatron
+		GuiControl, MyWindow:, Adv2Core, % BGCoreName
+		GuiControl, MyWindow:, Adv2Area, % BGArea
+		GuiControl, MyWindow:, Adv2Reset, % BGCoreReset
+		GuiControl, MyWindow:, Adv2Champs, % BGChampions
+		GuiControl, MyWindow:, Adv2XP, % BGCoreXP
+		GuiControl, , Adv2ProgBar, % BGCoreProgressPct
+		GuiControl, MyWindow:, Adv2ProgText, % BGCoreProgress
+
+		GuiControl, MyWindow:, Adv3Val, % AdvFromID(BG2Adventure) " (" BG2Adventure ")"
+		GuiControl, MyWindow:, Adv3Patron, % BG2Patron
+		GuiControl, MyWindow:, Adv3Core, % BG2CoreName
+		GuiControl, MyWindow:, Adv3Area, % BG2Area
+		GuiControl, MyWindow:, Adv3Reset, % BG2CoreReset
+		GuiControl, MyWindow:, Adv3Champs, % BG2Champions
+		GuiControl, MyWindow:, Adv3XP, % BG2CoreXP
+		GuiControl, , Adv3ProgBar, % BG2CoreProgressPct
+		GuiControl, MyWindow:, Adv3ProgText, % BG2CoreProgress
+
+		GuiControl, MyWindow:, Adv4Val, % AdvFromID(BG3Adventure) " (" BG3Adventure ")"
+		GuiControl, MyWindow:, Adv4Patron, % BG3Patron
+		GuiControl, MyWindow:, Adv4Core, % BG3CoreName
+		GuiControl, MyWindow:, Adv4Area, % BG3Area
+		GuiControl, MyWindow:, Adv4Reset, % BG3CoreReset
+		GuiControl, MyWindow:, Adv4Champs, % BG3Champions
+		GuiControl, MyWindow:, Adv4XP, % BG3CoreXP
+		GuiControl, , Adv4ProgBar, % BG3CoreProgressPct
+		GuiControl, MyWindow:, Adv4ProgText, % BG3CoreProgress
+
+		;Inventory
 Gui, MyWindow:Default
 Gui, ListView, InventoryLV
 LV_Delete()
@@ -1199,9 +1379,9 @@ MyWindowGuiSize(GuiHwnd, EventInfo, Width, Height) {
 	tabH := Height - 59
 	GuiControl, MoveDraw, SummaryLV, % "w" . tabW . " h" . tabH
 
-	GuiControl, MoveDraw, AdventuresLV, % "w" . tabW . " h" . tabH
+
 	GuiControl, MoveDraw, PatronsLV,    % "w" . tabW . " h" . tabH
-	GuiControl, MoveDraw, InventoryLV,  % "w" . tabW . " h" . tabH
+	GuiControl, MoveDraw, InventoryLV,  % "w" . tabW . " h" . (tabH - 25)
 	GuiControl, MoveDraw, ChampionsLV,  % "w" . tabW . " h" . tabH
 	GuiControl, MoveDraw, PityLV,       % "w" . tabW . " h" . tabH
 	GuiControl, MoveDraw, ItemLevelsLV, % "w" . tabW . " h" . tabH
@@ -1374,6 +1554,19 @@ Exit_Clicked:
 		ExitApp
 		return
 	}
+
+; Labels: show submenu popups from Inventory tab buttons
+ShowChestsMenu:
+	Menu, ChestsSubmenu, Show
+	return
+
+ShowBlacksmithMenu:
+	Menu, BlacksmithSubmenu, Show
+	return
+
+ShowBountyMenu:
+	Menu, BountySubmenu, Show
+	return
 
 ; Label: toggle crash protection monitoring on/off
 Crash_Toggle:
@@ -3177,7 +3370,7 @@ global lastadv := 0			;fmagdi - to be used to save ended adventureid for use as 
 LoadAdventure() {
 	global CurrentSettings
 	GetUserDetails()
-	while !(CurrentAdventure == "Map" || CurrentAdventure == "-1") {
+	while !(FGAdventure == "Map" || FGAdventure == "-1") {
 		MsgBox, 5, , Please end your current adventure first.
 		IfMsgBox, Cancel
 		{
@@ -3274,12 +3467,12 @@ ShowAdvPicker(defaultID=0) {
 ; End current foreground adventure
 EndAdventure() {
 	GetUserDetails()				;fmagdi - updates info before ending an adventure to be sure you are ending the correct one
-	if (CurrentAdventure == "Map" || CurrentAdventure == "-1") {
+	if (FGAdventure == "Map" || FGAdventure == "-1") {
 		MsgBox, No current adventure active.
 		return
 	}
-	lastadv := CurrentAdventure	;fmagdi - saves ended adventure id for use as default when loading next adventure
-	EndAdventureInstance("Current", CurrentAdventure, CurrentPatron, ActiveInstance)
+	lastadv := FGAdventure	;fmagdi - saves ended adventure id for use as default when loading next adventure
+	EndAdventureInstance("Current", FGAdventure, FGPatron, ActiveInstance)
 }
 
 ; End background party 1 adventure
@@ -3289,11 +3482,11 @@ EndBGAdventure() {
 	} else {
 		bginstance := 1
 	}
-	if (BackgroundAdventure == "-1" or BackgroundAdventure == "") {
+	if (BGAdventure == "-1" or BGAdventure == "") {
 		MsgBox, No background adventure active.
 		return
 	}
-	EndAdventureInstance("Background", BackgroundAdventure, BackgroundPatron, bginstance)
+	EndAdventureInstance("Background", BGAdventure, BGPatron, bginstance)
 }
 
 ; End background party 2 adventure
@@ -3303,11 +3496,11 @@ EndBG2Adventure() {
 	} else {
 		bginstance := 3
 	}
-	if (Background2Adventure == "-1" or Background2Adventure == "") {
+	if (BG2Adventure == "-1" or BG2Adventure == "") {
 		MsgBox, No background2 adventure active.
 		return
 	}
-	EndAdventureInstance("Background2", Background2Adventure, Background2Patron, bginstance)
+	EndAdventureInstance("Background2", BG2Adventure, BG2Patron, bginstance)
 }
 
 ; End background party 3 adventure
@@ -3317,11 +3510,11 @@ EndBG3Adventure() {
 	} else {
 		bginstance := 4
 	}
-	if (Background3Adventure == "-1" or Background3Adventure == "") {
+	if (BG3Adventure == "-1" or BG3Adventure == "") {
 		MsgBox, No background3 adventure active.
 		return
 	}
-	EndAdventureInstance("Background3", Background3Adventure, Background3Patron, bginstance)
+	EndAdventureInstance("Background3", BG3Adventure, BG3Patron, bginstance)
 }
 
 ; Generic adventure end handler — confirms and sends softreset API call
@@ -3801,34 +3994,46 @@ GetUserDetails(newservername = "") {
 ParseAdventureData() {
 	APIStatus("⌛ Parsing Data - Adventures... Please wait...")
 	result := ParseAdventureDataFromDetails(UserDetails.details, ActiveInstance)
-	CurrentAdventure     := result.fg.adventure
-	CurrentArea          := result.fg.area
-	CurrentPatron        := result.fg.patron
+	FGAdventure     := result.fg.adventure
+	FGArea          := result.fg.area
+	FGPatron        := result.fg.patron
+	FGCustomName         := result.fg.customName
 	FGCoreName           := result.fg.coreName
+	FGCoreReset          := result.fg.coreReset
 	FGCoreXP             := result.fg.coreXP
 	FGCoreProgress       := result.fg.coreProgress
-	CurrentChampions     := result.fg.champCount
-	BackgroundAdventure  := result.bg1.adventure
-	BackgroundArea       := result.bg1.area
-	BackgroundPatron     := result.bg1.patron
+	FGCoreProgressPct    := result.fg.coreProgressPct
+	FGChampions     := result.fg.champCount
+	BGAdventure  := result.bg1.adventure
+	BGArea       := result.bg1.area
+	BGPatron     := result.bg1.patron
+	BGCustomName         := result.bg1.customName
 	BGCoreName           := result.bg1.coreName
+	BGCoreReset          := result.bg1.coreReset
 	BGCoreXP             := result.bg1.coreXP
 	BGCoreProgress       := result.bg1.coreProgress
-	BackgroundChampions  := result.bg1.champCount
-	Background2Adventure := result.bg2.adventure
-	Background2Area      := result.bg2.area
-	Background2Patron    := result.bg2.patron
+	BGCoreProgressPct    := result.bg1.coreProgressPct
+	BGChampions  := result.bg1.champCount
+	BG2Adventure := result.bg2.adventure
+	BG2Area      := result.bg2.area
+	BG2Patron    := result.bg2.patron
+	BG2CustomName        := result.bg2.customName
 	BG2CoreName          := result.bg2.coreName
+	BG2CoreReset         := result.bg2.coreReset
 	BG2CoreXP            := result.bg2.coreXP
 	BG2CoreProgress      := result.bg2.coreProgress
-	Background2Champions := result.bg2.champCount
-	Background3Adventure := result.bg3.adventure
-	Background3Area      := result.bg3.area
-	Background3Patron    := result.bg3.patron
+	BG2CoreProgressPct   := result.bg2.coreProgressPct
+	BG2Champions := result.bg2.champCount
+	BG3Adventure := result.bg3.adventure
+	BG3Area      := result.bg3.area
+	BG3Patron    := result.bg3.patron
+	BG3CustomName        := result.bg3.customName
 	BG3CoreName          := result.bg3.coreName
+	BG3CoreReset         := result.bg3.coreReset
 	BG3CoreXP            := result.bg3.coreXP
 	BG3CoreProgress      := result.bg3.coreProgress
-	Background3Champions := result.bg3.champCount
+	BG3CoreProgressPct   := result.bg3.coreProgressPct
+	BG3Champions := result.bg3.champCount
 	ChampionsActiveCount := result.champsActiveCount
 }
 
@@ -4720,7 +4925,7 @@ List_ChestIDs:
 ; Display game client localSettings.json contents in a dialog
 ViewICSettings() {
 	if !FileExist(ICSettingsFile) {
-		MsgBox, 48, IC Settings, % "localSettings.json not found at:`n" ICSettingsFile "`n`nThe game may not be installed or has not created this file yet."
+		MsgBox, 48, IC Settings, % "localSettings.json not found at:`n" ICSettingsFile "`n`nThe game may not have created this file yet or it has been deprecated."
 		return
 	}
 	rawicsettings := ""
@@ -4825,7 +5030,7 @@ KlehoImage() {
 	}
 	StringTrimRight, kleholink, kleholink, 1
 	kleholink := kleholink ".png"
-	InputBox, dummyvar, Kleho Image, % "Copy link for formation sharing.`n`nSave image to the following file?`nformationimages\Patron-" CurrentPatron "\AdvID-" CurrentAdventure "\Area-" CurrentArea ".png", , , , , , , , % kleholink
+	InputBox, dummyvar, Kleho Image, % "Copy link for formation sharing.`n`nSave image to the following file?`nformationimages\Patron-" FGPatron "\AdvID-" FGAdventure "\Area-" FGArea ".png", , , , , , , , % kleholink
 	if ErrorLevel {
 		dummyvar := ""
 		return
@@ -4833,13 +5038,13 @@ KlehoImage() {
 	if !(FileExist("\formationimages\")) {
 		FileCreateDir, formationimages
 	}
-	if !(FileExist("\formationimages\Patron-" CurrentPatron)) {
-		FileCreateDir, % "formationimages\Patron-" CurrentPatron
+	if !(FileExist("\formationimages\Patron-" FGPatron)) {
+		FileCreateDir, % "formationimages\Patron-" FGPatron
 	}
-	if !(FileExist("\formationimages\Patron-" CurrentPatron "\AdvID-" CurrentAdventure)) {
-		FileCreateDir, % "formationimages\Patron-" CurrentPatron "\AdvID-" CurrentAdventure
+	if !(FileExist("\formationimages\Patron-" FGPatron "\AdvID-" FGAdventure)) {
+		FileCreateDir, % "formationimages\Patron-" FGPatron "\AdvID-" FGAdventure
 	}
-	UrlDownloadToFile, %kleholink%, % "formationimages\Patron-" CurrentPatron "\AdvID-" CurrentAdventure "\Area-" CurrentArea ".png"
+	UrlDownloadToFile, %kleholink%, % "formationimages\Patron-" FGPatron "\AdvID-" FGAdventure "\Area-" FGArea ".png"
 	dummyvar := ""
 	return
 }

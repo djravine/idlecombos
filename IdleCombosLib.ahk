@@ -132,6 +132,26 @@ BuildChestDropdownList() {
 }
 
 ;-----------------------------------------------------------------------------
+; AdvFromID(id) - Look up adventure name from advdefs.json cache
+; Returns: adventure name if found, or the raw ID as string if not
+;-----------------------------------------------------------------------------
+AdvFromID(id) {
+	static advCache := ""
+	if (!IsObject(advCache)) {
+		if !FileExist("advdefs.json")
+			return id
+		FileRead, raw, advdefs.json
+		Try {
+			advCache := JSON.parse(raw)
+		} catch e {
+			return id
+		}
+	}
+	name := advCache[id + 0]
+	return name != "" ? name : id
+}
+
+;-----------------------------------------------------------------------------
 ; BuildPatronPickerList() - Build pipe-delimited patron list with IDs
 ; Format: "None (0)|Mirt the Moneylender (1)|..."
 ; Used by PatronPicker GUI — includes IDs so PickerExtractID() can extract them.
@@ -1027,6 +1047,7 @@ ParseAdventureDataFromDetails(details, activeInstance) {
 		InstanceList[v.game_instance_id].current_adventure_id := v.current_adventure_id
 		InstanceList[v.game_instance_id].current_area := v.current_area
 		InstanceList[v.game_instance_id].Patron := PatronFromID(v.current_patron_id)
+		InstanceList[v.game_instance_id].CustomName := v.custom_name
 		InstanceList[v.game_instance_id].ChampionsCount := 0
 		for l, w in v.formation {
 			if (w > 0) {
@@ -1037,7 +1058,9 @@ ParseAdventureDataFromDetails(details, activeInstance) {
 	for k, v in details.modron_saves {
 		InstanceList[v.instance_id].core_name := Corelist[v.core_id] ? Corelist[v.core_id] : "None"
 		if (v.properties.toggle_preferences.reset == true)
-			InstanceList[v.instance_id].core_name := InstanceList[v.instance_id].core_name " (Reset at " v.area_goal ")"
+			InstanceList[v.instance_id].core_reset := v.area_goal
+		else
+			InstanceList[v.instance_id].core_reset := ""
 		core_level := ceil((sqrt(36000000+8000*v.exp_total)-6000)/4000)
 		core_tolevel := v.exp_total-(2000*(core_level-1)**2+6000*(core_level-1))
 		core_levelxp := 4000*(core_level+1)
@@ -1047,6 +1070,7 @@ ParseAdventureDataFromDetails(details, activeInstance) {
 			core_level := core_level " - Max 15"
 		InstanceList[v.instance_id].core_xp := core_humxp " (Lvl " core_level ")"
 		InstanceList[v.instance_id].core_progress := core_tolevel "/" core_levelxp " (" core_pcttolevel "%)"
+		InstanceList[v.instance_id].core_progresspct := core_pcttolevel
 	}
 
 	champsActiveCount := 0
@@ -1064,12 +1088,15 @@ ParseAdventureDataFromDetails(details, activeInstance) {
 		} else {
 			continue
 		}
+		result[slotKey].customName   := v.CustomName
 		result[slotKey].adventure    := v.current_adventure_id == -1 ? "Map" : v.current_adventure_id
 		result[slotKey].area         := v.current_area
 		result[slotKey].patron       := v.Patron
 		result[slotKey].coreName     := v.core_name
+		result[slotKey].coreReset    := v.core_reset
 		result[slotKey].coreXP       := v.core_xp
 		result[slotKey].coreProgress := v.core_progress
+		result[slotKey].coreProgressPct := v.core_progresspct
 		result[slotKey].champCount   := v.ChampionsCount
 		champsActiveCount += v.ChampionsCount
 	}
