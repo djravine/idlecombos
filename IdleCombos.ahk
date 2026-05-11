@@ -3695,8 +3695,22 @@ tryDetectPlatform(desc, manual) {
 				}
 			}
 		}
-		if manual
-			MsgBox, % desc.notFoundMsg
+		if manual {
+			MsgBox, 4, IdleCombos Setup, % desc.notFoundMsg "`n`nWould you like to locate the install folder manually?"
+			IfMsgBox, Yes
+			{
+				FileSelectFolder, selectedDir, , 3, % "Select your Idle Champions install folder (" desc.platformName ")"
+				if (!ErrorLevel && selectedDir != "") {
+					if !InStr(selectedDir, "\", false, 0)
+						selectedDir .= "\"
+					applyGameInstall(selectedDir, GameClientEpicLauncher, desc.platformName, selectedDir WRLFilePath, desc.loadClientId)
+					MsgBox, % desc.platformName " install set to:`n" GameInstallDir
+					FirstRun()
+					GetUserDetails()
+					return true
+				}
+			}
+		}
 		return false
 	}
 
@@ -3716,8 +3730,25 @@ tryDetectPlatform(desc, manual) {
 		}
 		return true
 	}
-	if manual
-		MsgBox, % desc.notFoundMsg
+	if manual {
+		MsgBox, 4, IdleCombos Setup, % desc.notFoundMsg "`n`nWould you like to locate the install folder manually?"
+		IfMsgBox, Yes
+		{
+			FileSelectFolder, selectedDir, , 3, % "Select your Idle Champions install folder (" desc.platformName ")"
+			if (!ErrorLevel && selectedDir != "") {
+				if !InStr(selectedDir, "\", false, 0)
+					selectedDir .= "\"
+				wrlPath := selectedDir . WRLFilePath
+				applyGameInstall(selectedDir, desc.clientExe, desc.platformName, wrlPath, desc.loadClientId)
+				MsgBox, % desc.platformName " install set to:`n" GameInstallDir
+				if (!desc.skipCallback) {
+					FirstRun()
+					GetUserDetails()
+				}
+				return true
+			}
+		}
+	}
 	return false
 }
 
@@ -3856,7 +3887,11 @@ FirstRun() {
 			if (setGameInstallEpic(false)) {
 				MsgBox, % "Epic Games install found at:`n" GameInstallDir
 			} else {
-				MsgBox, Epic Games install not found. You can enter credentials manually.
+				MsgBox, 4, IdleCombos Setup, Epic Games install not found.`nWould you like to locate the folder manually?
+				IfMsgBox, Yes
+				{
+					setGameInstallEpic(true)
+				}
 			}
 		}
 		IfMsgBox, No
@@ -3867,7 +3902,11 @@ FirstRun() {
 				if (setGameInstallSteam(false)) {
 					MsgBox, % "Steam install found at:`n" GameInstallDir
 				} else {
-					MsgBox, Steam install not found. You can enter credentials manually.
+					MsgBox, 4, IdleCombos Setup, Steam install not found.`nWould you like to locate the folder manually?
+					IfMsgBox, Yes
+					{
+						setGameInstallSteam(true)
+					}
 				}
 			}
 			IfMsgBox, No
