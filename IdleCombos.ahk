@@ -638,80 +638,87 @@ Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Form
 		Gui, MyWindow:Add, ListView, x352 y190 w332 h348 vInvBSLV hwndInvBSHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Contract|Count|Details
 
 		Gui, Tab, Patrons
-		; 2×3 grid: col1 x=4 w=340, col2 x=348 w=340 | Box h=110
-		; Row 1 y=35, Row 2 y=149, Row 3 y=263
+		; 2×3 contact card grid: portrait left, text right
+		; Col1 x=4 w=340, Col2 x=348 w=340 | Box h=110 | Portrait 80×80
+
 		Gui, MyWindow:Add, GroupBox, x4 y35 w340 h110 vPatronGB1, Mirt the Moneylender
-		Gui, MyWindow:Add, Text, x12 y51 w60, Variants:
-		Gui, MyWindow:Add, Text, x72 y51 w120 vPat1Variants, —
-		Gui, MyWindow:Add, Text, x200 y51 w60, Completed:
-		Gui, MyWindow:Add, Text, x260 y51 w76 vPat1Completed, —
-		Gui, MyWindow:Add, Text, x12 y67 w60, FP:
-		Gui, MyWindow:Add, Text, x72 y67 w120 vPat1FP, —
-		Gui, MyWindow:Add, Text, x200 y67 w60, Challenges:
-		Gui, MyWindow:Add, Text, x260 y67 w76 vPat1Challenges, —
-		Gui, MyWindow:Add, Text, x12 y83 w60, Influence:
-		Gui, MyWindow:Add, Text, x72 y83 w264 vPat1Requires, —
-		Gui, MyWindow:Add, Text, x12 y99 w60, Coins:
-		Gui, MyWindow:Add, Text, x72 y99 w264 vPat1Costs, —
+		Gui, MyWindow:Add, Picture, x12 y51 w80 h-1 vPat1Pic, %A_ScriptDir%\images\patron_1.png
+		Gui, MyWindow:Add, Text, x100 y51 w55, Variants:
+		Gui, MyWindow:Add, Text, x155 y51 w80 vPat1Variants, —
+		Gui, MyWindow:Add, Text, x240 y51 w50, Done:
+		Gui, MyWindow:Add, Text, x290 y51 w46 vPat1Completed, —
+		Gui, MyWindow:Add, Text, x100 y67 w55, FP:
+		Gui, MyWindow:Add, Text, x155 y67 w80 vPat1FP, —
+		Gui, MyWindow:Add, Text, x240 y67 w50, Challs:
+		Gui, MyWindow:Add, Text, x290 y67 w46 vPat1Challenges, —
+		Gui, MyWindow:Add, Text, x100 y83 w55, Influence:
+		Gui, MyWindow:Add, Text, x155 y83 w181 vPat1Requires, —
+		Gui, MyWindow:Add, Text, x100 y99 w55, Coins:
+		Gui, MyWindow:Add, Text, x155 y99 w181 vPat1Costs, —
 
 		Gui, MyWindow:Add, GroupBox, x348 y35 w340 h110 vPatronGB2, Vajra Safahr
-		Gui, MyWindow:Add, Text, x356 y51 w60, Variants:
-		Gui, MyWindow:Add, Text, x416 y51 w120 vPat2Variants, —
-		Gui, MyWindow:Add, Text, x544 y51 w60, Completed:
-		Gui, MyWindow:Add, Text, x604 y51 w76 vPat2Completed, —
-		Gui, MyWindow:Add, Text, x356 y67 w60, FP:
-		Gui, MyWindow:Add, Text, x416 y67 w120 vPat2FP, —
-		Gui, MyWindow:Add, Text, x544 y67 w60, Challenges:
-		Gui, MyWindow:Add, Text, x604 y67 w76 vPat2Challenges, —
-		Gui, MyWindow:Add, Text, x356 y83 w60, Influence:
-		Gui, MyWindow:Add, Text, x416 y83 w264 vPat2Requires, —
-		Gui, MyWindow:Add, Text, x356 y99 w60, Coins:
-		Gui, MyWindow:Add, Text, x416 y99 w264 vPat2Costs, —
+		Gui, MyWindow:Add, Picture, x356 y51 w80 h-1 vPat2Pic, %A_ScriptDir%\images\patron_2.png
+		Gui, MyWindow:Add, Text, x444 y51 w55, Variants:
+		Gui, MyWindow:Add, Text, x499 y51 w80 vPat2Variants, —
+		Gui, MyWindow:Add, Text, x584 y51 w50, Done:
+		Gui, MyWindow:Add, Text, x634 y51 w46 vPat2Completed, —
+		Gui, MyWindow:Add, Text, x444 y67 w55, FP:
+		Gui, MyWindow:Add, Text, x499 y67 w80 vPat2FP, —
+		Gui, MyWindow:Add, Text, x584 y67 w50, Challs:
+		Gui, MyWindow:Add, Text, x634 y67 w46 vPat2Challenges, —
+		Gui, MyWindow:Add, Text, x444 y83 w55, Influence:
+		Gui, MyWindow:Add, Text, x499 y83 w181 vPat2Requires, —
+		Gui, MyWindow:Add, Text, x444 y99 w55, Coins:
+		Gui, MyWindow:Add, Text, x499 y99 w181 vPat2Costs, —
 
 		Gui, MyWindow:Add, GroupBox, x4 y149 w340 h110 vPatronGB3, Strahd von Zarovich
-		Gui, MyWindow:Add, Text, x12 y165 w60, Variants:
-		Gui, MyWindow:Add, Text, x72 y165 w120 vPat3Variants, —
-		Gui, MyWindow:Add, Text, x200 y165 w60, Completed:
-		Gui, MyWindow:Add, Text, x260 y165 w76 vPat3Completed, —
-		Gui, MyWindow:Add, Text, x12 y181 w60, FP:
-		Gui, MyWindow:Add, Text, x72 y181 w120 vPat3FP, —
-		Gui, MyWindow:Add, Text, x200 y181 w60, Challenges:
-		Gui, MyWindow:Add, Text, x260 y181 w76 vPat3Challenges, —
-		Gui, MyWindow:Add, Text, x12 y197 w60, Influence:
-		Gui, MyWindow:Add, Text, x72 y197 w264 vPat3Requires, —
-		Gui, MyWindow:Add, Text, x12 y213 w60, Coins:
-		Gui, MyWindow:Add, Text, x72 y213 w264 vPat3Costs, —
+		Gui, MyWindow:Add, Picture, x12 y165 w80 h-1 vPat3Pic, %A_ScriptDir%\images\patron_3.png
+		Gui, MyWindow:Add, Text, x100 y165 w55, Variants:
+		Gui, MyWindow:Add, Text, x155 y165 w80 vPat3Variants, —
+		Gui, MyWindow:Add, Text, x240 y165 w50, Done:
+		Gui, MyWindow:Add, Text, x290 y165 w46 vPat3Completed, —
+		Gui, MyWindow:Add, Text, x100 y181 w55, FP:
+		Gui, MyWindow:Add, Text, x155 y181 w80 vPat3FP, —
+		Gui, MyWindow:Add, Text, x240 y181 w50, Challs:
+		Gui, MyWindow:Add, Text, x290 y181 w46 vPat3Challenges, —
+		Gui, MyWindow:Add, Text, x100 y197 w55, Influence:
+		Gui, MyWindow:Add, Text, x155 y197 w181 vPat3Requires, —
+		Gui, MyWindow:Add, Text, x100 y213 w55, Coins:
+		Gui, MyWindow:Add, Text, x155 y213 w181 vPat3Costs, —
 
 		Gui, MyWindow:Add, GroupBox, x348 y149 w340 h110 vPatronGB4, Zariel
-		Gui, MyWindow:Add, Text, x356 y165 w60, Variants:
-		Gui, MyWindow:Add, Text, x416 y165 w120 vPat4Variants, —
-		Gui, MyWindow:Add, Text, x544 y165 w60, Completed:
-		Gui, MyWindow:Add, Text, x604 y165 w76 vPat4Completed, —
-		Gui, MyWindow:Add, Text, x356 y181 w60, FP:
-		Gui, MyWindow:Add, Text, x416 y181 w120 vPat4FP, —
-		Gui, MyWindow:Add, Text, x544 y181 w60, Challenges:
-		Gui, MyWindow:Add, Text, x604 y181 w76 vPat4Challenges, —
-		Gui, MyWindow:Add, Text, x356 y197 w60, Influence:
-		Gui, MyWindow:Add, Text, x416 y197 w264 vPat4Requires, —
-		Gui, MyWindow:Add, Text, x356 y213 w60, Coins:
-		Gui, MyWindow:Add, Text, x416 y213 w264 vPat4Costs, —
+		Gui, MyWindow:Add, Picture, x356 y165 w80 h-1 vPat4Pic, %A_ScriptDir%\images\patron_4.png
+		Gui, MyWindow:Add, Text, x444 y165 w55, Variants:
+		Gui, MyWindow:Add, Text, x499 y165 w80 vPat4Variants, —
+		Gui, MyWindow:Add, Text, x584 y165 w50, Done:
+		Gui, MyWindow:Add, Text, x634 y165 w46 vPat4Completed, —
+		Gui, MyWindow:Add, Text, x444 y181 w55, FP:
+		Gui, MyWindow:Add, Text, x499 y181 w80 vPat4FP, —
+		Gui, MyWindow:Add, Text, x584 y181 w50, Challs:
+		Gui, MyWindow:Add, Text, x634 y181 w46 vPat4Challenges, —
+		Gui, MyWindow:Add, Text, x444 y197 w55, Influence:
+		Gui, MyWindow:Add, Text, x499 y197 w181 vPat4Requires, —
+		Gui, MyWindow:Add, Text, x444 y213 w55, Coins:
+		Gui, MyWindow:Add, Text, x499 y213 w181 vPat4Costs, —
 
 		Gui, MyWindow:Add, GroupBox, x4 y263 w340 h110 vPatronGB5, Elminster
-		Gui, MyWindow:Add, Text, x12 y279 w60, Variants:
-		Gui, MyWindow:Add, Text, x72 y279 w120 vPat5Variants, —
-		Gui, MyWindow:Add, Text, x200 y279 w60, Completed:
-		Gui, MyWindow:Add, Text, x260 y279 w76 vPat5Completed, —
-		Gui, MyWindow:Add, Text, x12 y295 w60, FP:
-		Gui, MyWindow:Add, Text, x72 y295 w120 vPat5FP, —
-		Gui, MyWindow:Add, Text, x200 y295 w60, Challenges:
-		Gui, MyWindow:Add, Text, x260 y295 w76 vPat5Challenges, —
-		Gui, MyWindow:Add, Text, x12 y311 w60, Influence:
-		Gui, MyWindow:Add, Text, x72 y311 w264 vPat5Requires, —
-		Gui, MyWindow:Add, Text, x12 y327 w60, Coins:
-		Gui, MyWindow:Add, Text, x72 y327 w264 vPat5Costs, —
+		Gui, MyWindow:Add, Picture, x12 y279 w80 h-1 vPat5Pic, %A_ScriptDir%\images\patron_5.png
+		Gui, MyWindow:Add, Text, x100 y279 w55, Variants:
+		Gui, MyWindow:Add, Text, x155 y279 w80 vPat5Variants, —
+		Gui, MyWindow:Add, Text, x240 y279 w50, Done:
+		Gui, MyWindow:Add, Text, x290 y279 w46 vPat5Completed, —
+		Gui, MyWindow:Add, Text, x100 y295 w55, FP:
+		Gui, MyWindow:Add, Text, x155 y295 w80 vPat5FP, —
+		Gui, MyWindow:Add, Text, x240 y295 w50, Challs:
+		Gui, MyWindow:Add, Text, x290 y295 w46 vPat5Challenges, —
+		Gui, MyWindow:Add, Text, x100 y311 w55, Influence:
+		Gui, MyWindow:Add, Text, x155 y311 w181 vPat5Requires, —
+		Gui, MyWindow:Add, Text, x100 y327 w55, Coins:
+		Gui, MyWindow:Add, Text, x155 y327 w181 vPat5Costs, —
 
 		Gui, MyWindow:Add, GroupBox, x348 y263 w340 h110 vPatronGB6, Patron 6
-		Gui, MyWindow:Add, Text, x356 y283 w280 vPat6Val c808080, Empty Slot
+		Gui, MyWindow:Add, Picture, x356 y279 w80 h-1 vPat6Pic, %A_ScriptDir%\images\patron_6.png
+		Gui, MyWindow:Add, Text, x444 y299 w200 vPat6Val c808080, Empty Slot
 
 		Gui, Tab, Champions
 		Gui, MyWindow:Add, ListView, x4 y35 w600 h506 vChampionsLV hwndChampionsHwnd +Grid +ReadOnly -Multi +NoSortHdr, Champion|Stat|Value
