@@ -3663,6 +3663,41 @@ SetIcon() {
 	}
 }
 
+; Extract credentials from WRL (or prompt manually) and save settings.
+; Used by menu-driven detection to avoid re-running the full FirstRun wizard.
+detectCredentialsAndSave() {
+	if (WRLFile != "" && FileExist(WRLFile)) {
+		GetIdFromWRL()
+		LogFile("Platform: " GamePlatform)
+		LogFile("User ID: " UserID " & Hash: [REDACTED] detected in WRL")
+		GetPlayServerFromWRL()
+	} else {
+		MsgBox, 4, , Could not find webRequestLog.txt automatically.`nEnter credentials manually?
+		IfMsgBox, Yes
+		{
+			InputBox, UserID, user_id, Please enter your "user_id" value., , 250, 125
+			if ErrorLevel
+				return
+			InputBox, UserHash, hash, Please enter your "hash" value., , 250, 125
+			if ErrorLevel
+				return
+			LogFile("User ID: " UserID " & Hash: [REDACTED] manually entered")
+		}
+		IfMsgBox, No
+			return
+	}
+	CurrentSettings.user_id := UserID
+	CurrentSettings.user_id_epic := UserIDEpic
+	CurrentSettings.user_id_steam := UserIDSteam
+	CurrentSettings.hash := DPAPIEncrypt(UserHash)
+	CurrentSettings.loadgameclient := LoadGameClient
+	CurrentSettings.wrlpath := WRLFile
+	CurrentSettings.firstrun := 1
+	PersistSettings()
+	LogFile("Game detection completed for " GamePlatform)
+	GetUserDetails()
+}
+
 ; Shared platform detection engine — scans for game install using platform descriptor
 tryDetectPlatform(desc, manual) {
 	; Shared detection engine for platform-based game install detection.
@@ -3705,8 +3740,7 @@ tryDetectPlatform(desc, manual) {
 						selectedDir .= "\"
 					applyGameInstall(selectedDir, GameClientEpicLauncher, desc.platformName, selectedDir WRLFilePath, desc.loadClientId)
 					MsgBox, % desc.platformName " install set to:`n" GameInstallDir
-					FirstRun()
-					GetUserDetails()
+					detectCredentialsAndSave()
 					return true
 				}
 			}
@@ -3724,8 +3758,7 @@ tryDetectPlatform(desc, manual) {
 		if manual {
 			MsgBox, % desc.foundMsg
 			if (!desc.skipCallback) {
-				FirstRun()
-				GetUserDetails()
+				detectCredentialsAndSave()
 			}
 		}
 		return true
@@ -3742,8 +3775,7 @@ tryDetectPlatform(desc, manual) {
 				applyGameInstall(selectedDir, desc.clientExe, desc.platformName, wrlPath, desc.loadClientId)
 				MsgBox, % desc.platformName " install set to:`n" GameInstallDir
 				if (!desc.skipCallback) {
-					FirstRun()
-					GetUserDetails()
+					detectCredentialsAndSave()
 				}
 				return true
 			}
