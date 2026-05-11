@@ -628,17 +628,90 @@ Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Form
 		Gui, MyWindow:Add, Button, x+4 yp w90 gShowBlacksmithMenu, Blacksmith
 		Gui, MyWindow:Add, Button, x+4 yp w100 gShowBountyMenu, Bounty (Alpha)
 		; 2×2 grid: top=Gems+Chests, bottom=Bounties+Blacksmith
-		Gui, MyWindow:Add, GroupBox, x4 y58 w340 h154 vInvGBGems, Gems
-		Gui, MyWindow:Add, ListView, x8 y74 w332 h134 vInvGemsLV hwndInvGemsHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Item|Count|Details
-		Gui, MyWindow:Add, GroupBox, x348 y58 w340 h154 vInvGBChests, Chests
-		Gui, MyWindow:Add, ListView, x352 y74 w332 h134 vInvChestsLV hwndInvChestsHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Chest|Count|Details
-		Gui, MyWindow:Add, GroupBox, x4 y172 w340 h370 vInvGBBounty, Bounty Contracts
+		Gui, MyWindow:Add, GroupBox, x4 y58 w340 h194 vInvGBGems, Gems
+		Gui, MyWindow:Add, ListView, x8 y74 w332 h174 vInvGemsLV hwndInvGemsHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Item|Count|Details
+		Gui, MyWindow:Add, GroupBox, x348 y58 w340 h194 vInvGBChests, Chests
+		Gui, MyWindow:Add, ListView, x352 y74 w332 h174 vInvChestsLV hwndInvChestsHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Chest|Count|Details
+		Gui, MyWindow:Add, GroupBox, x4 y152 w340 h390 vInvGBBounty, Bounty Contracts
 		Gui, MyWindow:Add, ListView, x8 y190 w332 h348 vInvBountyLV hwndInvBountyHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Contract|Count|Details
-		Gui, MyWindow:Add, GroupBox, x348 y172 w340 h370 vInvGBBS, Blacksmith Contracts
+		Gui, MyWindow:Add, GroupBox, x348 y152 w340 h390 vInvGBBS, Blacksmith Contracts
 		Gui, MyWindow:Add, ListView, x352 y190 w332 h348 vInvBSLV hwndInvBSHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Contract|Count|Details
 
 		Gui, Tab, Patrons
-		Gui, MyWindow:Add, ListView, x4 y35 w600 h506 vPatronsLV hwndPatronsHwnd +Grid +ReadOnly -Multi +NoSortHdr, Patron|Variants|Completed|FP Currency|Challenges|Influence / Requires|Coins / Costs
+		; 2×3 grid: col1 x=4 w=340, col2 x=348 w=340 | Box h=110
+		; Row 1 y=35, Row 2 y=149, Row 3 y=263
+		Gui, MyWindow:Add, GroupBox, x4 y35 w340 h110 vPatronGB1, Mirt the Moneylender
+		Gui, MyWindow:Add, Text, x12 y51 w60, Variants:
+		Gui, MyWindow:Add, Text, x72 y51 w120 vPat1Variants, —
+		Gui, MyWindow:Add, Text, x200 y51 w60, Completed:
+		Gui, MyWindow:Add, Text, x260 y51 w76 vPat1Completed, —
+		Gui, MyWindow:Add, Text, x12 y67 w60, FP:
+		Gui, MyWindow:Add, Text, x72 y67 w120 vPat1FP, —
+		Gui, MyWindow:Add, Text, x200 y67 w60, Challenges:
+		Gui, MyWindow:Add, Text, x260 y67 w76 vPat1Challenges, —
+		Gui, MyWindow:Add, Text, x12 y83 w60, Influence:
+		Gui, MyWindow:Add, Text, x72 y83 w264 vPat1Requires, —
+		Gui, MyWindow:Add, Text, x12 y99 w60, Coins:
+		Gui, MyWindow:Add, Text, x72 y99 w264 vPat1Costs, —
+
+		Gui, MyWindow:Add, GroupBox, x348 y35 w340 h110 vPatronGB2, Vajra Safahr
+		Gui, MyWindow:Add, Text, x356 y51 w60, Variants:
+		Gui, MyWindow:Add, Text, x416 y51 w120 vPat2Variants, —
+		Gui, MyWindow:Add, Text, x544 y51 w60, Completed:
+		Gui, MyWindow:Add, Text, x604 y51 w76 vPat2Completed, —
+		Gui, MyWindow:Add, Text, x356 y67 w60, FP:
+		Gui, MyWindow:Add, Text, x416 y67 w120 vPat2FP, —
+		Gui, MyWindow:Add, Text, x544 y67 w60, Challenges:
+		Gui, MyWindow:Add, Text, x604 y67 w76 vPat2Challenges, —
+		Gui, MyWindow:Add, Text, x356 y83 w60, Influence:
+		Gui, MyWindow:Add, Text, x416 y83 w264 vPat2Requires, —
+		Gui, MyWindow:Add, Text, x356 y99 w60, Coins:
+		Gui, MyWindow:Add, Text, x416 y99 w264 vPat2Costs, —
+
+		Gui, MyWindow:Add, GroupBox, x4 y149 w340 h110 vPatronGB3, Strahd von Zarovich
+		Gui, MyWindow:Add, Text, x12 y165 w60, Variants:
+		Gui, MyWindow:Add, Text, x72 y165 w120 vPat3Variants, —
+		Gui, MyWindow:Add, Text, x200 y165 w60, Completed:
+		Gui, MyWindow:Add, Text, x260 y165 w76 vPat3Completed, —
+		Gui, MyWindow:Add, Text, x12 y181 w60, FP:
+		Gui, MyWindow:Add, Text, x72 y181 w120 vPat3FP, —
+		Gui, MyWindow:Add, Text, x200 y181 w60, Challenges:
+		Gui, MyWindow:Add, Text, x260 y181 w76 vPat3Challenges, —
+		Gui, MyWindow:Add, Text, x12 y197 w60, Influence:
+		Gui, MyWindow:Add, Text, x72 y197 w264 vPat3Requires, —
+		Gui, MyWindow:Add, Text, x12 y213 w60, Coins:
+		Gui, MyWindow:Add, Text, x72 y213 w264 vPat3Costs, —
+
+		Gui, MyWindow:Add, GroupBox, x348 y149 w340 h110 vPatronGB4, Zariel
+		Gui, MyWindow:Add, Text, x356 y165 w60, Variants:
+		Gui, MyWindow:Add, Text, x416 y165 w120 vPat4Variants, —
+		Gui, MyWindow:Add, Text, x544 y165 w60, Completed:
+		Gui, MyWindow:Add, Text, x604 y165 w76 vPat4Completed, —
+		Gui, MyWindow:Add, Text, x356 y181 w60, FP:
+		Gui, MyWindow:Add, Text, x416 y181 w120 vPat4FP, —
+		Gui, MyWindow:Add, Text, x544 y181 w60, Challenges:
+		Gui, MyWindow:Add, Text, x604 y181 w76 vPat4Challenges, —
+		Gui, MyWindow:Add, Text, x356 y197 w60, Influence:
+		Gui, MyWindow:Add, Text, x416 y197 w264 vPat4Requires, —
+		Gui, MyWindow:Add, Text, x356 y213 w60, Coins:
+		Gui, MyWindow:Add, Text, x416 y213 w264 vPat4Costs, —
+
+		Gui, MyWindow:Add, GroupBox, x4 y263 w340 h110 vPatronGB5, Elminster
+		Gui, MyWindow:Add, Text, x12 y279 w60, Variants:
+		Gui, MyWindow:Add, Text, x72 y279 w120 vPat5Variants, —
+		Gui, MyWindow:Add, Text, x200 y279 w60, Completed:
+		Gui, MyWindow:Add, Text, x260 y279 w76 vPat5Completed, —
+		Gui, MyWindow:Add, Text, x12 y295 w60, FP:
+		Gui, MyWindow:Add, Text, x72 y295 w120 vPat5FP, —
+		Gui, MyWindow:Add, Text, x200 y295 w60, Challenges:
+		Gui, MyWindow:Add, Text, x260 y295 w76 vPat5Challenges, —
+		Gui, MyWindow:Add, Text, x12 y311 w60, Influence:
+		Gui, MyWindow:Add, Text, x72 y311 w264 vPat5Requires, —
+		Gui, MyWindow:Add, Text, x12 y327 w60, Coins:
+		Gui, MyWindow:Add, Text, x72 y327 w264 vPat5Costs, —
+
+		Gui, MyWindow:Add, GroupBox, x348 y263 w340 h110 vPatronGB6, Patron 6
+		Gui, MyWindow:Add, Text, x356 y283 w280 vPat6Val c808080, Empty Slot
 
 		Gui, Tab, Champions
 		Gui, MyWindow:Add, ListView, x4 y35 w600 h506 vChampionsLV hwndChampionsHwnd +Grid +ReadOnly -Multi +NoSortHdr, Champion|Stat|Value
@@ -1084,17 +1157,21 @@ Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Form
 		Loop % LV_GetCount("Col")
 			LV_ModifyCol(A_Index, "AutoHdr")
 
-;Patrons — display names from dict, variable data via short-name prefix
-Gui, MyWindow:Default
-Gui, ListView, PatronsLV
-LV_Delete()
-for _, pid in PatronIDs {
-	pShort := PatronShortNames[pid]
-	pDisplay := PatronFromID(pid)
-	LV_Add("", pDisplay, %pShort%Variants, %pShort%Completed, %pShort%FPCurrency, %pShort%Challenges, %pShort%Requires, %pShort%Costs)
-}
-Loop % LV_GetCount("Col")
-	LV_ModifyCol(A_Index, "AutoHdr")
+		;Patrons — update GroupBox cards
+		Gui, MyWindow:Default
+		patIdx := 0
+		for _, pid in PatronIDs {
+			patIdx += 1
+			pShort := PatronShortNames[pid]
+			pDisplay := PatronFromID(pid)
+			GuiControl, MyWindow:, PatronGB%patIdx%, % pDisplay
+			GuiControl, MyWindow:, Pat%patIdx%Variants, % %pShort%Variants
+			GuiControl, MyWindow:, Pat%patIdx%Completed, % %pShort%Completed
+			GuiControl, MyWindow:, Pat%patIdx%FP, % %pShort%FPCurrency
+			GuiControl, MyWindow:, Pat%patIdx%Challenges, % %pShort%Challenges
+			GuiControl, MyWindow:, Pat%patIdx%Requires, % %pShort%Requires
+			GuiControl, MyWindow:, Pat%patIdx%Costs, % %pShort%Costs
+		}
 
 ;Champions
 Gui, MyWindow:Default
@@ -1421,21 +1498,7 @@ MyWindowGuiSize(GuiHwnd, EventInfo, Width, Height) {
 	GuiControl, MoveDraw, SummaryBlessLV,    % "x" . (blessX + 4) . " w" . (blessW - 8) . " h" . (tabH - 20)
 
 
-	GuiControl, MoveDraw, PatronsLV,    % "w" . tabW . " h" . tabH
-	; Inventory — 2×2 GroupBox grid
-	invHalfW := Floor(tabW / 2) - 4
-	invTopH := 154
-	invBotH := tabH - invTopH - 4
-	invBotY := 58 + invTopH
-	invCol2X := invHalfW + 8
-	GuiControl, MoveDraw, InvGBGems,    % "w" . invHalfW . " h" . invTopH
-	GuiControl, MoveDraw, InvGemsLV,    % "w" . (invHalfW - 8) . " h" . (invTopH - 20)
-	GuiControl, MoveDraw, InvGBChests,  % "x" . invCol2X . " w" . invHalfW . " h" . invTopH
-	GuiControl, MoveDraw, InvChestsLV,  % "x" . (invCol2X + 4) . " w" . (invHalfW - 8) . " h" . (invTopH - 20)
-	GuiControl, MoveDraw, InvGBBounty,  % "y" . invBotY . " w" . invHalfW . " h" . invBotH
-	GuiControl, MoveDraw, InvBountyLV,  % "y" . (invBotY + 16) . " w" . (invHalfW - 8) . " h" . (invBotH - 22)
-	GuiControl, MoveDraw, InvGBBS,      % "x" . invCol2X . " y" . invBotY . " w" . invHalfW . " h" . invBotH
-	GuiControl, MoveDraw, InvBSLV,      % "x" . (invCol2X + 4) . " y" . (invBotY + 16) . " w" . (invHalfW - 8) . " h" . (invBotH - 22)
+
 	GuiControl, MoveDraw, ChampionsLV,  % "w" . tabW . " h" . tabH
 	GuiControl, MoveDraw, PityLV,       % "w" . tabW . " h" . tabH
 	GuiControl, MoveDraw, ItemLevelsLV, % "w" . tabW . " h" . tabH
