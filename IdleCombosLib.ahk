@@ -78,6 +78,122 @@ BuildPatronDropdownList() {
 	return ddl
 }
 
+;-----------------------------------------------------------------------------
+; BuildChampDropdownList() - Build sorted pipe-delimited champion DDL string
+; Format: "Arkhan (157)|Bruenor (1)|Celeste (2)|..."  sorted alphabetically
+; Skips empty/blank champion entries.
+; Returns: pipe-delimited string for use in DropDownList controls
+;-----------------------------------------------------------------------------
+BuildChampDropdownList() {
+	global _dict
+	; Collect "Name (ID)" entries
+	champList := ""
+	for champID, champName in _dict.champions {
+		if (champName = "" || champName = "UNKNOWN")
+			continue
+		champList .= champName " (" (champID + 0) ")`n"
+	}
+	; Sort alphabetically (case-insensitive)
+	Sort, champList
+	; Build pipe-delimited DDL string
+	ddl := ""
+	Loop, Parse, champList, `n, `r
+	{
+		if (A_LoopField = "")
+			continue
+		ddl .= (ddl = "" ? "" : "|") A_LoopField
+	}
+	return ddl
+}
+
+;-----------------------------------------------------------------------------
+; BuildChestDropdownList() - Build sorted pipe-delimited chest DDL string
+; Format: "Gold Chest (2)|Silver Chest (1)|..."  sorted alphabetically
+; Skips empty/blank chest entries.
+; Returns: pipe-delimited string for use in ComboBox controls
+;-----------------------------------------------------------------------------
+BuildChestDropdownList() {
+	global _dict
+	chestList := ""
+	for chestID, chestName in _dict.chests {
+		if (chestName = "" || chestName = "UNKNOWN")
+			continue
+		chestList .= chestName " (" (chestID + 0) ")`n"
+	}
+	Sort, chestList
+	ddl := ""
+	Loop, Parse, chestList, `n, `r
+	{
+		if (A_LoopField = "")
+			continue
+		ddl .= (ddl = "" ? "" : "|") A_LoopField
+	}
+	return ddl
+}
+
+;-----------------------------------------------------------------------------
+; BuildPatronPickerList() - Build pipe-delimited patron list with IDs
+; Format: "None (0)|Mirt the Moneylender (1)|..."
+; Used by PatronPicker GUI — includes IDs so PickerExtractID() can extract them.
+;-----------------------------------------------------------------------------
+BuildPatronPickerList() {
+	ddl := "None (0)"
+	for _, pid in PatronIDs
+		ddl .= "|" PatronFromID(pid) " (" pid ")"
+	return ddl
+}
+
+;-----------------------------------------------------------------------------
+; BuildAdvDropdownList() - Build sorted pipe-delimited adventure DDL string
+; Reads advdefs.json from the working directory. Returns "" if file absent or
+; unparseable (graceful first-run fallback — caller should use InputBox instead).
+; Format: "A Brief Tour of the Realms (1)|The Cursed Farmer (3)|..."
+; Sorted alphabetically by adventure name.
+;-----------------------------------------------------------------------------
+BuildAdvDropdownList() {
+	FileRead, advRaw, %A_WorkingDir%\advdefs.json
+	if (ErrorLevel)
+		return ""
+	Try {
+		advMap := JSON.parse(advRaw)
+	} catch {
+		return ""
+	}
+	if (!IsObject(advMap))
+		return ""
+	advList := ""
+	for advID, advName in advMap {
+		if (advName = "" || advName = "UNKNOWN")
+			continue
+		advList .= advName " (" (advID + 0) ")`n"
+	}
+	Sort, advList
+	ddl := ""
+	Loop, Parse, advList, `n, `r
+	{
+		if (A_LoopField = "")
+			continue
+		ddl .= (ddl = "" ? "" : "|") A_LoopField
+	}
+	return ddl
+}
+
+;-----------------------------------------------------------------------------
+; PickerExtractID(selection) - Extract numeric ID from "Name (ID)" format
+; If selection ends with "(digits)", extracts and returns that number.
+; If selection is all digits (including "0"), returns it as a number.
+; Returns "" if neither form is recognised.
+;-----------------------------------------------------------------------------
+PickerExtractID(selection) {
+	RegExMatch(selection, "\((\d+)\)$", m)
+	if (m1 != "")
+		return m1 + 0
+	trimmed := Trim(selection)
+	if (trimmed ~= "^\d+$")
+		return trimmed + 0
+	return ""
+}
+
 ; Get Patron display name from patron ID (e.g. 1 → "Mirt the Moneylender")
 PatronFromID(patronid) {
 	global _dict
@@ -224,8 +340,8 @@ global BlacksmithContracts := [{buffId: 31, name: "Tiny", var: "CurrentTinyBS", 
 ; SETTINGS DEFAULTS
 ;=============================================================================
 
-global SettingsCheckValue := 25 ;used to check for outdated settings file
-global NewSettings := JSON.stringify({"alwayssavechests":1,"alwayssavecontracts":1,"alwayssavecodes":1,"disabletooltips":0,"firstrun":0,"getdetailsonstart":0,"hash":0,"instance_id":0,"launchgameonstart":0,"loadgameclient":0,"logenabled":0,"nosavesetting":0,"servername":"master","user_id":0,"user_id_epic":0,"user_id_steam":0,"tabactive":"Summary","style":"Default","serverdetection":1,"wrlpath":"","blacksmithcontractresults":1,"disableuserdetailsreload":0,"redeemcodehistoryskip":1,"autorefreshminutes":0,"showapimessages":1})
+global SettingsCheckValue := 38 ;used to check for outdated settings file
+global NewSettings := JSON.stringify({"alwayssavechests":1,"alwayssavecontracts":1,"alwayssavecodes":1,"disabletooltips":0,"firstrun":0,"getdetailsonstart":0,"hash":0,"instance_id":0,"launchgameonstart":0,"loadgameclient":0,"logenabled":0,"nosavesetting":0,"servername":"master","user_id":0,"user_id_epic":0,"user_id_steam":0,"tabactive":"Summary","style":"Default","serverdetection":1,"wrlpath":"","blacksmithcontractresults":1,"disableuserdetailsreload":0,"redeemcodehistoryskip":1,"autorefreshminutes":0,"showapimessages":1,"lastbschamp":0,"lastbstncount":0,"lastbssmcount":0,"lastbsmdcount":0,"lastbslgcount":0,"lastbshgcount":0,"lastbountytncount":0,"lastbountysmcount":0,"lastbountymdcount":0,"lastbountylgcount":0,"lastadvid":0,"lastpatronid":0,"lastchestid":0})
 
 ;=============================================================================
 ; SERVER CONSTANTS

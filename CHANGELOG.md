@@ -9,6 +9,18 @@ To all the Idle Dragoneers who inspired and assisted me!
 ## 3.82
 
 * Fix Crash Protect launching multiple game copies — replaced tight `Sleep 10s` loop with `WinWait` (120s timeout) so it waits for the game to actually start before retrying; gives up after 3 consecutive failures instead of looping forever
+* Persist blacksmith last champion and last counts (Tiny/Small/Medium/Large/Huge) across sessions — stored in settings, restored on load
+* Persist bounty last counts (Tiny/Small/Medium/Large) across sessions — stored in settings, restored on load
+* Replace blacksmith hero ID `InputBox` with a sorted champion `ComboBox` populated from `idledict.json` — pre-selects last-used champion; format is "Name (ID)"; also accepts typed champion IDs
+* Replace Buy/Open Event chest `InputBox` prompts with a sorted chest `ComboBox` picker populated from `idledict.json` — format is "Name (ID)"; also accepts typed chest IDs
+* Replace Load Adventure patron `InputBox` with a patron `ComboBox` picker — shows "None (0)" through all five patrons with IDs; also accepts typed patron IDs; fixes validation range (was `< 5`, now `<= 5` to include Elminster)
+* Add `BuildChestDropdownList()`, `BuildPatronPickerList()`, and `PickerExtractID()` helpers to `IdleCombosLib.ahk`
+* Bump `SettingsCheckValue` to 26 with 10 new settings keys: `lastbschamp`, `lastbstncount`, `lastbssmcount`, `lastbsmdcount`, `lastbslgcount`, `lastbshgcount`, `lastbountytncount`, `lastbountysmcount`, `lastbountymdcount`, `lastbountylgcount`
+* Replace Load Adventure `InputBox` with a sorted adventure `ComboBox` picker (`ShowAdvPicker()`) populated from `advdefs.json` — pre-selects last-used adventure; falls back to plain `InputBox` if `advdefs.json` does not yet exist; format is "Name (ID)"; also accepts typed adventure IDs
+* Add `BuildAdvDropdownList()` helper to `IdleCombosLib.ahk` — reads `advdefs.json`, builds sorted "Name (ID)" list, returns `""` gracefully on first run before API sync
+* Persist last-used adventure ID, patron ID, and event chest ID across sessions — stored in settings, pre-filled in respective pickers on next use
+* Patron picker now pre-selects the last-used patron; chest picker now pre-selects the last-used event chest
+* Bump `SettingsCheckValue` to 27 with 3 new settings keys: `lastadvid`, `lastpatronid`, `lastchestid`
 
 ## 3.81
 

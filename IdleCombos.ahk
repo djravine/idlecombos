@@ -244,6 +244,14 @@ global LastBountyTnCount := ""
 global LastBountySmCount := ""
 global LastBountyMdCount := ""
 global LastBountyLgCount := ""
+global ChampPickerResult := ""  ; set by ChampPickerOK label
+global ChampPickerDone   := false  ; set by ChampPickerOK/Cancel labels
+global ChestPickerResult := ""  ; set by ChestPickerOK label
+global ChestPickerDone   := false  ; set by ChestPickerOK/Cancel labels
+global PatronPickerResult := -1  ; set by PatronPickerOK label (-1 = cancelled)
+global PatronPickerDone   := false  ; set by PatronPickerOK/Cancel labels
+global AdvPickerResult := ""   ; set by AdvPickerOK label
+global AdvPickerDone   := false  ; set by AdvPickerOK/Cancel labels
 global foundCodeString := ""
 global BgColour := "FFFFFF"
 
@@ -635,6 +643,17 @@ Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Form
 		RedeemCodeHistorySkip := CurrentSettings.redeemcodehistoryskip
 		AutoRefreshMinutes := CurrentSettings.autorefreshminutes ? CurrentSettings.autorefreshminutes : 0
 		ShowAPIMessages := CurrentSettings.showapimessages
+		LastBSChamp      := CurrentSettings.lastbschamp
+		LastBSTnCount    := CurrentSettings.lastbstncount
+		LastBSSmCount    := CurrentSettings.lastbssmcount
+		LastBSMdCount    := CurrentSettings.lastbsmdcount
+		LastBSLgCount    := CurrentSettings.lastbslgcount
+		LastBSHgCount    := CurrentSettings.lastbshgcount
+		LastBountyTnCount := CurrentSettings.lastbountytncount
+		LastBountySmCount := CurrentSettings.lastbountysmcount
+		LastBountyMdCount := CurrentSettings.lastbountymdcount
+		LastBountyLgCount := CurrentSettings.lastbountylgcount
+		lastadv := CurrentSettings.lastadvid ? CurrentSettings.lastadvid : 0
 		if (AutoRefreshMinutes > 0) {
 			SetTimer, AutoRefreshTimer, % AutoRefreshMinutes * 60000
 		} else {
@@ -1658,12 +1677,12 @@ Buy_Gold:
 
 BuyEvent()
 	{
-		InputBox, chestid, Opening Chests, % "Enter Chest ID?`n", , 200, 150
-		if ErrorLevel
+		chestid := ShowChestPicker("Buy Event Chests", CurrentSettings.lastchestid)
+		if !(chestid > 0)
 			return
-		if (chestid) {
-			Buy_Chests(chestid)
-		}
+		CurrentSettings.lastchestid := chestid + 0
+		PersistSettings()
+		Buy_Chests(chestid)
 		return
 	}
 
@@ -1711,12 +1730,12 @@ Open_Gold:
 
 OpenEvent()
 	{
-		InputBox, chestid, Opening Chests, % "Enter Chest ID?`n", , 200, 150
-		if ErrorLevel
+		chestid := ShowChestPicker("Open Event Chests", CurrentSettings.lastchestid)
+		if !(chestid > 0)
 			return
-		if (chestid) {
-			OpenChestIfGameClosed(chestid)
-		}
+		CurrentSettings.lastchestid := chestid + 0
+		PersistSettings()
+		OpenChestIfGameClosed(chestid)
 		return
 	}
 
@@ -1726,6 +1745,33 @@ Open_Event:
 		OpenEvent()
 		return
 	}
+
+; Show a ComboBox chest picker GUI; returns the selected/typed chest ID (number > 0), or 0/empty on cancel.
+; defaultID: optional pre-selected chest ID (0 = no pre-selection)
+ShowChestPicker(windowTitle, defaultID=0) {
+	global ChestPickerResult, ChestPickerDone
+	chestDDL := BuildChestDropdownList()
+	ChestPickerResult := ""
+	ChestPickerDone := false
+	Gui, ChestPicker:Destroy
+	Gui, ChestPicker:Add, Text, w265, % "Select a chest or type a chest ID:"
+	Gui, ChestPicker:Add, ComboBox, vChestPickerChoice w265, %chestDDL%
+	if (defaultID + 0 > 0) {
+		Loop, Parse, chestDDL, |
+		{
+			if (RegExMatch(A_LoopField, "\(" (defaultID + 0) "\)$")) {
+				GuiControl, ChooseString, ChestPickerChoice, % A_LoopField
+				break
+			}
+		}
+	}
+	Gui, ChestPicker:Add, Button, gChestPickerOK w125, OK
+	Gui, ChestPicker:Add, Button, x+10 gChestPickerCancel w125, Cancel
+	Gui, ChestPicker:Show, w290, % windowTitle
+	while !ChestPickerDone
+		Sleep, 100
+	return ChestPickerResult
+}
 
 ; Label: open redeem codes window with paste/autoload/submit controls
 Open_Codes:
@@ -2668,15 +2714,34 @@ _UseBlacksmith_Inner(buffid) {
 			return
 		}
 	}
-	heroid := "error"
-	InputBox, heroid, Blacksmithing, % "Use " contractname " Blacksmith Contracts on which Champ? (Enter ID)", , 200, 180, , , , , %LastBSChamp%
-	if ErrorLevel
-		return
-	while !((heroid is number) OR ((heroid > 0) && (heroid < 107)) OR ((heroid > 112) && (heroid < 130))) {
-		InputBox, heroid, Blacksmithing, % "Please enter a valid Champ ID number", , 200, 180, , , , , %LastBSChamp%
-		if ErrorLevel
-			return
+	heroid := ""
+	; Build sorted champion dropdown
+	champDDL := BuildChampDropdownList()
+	champPickPos := 1
+	if (LastBSChamp + 0 > 0) {
+		Loop, Parse, champDDL, |
+		{
+			RegExMatch(A_LoopField, "\((\d+)\)$", _cpM)
+			if (_cpM1 + 0 = LastBSChamp + 0) {
+				champPickPos := A_Index
+				break
+			}
+		}
 	}
+	global ChampPickerResult, ChampPickerDone
+	ChampPickerResult := ""
+	ChampPickerDone := false
+	Gui, ChampPicker:Destroy
+	Gui, ChampPicker:Add, Text, w265, % "Use " contractname " Blacksmith Contracts on which Champion?"
+	Gui, ChampPicker:Add, ComboBox, vChampPickerChoice w265 Choose%champPickPos%, %champDDL%
+	Gui, ChampPicker:Add, Button, gChampPickerOK w125, OK
+	Gui, ChampPicker:Add, Button, x+10 gChampPickerCancel w125, Cancel
+	Gui, ChampPicker:Show, w290, Select Champion
+	while !ChampPickerDone
+		Sleep, 100
+	if (ChampPickerResult = "")
+		return
+	heroid := ChampPickerResult
 	MsgBox, 4, , % "Use " count " " contractname " Blacksmith Contracts on " ChampFromID(heroid) "?"
 	IfMsgBox, No
 	{
@@ -2689,7 +2754,17 @@ _UseBlacksmith_Inner(buffid) {
 		case 33: LastBSMdCount := count
 		case 34: LastBSLgCount := count
 		case 1797: LastBSHgCount := count
-	}	
+	}
+	; Persist last-used blacksmith values to settings
+	CurrentSettings.lastbschamp := heroid + 0
+	switch buffid {
+		case 31: CurrentSettings.lastbstncount := count
+		case 32: CurrentSettings.lastbssmcount := count
+		case 33: CurrentSettings.lastbsmdcount := count
+		case 34: CurrentSettings.lastbslgcount := count
+		case 1797: CurrentSettings.lastbshgcount := count
+	}
+	PersistSettings()
 	bscontractparams := "&user_id=" UserID "&hash=" UserHash "&instance_id=" InstanceID "&buff_id=" buffid "&hero_id=" heroid "&num_uses="
 	tempsavesetting := 0
 	slot1lvs := 0
@@ -2755,6 +2830,96 @@ _UseBlacksmith_Inner(buffid) {
 		GetUserDetails()
 	}
 	SB_SetText("✅ " contractname " Blacksmith Contracts use completed")
+	return
+}
+
+; Label: Champion picker OK button — saves selection and signals the wait loop
+ChampPickerOK:
+{
+	global ChampPickerResult, ChampPickerDone
+	Gui, ChampPicker:Submit, NoHide
+	ChampPickerResult := PickerExtractID(ChampPickerChoice)
+	Gui, ChampPicker:Destroy
+	ChampPickerDone := true
+	return
+}
+
+; Label: Champion picker Cancel button / window close — signals wait loop with empty result
+ChampPickerCancel:
+ChampPickerGuiClose:
+{
+	global ChampPickerResult, ChampPickerDone
+	ChampPickerResult := ""
+	Gui, ChampPicker:Destroy
+	ChampPickerDone := true
+	return
+}
+
+; Label: Chest picker OK button — extracts ID and signals the wait loop
+ChestPickerOK:
+{
+	global ChestPickerResult, ChestPickerDone
+	Gui, ChestPicker:Submit, NoHide
+	ChestPickerResult := PickerExtractID(ChestPickerChoice)
+	Gui, ChestPicker:Destroy
+	ChestPickerDone := true
+	return
+}
+
+; Label: Chest picker Cancel button / window close — signals wait loop with empty result
+ChestPickerCancel:
+ChestPickerGuiClose:
+{
+	global ChestPickerResult, ChestPickerDone
+	ChestPickerResult := ""
+	Gui, ChestPicker:Destroy
+	ChestPickerDone := true
+	return
+}
+
+; Label: Patron picker OK button — extracts ID and signals the wait loop
+PatronPickerOK:
+{
+	global PatronPickerResult, PatronPickerDone
+	Gui, PatronPicker:Submit, NoHide
+	pid := PickerExtractID(PatronPickerChoice)
+	PatronPickerResult := (pid . "" != "") ? pid : -1
+	Gui, PatronPicker:Destroy
+	PatronPickerDone := true
+	return
+}
+
+; Label: Patron picker Cancel button / window close — signals wait loop with sentinel -1
+PatronPickerCancel:
+PatronPickerGuiClose:
+{
+	global PatronPickerResult, PatronPickerDone
+	PatronPickerResult := -1
+	Gui, PatronPicker:Destroy
+	PatronPickerDone := true
+	return
+}
+
+; Label: Adventure picker OK button — extracts ID and signals the wait loop
+AdvPickerOK:
+{
+	global AdvPickerResult, AdvPickerDone
+	Gui, AdvPicker:Submit, NoHide
+	id := PickerExtractID(AdvPickerChoice)
+	AdvPickerResult := (id . "" != "" && id + 0 > 0) ? id + 0 : 0
+	Gui, AdvPicker:Destroy
+	AdvPickerDone := true
+	return
+}
+
+; Label: Adventure picker Cancel button / window close — signals wait loop with 0
+AdvPickerCancel:
+AdvPickerGuiClose:
+{
+	global AdvPickerResult, AdvPickerDone
+	AdvPickerResult := 0
+	Gui, AdvPicker:Destroy
+	AdvPickerDone := true
 	return
 }
 
@@ -2865,6 +3030,22 @@ UseBounty(buffid) {
 	{
 		return
 	}
+	; Persist last-used bounty count for this contract type
+	switch buffid {
+		case 17:
+			LastBountyTnCount := count
+			CurrentSettings.lastbountytncount := count
+		case 18:
+			LastBountySmCount := count
+			CurrentSettings.lastbountysmcount := count
+		case 19:
+			LastBountyMdCount := count
+			CurrentSettings.lastbountymdcount := count
+		case 20:
+			LastBountyLgCount := count
+			CurrentSettings.lastbountylgcount := count
+	}
+	PersistSettings()
 	FileAppend, [PROCESS START] %contractname% Bounty Contracts to use: %count%`n, %BountyLogFile%
 	;bounty cancel
 	UseBountyClick("BOUNTY CANCEL", "bounty_cancel", 5, 5, 500)
@@ -2936,6 +3117,7 @@ global lastadv := 0			;fmagdi - to be used to save ended adventureid for use as 
 
 ; Load a new adventure by ID with optional patron selection
 LoadAdventure() {
+	global CurrentSettings
 	GetUserDetails()
 	while !(CurrentAdventure == "Map" || CurrentAdventure == "-1") {
 		MsgBox, 5, , Please end your current adventure first.
@@ -2944,29 +3126,91 @@ LoadAdventure() {
 			return
 		}
 	}
-	advtoload := lastadv		;fmagdi - defaults to last ended adventure id, or to variable default in globals
-	patrontoload := 0
-	InputBox, advtoload, Adventure to Load, Please enter the adventure_id`nyou would like to load., , 250, 150, , , , , %advtoload%
-	if (ErrorLevel=1) {
+	advtoload := ShowAdvPicker(lastadv)
+	if !(advtoload > 0)
 		return
-	}
 	if !((advtoload > 0) && (advtoload < 9999)) {
 		MsgBox % "Invalid adventure_id: " advtoload
 		return
 	}
-	InputBox, patrontoload, Patron to Load, Please enter the patron_id`nyou would like to load., , 250, 150, , , , , %patrontoload%
-	if (ErrorLevel=1) {
+	patrontoload := ShowPatronPicker(CurrentSettings.lastpatronid)
+	if (patrontoload < 0)
 		return
-	}
-	if !((patrontoload > -1) && (patrontoload < 5)) {
+	if !((patrontoload >= 0) && (patrontoload <= 5)) {
 		MsgBox % "Invalid patron_id: " patrontoload
 		return
 	}
+	CurrentSettings.lastadvid := advtoload + 0
+	CurrentSettings.lastpatronid := patrontoload + 0
+	PersistSettings()
 	advparams := BuildAuthParams() "&patron_tier=0&game_instance_id=" ActiveInstance "&adventure_id=" advtoload "&patron_id=" patrontoload
 	sResult := ServerCall("setcurrentobjective", advparams)
 	GetUserDetails()
 	SB_SetText("✅ Selected adventure has been loaded")
 	return
+}
+
+; Show a ComboBox patron picker GUI; returns patron ID (0-5) on OK, or -1 on cancel/invalid.
+; defaultID: optional pre-selected patron ID (-1 or "" = no pre-selection)
+ShowPatronPicker(defaultID="") {
+	global PatronPickerResult, PatronPickerDone
+	patronDDL := BuildPatronPickerList()
+	PatronPickerResult := -1
+	PatronPickerDone := false
+	Gui, PatronPicker:Destroy
+	Gui, PatronPicker:Add, Text, w265, % "Select a patron or type a patron ID:"
+	Gui, PatronPicker:Add, ComboBox, vPatronPickerChoice w265, %patronDDL%
+	if (defaultID . "" != "" && defaultID + 0 >= 0) {
+		Loop, Parse, patronDDL, |
+		{
+			if (RegExMatch(A_LoopField, "\(" (defaultID + 0) "\)$")) {
+				GuiControl, ChooseString, PatronPickerChoice, % A_LoopField
+				break
+			}
+		}
+	}
+	Gui, PatronPicker:Add, Button, gPatronPickerOK w125, OK
+	Gui, PatronPicker:Add, Button, x+10 gPatronPickerCancel w125, Cancel
+	Gui, PatronPicker:Show, w290, Select Patron
+	while !PatronPickerDone
+		Sleep, 100
+	return PatronPickerResult
+}
+
+; Show a ComboBox adventure picker GUI; returns adventure ID on OK, or 0 on cancel/invalid.
+; Falls back to plain InputBox if advdefs.json does not exist.
+; defaultID: optional pre-selected adventure ID (0 or "" = no pre-selection)
+ShowAdvPicker(defaultID=0) {
+	global AdvPickerResult, AdvPickerDone
+	advDDL := BuildAdvDropdownList()
+	if (advDDL = "") {
+		; advdefs.json absent — fall back to InputBox
+		defval := (defaultID + 0 > 0) ? defaultID : ""
+		InputBox, inputAdv, Adventure to Load, Please enter the adventure_id`nyou would like to load., , 250, 150, , , , , %defval%
+		if (ErrorLevel = 1)
+			return 0
+		return inputAdv + 0
+	}
+	AdvPickerResult := ""
+	AdvPickerDone := false
+	Gui, AdvPicker:Destroy
+	Gui, AdvPicker:Add, Text, w265, % "Select an adventure or type an adventure ID:"
+	Gui, AdvPicker:Add, ComboBox, vAdvPickerChoice w265, %advDDL%
+	if (defaultID + 0 > 0) {
+		Loop, Parse, advDDL, |
+		{
+			if (RegExMatch(A_LoopField, "\(" (defaultID + 0) "\)$")) {
+				GuiControl, ChooseString, AdvPickerChoice, % A_LoopField
+				break
+			}
+		}
+	}
+	Gui, AdvPicker:Add, Button, gAdvPickerOK w125, OK
+	Gui, AdvPicker:Add, Button, x+10 gAdvPickerCancel w125, Cancel
+	Gui, AdvPicker:Show, w290, Select Adventure
+	while !AdvPickerDone
+		Sleep, 100
+	return AdvPickerResult
 }
 
 ; End current foreground adventure
