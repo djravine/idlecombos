@@ -3731,13 +3731,13 @@ tryDetectPlatform(desc, manual) {
 			}
 		}
 		if manual {
-			MsgBox, 4, IdleCombos Setup, % desc.notFoundMsg "`n`nWould you like to locate the install folder manually?"
+			MsgBox, 4, IdleCombos Setup, % desc.notFoundMsg "`n`nWould you like to locate IdleDragons.exe manually?"
 			IfMsgBox, Yes
 			{
-				FileSelectFolder, selectedDir, , 3, % "Select your Idle Champions install folder (" desc.platformName ")"
-				if (!ErrorLevel && selectedDir != "") {
-					if (SubStr(selectedDir, 0) != "\")
-						selectedDir .= "\"
+				FileSelectFile, selectedExe, 1, , Locate IdleDragons.exe, IdleDragons.exe (IdleDragons.exe)
+				if (!ErrorLevel && selectedExe != "") {
+					SplitPath, selectedExe, , selectedDir
+					selectedDir .= "\"
 					applyGameInstall(selectedDir, GameClientEpicLauncher, desc.platformName, selectedDir WRLFilePath, desc.loadClientId)
 					MsgBox, % desc.platformName " install set to:`n" GameInstallDir
 					detectCredentialsAndSave()
@@ -3764,15 +3764,15 @@ tryDetectPlatform(desc, manual) {
 		return true
 	}
 	if manual {
-		MsgBox, 4, IdleCombos Setup, % desc.notFoundMsg "`n`nWould you like to locate the install folder manually?"
+		MsgBox, 4, IdleCombos Setup, % desc.notFoundMsg "`n`nWould you like to locate IdleDragons.exe manually?"
 		IfMsgBox, Yes
 		{
-			FileSelectFolder, selectedDir, , 3, % "Select your Idle Champions install folder (" desc.platformName ")"
-			if (!ErrorLevel && selectedDir != "") {
-				if (SubStr(selectedDir, 0) != "\")
-					selectedDir .= "\"
+			FileSelectFile, selectedExe, 1, , Locate IdleDragons.exe, IdleDragons.exe (IdleDragons.exe)
+			if (!ErrorLevel && selectedExe != "") {
+				SplitPath, selectedExe, , selectedDir
+				selectedDir .= "\"
 				wrlPath := selectedDir . WRLFilePath
-				applyGameInstall(selectedDir, desc.clientExe, desc.platformName, wrlPath, desc.loadClientId)
+				applyGameInstall(selectedDir, selectedExe, desc.platformName, wrlPath, desc.loadClientId)
 				MsgBox, % desc.platformName " install set to:`n" GameInstallDir
 				if (!desc.skipCallback) {
 					detectCredentialsAndSave()
