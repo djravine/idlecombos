@@ -78,6 +78,162 @@ BuildPatronDropdownList() {
 	return ddl
 }
 
+;-----------------------------------------------------------------------------
+; BuildChampDropdownList() - Build sorted pipe-delimited champion DDL string
+; Format: "Arkhan (157)|Bruenor (1)|Celeste (2)|..."  sorted alphabetically
+; Skips empty/blank champion entries.
+; Returns: pipe-delimited string for use in DropDownList controls
+;-----------------------------------------------------------------------------
+BuildChampDropdownList() {
+	global _dict
+	; Collect "Name (ID)" entries
+	champList := ""
+	for champID, champName in _dict.champions {
+		if (champName = "" || champName = "UNKNOWN")
+			continue
+		champList .= champName " (" (champID + 0) ")`n"
+	}
+	; Sort alphabetically (case-insensitive)
+	Sort, champList
+	; Build pipe-delimited DDL string
+	ddl := ""
+	Loop, Parse, champList, `n, `r
+	{
+		if (A_LoopField = "")
+			continue
+		ddl .= (ddl = "" ? "" : "|") A_LoopField
+	}
+	return ddl
+}
+
+;-----------------------------------------------------------------------------
+; BuildChestDropdownList() - Build sorted pipe-delimited chest DDL string
+; Format: "Gold Chest (2)|Silver Chest (1)|..."  sorted alphabetically
+; Skips empty/blank chest entries.
+; Returns: pipe-delimited string for use in ComboBox controls
+;-----------------------------------------------------------------------------
+BuildChestDropdownList() {
+	global _dict
+	chestList := ""
+	for chestID, chestName in _dict.chests {
+		if (chestName = "" || chestName = "UNKNOWN")
+			continue
+		chestList .= chestName " (" (chestID + 0) ")`n"
+	}
+	Sort, chestList
+	ddl := ""
+	Loop, Parse, chestList, `n, `r
+	{
+		if (A_LoopField = "")
+			continue
+		ddl .= (ddl = "" ? "" : "|") A_LoopField
+	}
+	return ddl
+}
+
+;-----------------------------------------------------------------------------
+; FormatDuration(seconds) - Format seconds into "Xd Yh Zm" string
+; Returns: formatted duration string, omitting zero components
+;-----------------------------------------------------------------------------
+FormatDuration(seconds) {
+	seconds := seconds + 0
+	if (seconds <= 0)
+		return "—"
+	d := Floor(seconds / 86400)
+	h := Floor(Mod(seconds, 86400) / 3600)
+	m := Floor(Mod(seconds, 3600) / 60)
+	result := ""
+	if (d > 0)
+		result .= d "d "
+	if (h > 0 || d > 0)
+		result .= h "h "
+	result .= m "m"
+	return result
+}
+
+;-----------------------------------------------------------------------------
+; AdvFromID(id) - Look up adventure name from advdefs.json cache
+; Returns: adventure name if found, or the raw ID as string if not
+;-----------------------------------------------------------------------------
+AdvFromID(id) {
+	static advCache := ""
+	if (!IsObject(advCache)) {
+		if !FileExist("advdefs.json")
+			return id
+		FileRead, raw, advdefs.json
+		Try {
+			advCache := JSON.parse(raw)
+		} catch e {
+			return id
+		}
+	}
+	name := advCache[id + 0]
+	return name != "" ? name : id
+}
+
+;-----------------------------------------------------------------------------
+; BuildPatronPickerList() - Build pipe-delimited patron list with IDs
+; Format: "None (0)|Mirt the Moneylender (1)|..."
+; Used by PatronPicker GUI — includes IDs so PickerExtractID() can extract them.
+;-----------------------------------------------------------------------------
+BuildPatronPickerList() {
+	ddl := "None (0)"
+	for _, pid in PatronIDs
+		ddl .= "|" PatronFromID(pid) " (" pid ")"
+	return ddl
+}
+
+;-----------------------------------------------------------------------------
+; BuildAdvDropdownList() - Build sorted pipe-delimited adventure DDL string
+; Reads advdefs.json from the working directory. Returns "" if file absent or
+; unparseable (graceful first-run fallback — caller should use InputBox instead).
+; Format: "A Brief Tour of the Realms (1)|The Cursed Farmer (3)|..."
+; Sorted alphabetically by adventure name.
+;-----------------------------------------------------------------------------
+BuildAdvDropdownList() {
+	FileRead, advRaw, %A_WorkingDir%\advdefs.json
+	if (ErrorLevel)
+		return ""
+	Try {
+		advMap := JSON.parse(advRaw)
+	} catch {
+		return ""
+	}
+	if (!IsObject(advMap))
+		return ""
+	advList := ""
+	for advID, advName in advMap {
+		if (advName = "" || advName = "UNKNOWN")
+			continue
+		advList .= advName " (" (advID + 0) ")`n"
+	}
+	Sort, advList
+	ddl := ""
+	Loop, Parse, advList, `n, `r
+	{
+		if (A_LoopField = "")
+			continue
+		ddl .= (ddl = "" ? "" : "|") A_LoopField
+	}
+	return ddl
+}
+
+;-----------------------------------------------------------------------------
+; PickerExtractID(selection) - Extract numeric ID from "Name (ID)" format
+; If selection ends with "(digits)", extracts and returns that number.
+; If selection is all digits (including "0"), returns it as a number.
+; Returns "" if neither form is recognised.
+;-----------------------------------------------------------------------------
+PickerExtractID(selection) {
+	RegExMatch(selection, "\((\d+)\)$", m)
+	if (m1 != "")
+		return m1 + 0
+	trimmed := Trim(selection)
+	if (trimmed ~= "^\d+$")
+		return trimmed + 0
+	return ""
+}
+
 ; Get Patron display name from patron ID (e.g. 1 → "Mirt the Moneylender")
 PatronFromID(patronid) {
 	global _dict
@@ -224,8 +380,8 @@ global BlacksmithContracts := [{buffId: 31, name: "Tiny", var: "CurrentTinyBS", 
 ; SETTINGS DEFAULTS
 ;=============================================================================
 
-global SettingsCheckValue := 25 ;used to check for outdated settings file
-global NewSettings := JSON.stringify({"alwayssavechests":1,"alwayssavecontracts":1,"alwayssavecodes":1,"disabletooltips":0,"firstrun":0,"getdetailsonstart":0,"hash":0,"instance_id":0,"launchgameonstart":0,"loadgameclient":0,"logenabled":0,"nosavesetting":0,"servername":"master","user_id":0,"user_id_epic":0,"user_id_steam":0,"tabactive":"Summary","style":"Default","serverdetection":1,"wrlpath":"","blacksmithcontractresults":1,"disableuserdetailsreload":0,"redeemcodehistoryskip":1,"autorefreshminutes":0,"showapimessages":1})
+global SettingsCheckValue := 38 ;used to check for outdated settings file
+global NewSettings := JSON.stringify({"alwayssavechests":1,"alwayssavecontracts":1,"alwayssavecodes":1,"disabletooltips":0,"firstrun":0,"getdetailsonstart":0,"hash":0,"instance_id":0,"launchgameonstart":0,"loadgameclient":0,"logenabled":0,"nosavesetting":0,"servername":"master","user_id":0,"user_id_epic":0,"user_id_steam":0,"tabactive":"Summary","style":"Default","serverdetection":1,"wrlpath":"","blacksmithcontractresults":1,"disableuserdetailsreload":0,"redeemcodehistoryskip":1,"autorefreshminutes":0,"showapimessages":1,"lastbschamp":0,"lastbstncount":0,"lastbssmcount":0,"lastbsmdcount":0,"lastbslgcount":0,"lastbshgcount":0,"lastbountytncount":0,"lastbountysmcount":0,"lastbountymdcount":0,"lastbountylgcount":0,"lastadvid":0,"lastpatronid":0,"lastchestid":0})
 
 ;=============================================================================
 ; SERVER CONSTANTS
@@ -911,6 +1067,7 @@ ParseAdventureDataFromDetails(details, activeInstance) {
 		InstanceList[v.game_instance_id].current_adventure_id := v.current_adventure_id
 		InstanceList[v.game_instance_id].current_area := v.current_area
 		InstanceList[v.game_instance_id].Patron := PatronFromID(v.current_patron_id)
+		InstanceList[v.game_instance_id].CustomName := v.custom_name
 		InstanceList[v.game_instance_id].ChampionsCount := 0
 		for l, w in v.formation {
 			if (w > 0) {
@@ -921,7 +1078,9 @@ ParseAdventureDataFromDetails(details, activeInstance) {
 	for k, v in details.modron_saves {
 		InstanceList[v.instance_id].core_name := Corelist[v.core_id] ? Corelist[v.core_id] : "None"
 		if (v.properties.toggle_preferences.reset == true)
-			InstanceList[v.instance_id].core_name := InstanceList[v.instance_id].core_name " (Reset at " v.area_goal ")"
+			InstanceList[v.instance_id].core_reset := v.area_goal
+		else
+			InstanceList[v.instance_id].core_reset := ""
 		core_level := ceil((sqrt(36000000+8000*v.exp_total)-6000)/4000)
 		core_tolevel := v.exp_total-(2000*(core_level-1)**2+6000*(core_level-1))
 		core_levelxp := 4000*(core_level+1)
@@ -931,6 +1090,7 @@ ParseAdventureDataFromDetails(details, activeInstance) {
 			core_level := core_level " - Max 15"
 		InstanceList[v.instance_id].core_xp := core_humxp " (Lvl " core_level ")"
 		InstanceList[v.instance_id].core_progress := core_tolevel "/" core_levelxp " (" core_pcttolevel "%)"
+		InstanceList[v.instance_id].core_progresspct := core_pcttolevel
 	}
 
 	champsActiveCount := 0
@@ -948,12 +1108,15 @@ ParseAdventureDataFromDetails(details, activeInstance) {
 		} else {
 			continue
 		}
+		result[slotKey].customName   := v.CustomName
 		result[slotKey].adventure    := v.current_adventure_id == -1 ? "Map" : v.current_adventure_id
 		result[slotKey].area         := v.current_area
 		result[slotKey].patron       := v.Patron
 		result[slotKey].coreName     := v.core_name
+		result[slotKey].coreReset    := v.core_reset
 		result[slotKey].coreXP       := v.core_xp
 		result[slotKey].coreProgress := v.core_progress
+		result[slotKey].coreProgressPct := v.core_progresspct
 		result[slotKey].champCount   := v.ChampionsCount
 		champsActiveCount += v.ChampionsCount
 	}
@@ -990,24 +1153,39 @@ ParsePatronDataFromDetails(details, currentTGPs, currentSilvers, currentGems, cu
 		pName := pNameMap[v.patron_id]
 		if !pName
 			continue
-		pData := {variants: "", fp: "", challenges: "", requires: "", costs: "", completed: "", total: ""}
+		pData := {variants: "", fp: "", challenges: "", requires: "", champs: "", costs: "", completed: "", total: "", unlocked: false}
 		if v.unlocked == False {
 			pData.variants   := "Locked"
 			pData.fp         := "-"
 			pData.challenges := "-"
 			; Table-driven unlock requirements per patron
 			; Each entry: {statKey, statThreshold, champThreshold, requiresLabel, costs: [{varExpr, threshold, label}]}
+			; Ensure cost values are numeric before building requirements
+			DefaultToZero(currentSilvers)
+			DefaultToZero(currentLgBounties)
+			DefaultToZero(currentTGPs)
+			DefaultToZero(currentGems)
+
+			; Build reqLabels with adventure/campaign names
+			reqLabel1 := " iLvls"
+			reqLabel2 := " " campaignFromID(15) " Advs"
+			advName413 := AdvFromID(413)
+			advName873 := AdvFromID(873)
+			reqLabel3 := " in " advName413 " (413)"
+			reqLabel4 := " in " advName873 " (873)"
+			reqLabel5 := " in " advName873 " (873)"
+
 			unlockReqs := {}
 			unlockReqs[1] := {statKey: "total_hero_levels", statThresh: 2000, champThresh: 20
-				, reqLabel: " iLvls", costs: [{val: currentTGPs, thresh: 3, label: "TGPs"}, {val: currentSilvers, thresh: 10, label: "Silver"}]}
+				, reqLabel: reqLabel1, costs: [{val: currentTGPs, thresh: 3, label: "TGPs"}, {val: currentSilvers, thresh: 10, label: "Silver"}]}
 			unlockReqs[2] := {statKey: "completed_adventures_variants_and_patron_variants_c15", statThresh: 15, champThresh: 30
-				, reqLabel: " WD:DH Advs", costs: [{val: currentGems, thresh: 2500, label: "Gems"}, {val: currentSilvers, thresh: 15, label: "Silver"}]}
+				, reqLabel: reqLabel2, costs: [{val: currentGems, thresh: 2500, label: "Gems"}, {val: currentSilvers, thresh: 15, label: "Silver"}]}
 			unlockReqs[3] := {statKey: "highest_area_completed_ever_c413", statThresh: 250, champThresh: 40
-				, reqLabel: " Adv 413", costs: [{val: currentLgBounties, thresh: 10, label: "Lg Bounty"}, {val: currentSilvers, thresh: 20, label: "Silver"}]}
+				, reqLabel: reqLabel3, costs: [{val: currentLgBounties, thresh: 10, label: "Lg Bounty"}, {val: currentSilvers, thresh: 20, label: "Silver"}]}
 			unlockReqs[4] := {statKey: "highest_area_completed_ever_c873", statThresh: 575, champThresh: 50
-				, reqLabel: " Adv 873", costs: [{val: currentSilvers, thresh: 50, label: "Silver"}]}
+				, reqLabel: reqLabel4, costs: [{val: currentSilvers, thresh: 50, label: "Silver"}]}
 			unlockReqs[5] := {statKey: "highest_area_completed_ever_c873", statThresh: 575, champThresh: 50
-				, reqLabel: " Adv 873", costs: [{val: currentSilvers, thresh: 50, label: "Silver"}]}
+				, reqLabel: reqLabel5, costs: [{val: currentSilvers, thresh: 50, label: "Silver"}]}
 
 			req := unlockReqs[v.patron_id]
 			if IsObject(req) {
@@ -1015,11 +1193,10 @@ ParsePatronDataFromDetails(details, currentTGPs, currentSilvers, currentGems, cu
 				statVal := details.stats[req.statKey]
 				if (statVal = "")
 					statVal := "0"
-				DefaultToZero(currentSilvers)
-				DefaultToZero(currentLgBounties)
-				pData.requires := statVal "/" req.statThresh req.reqLabel ", " totalChamps "/" req.champThresh " Champs"
-				if ((statVal + 0 >= req.statThresh) && (totalChamps + 0 >= req.champThresh))
-					pData.requires := pData.requires " ✓"
+				pData.requires := statVal "/" req.statThresh req.reqLabel
+				pData.requiresMet := (statVal + 0 >= req.statThresh)
+				pData.champs := totalChamps "/" req.champThresh " Champs"
+				pData.champsMet := (totalChamps + 0 >= req.champThresh)
 
 				; Build costs string from cost items
 				costParts := ""
@@ -1032,10 +1209,10 @@ ParsePatronDataFromDetails(details, currentTGPs, currentSilvers, currentGems, cu
 						allMet := false
 				}
 				pData.costs := costParts
-				if (allMet)
-					pData.costs := pData.costs " ✓"
+				pData.costsMet := allMet
 			}
 		} else {
+			pData.unlocked := true
 			for kk, vv in v.progress_bars {
 				switch vv.id {
 					case "variants_completed":
@@ -1049,14 +1226,14 @@ ParsePatronDataFromDetails(details, currentTGPs, currentSilvers, currentGems, cu
 			influenceAmt := v.influence_current_amount
 			currencyAmt  := v.currency_current_amount
 			if (influenceAmt > 0) {
-				pData.requires := "Influence: " FormatMagnitude(influenceAmt)
+				pData.requires := FormatMagnitude(influenceAmt)
 			} else {
-				pData.requires := "Influence: 0"
+				pData.requires := "0"
 			}
 			if (currencyAmt > 0) {
-				pData.costs := "Coins: " FormatMagnitude(currencyAmt)
+				pData.costs := FormatMagnitude(currencyAmt)
 			} else {
-				pData.costs := "Coins: 0"
+				pData.costs := "0"
 			}
 		}
 		result[pName] := pData

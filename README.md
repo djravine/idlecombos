@@ -2,11 +2,12 @@
 
 Companion App for Idle Champions, written in [AHK](https://www.autohotkey.com/).
 
-**v3.81** is the current supported Version. [View changelog.](https://github.com/djravine/idlecombos/blob/master/CHANGELOG.md)
+**v3.82** is the current supported Version. [View changelog.](https://github.com/djravine/idlecombos/blob/master/CHANGELOG.md)
 
 ![Summary](images/screenshot-summary.png)
 ![Adventures](images/screenshot-adventure.png)
 ![Inventory](images/screenshot-inventory.png)
+![Patrons](images/screenshot-patrons.png)
 ![Settings](images/screenshot-settings.png)
 
 ## Important Notes

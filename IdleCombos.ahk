@@ -7,7 +7,7 @@
 #include Lib\ScrollBox.ahk
 
 ;Versions
-global VersionNumber := "3.81"
+global VersionNumber := "3.82"
 global CurrentDictionary := "2.43"
 
 ;Local File globals
@@ -83,22 +83,22 @@ global UserHash := 0
 global InstanceID := 0
 global UserDetails := []
 global ActiveInstance := 0
-global CurrentAdventure := ""
-global CurrentArea := ""
-global CurrentPatron := ""
-global CurrentChampions := ""
-global BackgroundAdventure := ""
-global BackgroundArea := ""
-global BackgroundPatron := ""
-global BackgroundChampions := ""
-global Background2Adventure := ""
-global Background2Area := ""
-global Background2Patron := ""
-global Background2Champions := ""
-global Background3Adventure := ""
-global Background3Area := ""
-global Background3Patron := ""
-global Background3Champions := ""
+global FGAdventure := ""
+global FGArea := ""
+global FGPatron := ""
+global FGChampions := ""
+global BGAdventure := ""
+global BGArea := ""
+global BGPatron := ""
+global BGChampions := ""
+global BG2Adventure := ""
+global BG2Area := ""
+global BG2Patron := ""
+global BG2Champions := ""
+global BG3Adventure := ""
+global BG3Area := ""
+global BG3Patron := ""
+global BG3Champions := ""
 global AchievementGearChamp := ""
 global AchievementNeeds := ""
 global SummaryDataLoaded := false
@@ -144,18 +144,50 @@ global BrivSlot4 := 0
 global BrivZone := 0
 
 ;Modron globals
+global FGCustomName := ""
 global FGCoreName := ""
+global FGCoreReset := ""
 global FGCoreXP := ""
 global FGCoreProgress := ""
+global FGCoreProgressPct := 0
+global BGCustomName := ""
 global BGCoreName := ""
+global BGCoreReset := ""
 global BGCoreXP := ""
 global BGCoreProgress := ""
+global BGCoreProgressPct := 0
+global BG2CustomName := ""
 global BG2CoreName := ""
+global BG2CoreReset := ""
 global BG2CoreXP := ""
 global BG2CoreProgress := ""
+global BG2CoreProgressPct := 0
+global BG3CustomName := ""
 global BG3CoreName := ""
+global BG3CoreReset := ""
 global BG3CoreXP := ""
 global BG3CoreProgress := ""
+global BG3CoreProgressPct := 0
+global BG4CustomName := ""
+global BG4Adventure := ""
+global BG4Patron := ""
+global BG4Area := ""
+global BG4Champions := ""
+global BG4CoreName := ""
+global BG4CoreReset := ""
+global BG4CoreXP := ""
+global BG4CoreProgress := ""
+global BG4CoreProgressPct := 0
+global BG5CustomName := ""
+global BG5Adventure := ""
+global BG5Patron := ""
+global BG5Area := ""
+global BG5Champions := ""
+global BG5CoreName := ""
+global BG5CoreReset := ""
+global BG5CoreXP := ""
+global BG5CoreProgress := ""
+global BG5CoreProgressPct := 0
 
 ;Patron globals
 global MirtVariants := ""
@@ -165,6 +197,11 @@ global MirtFPCurrency := ""
 global MirtChallenges := ""
 global MirtRequires := ""
 global MirtCosts := ""
+global MirtUnlocked := false
+global MirtChamps := ""
+global MirtRequiresMet := false
+global MirtChampsMet := false
+global MirtCostsMet := false
 global VajraVariants := ""
 global VajraCompleted := ""
 global VajraVariantTotal := ""
@@ -172,6 +209,11 @@ global VajraFPCurrency := ""
 global VajraChallenges := ""
 global VajraRequires := ""
 global VajraCosts := ""
+global VajraUnlocked := false
+global VajraChamps := ""
+global VajraRequiresMet := false
+global VajraChampsMet := false
+global VajraCostsMet := false
 global StrahdVariants := ""
 global StrahdCompleted := ""
 global StrahdVariantTotal := ""
@@ -179,6 +221,11 @@ global StrahdFPCurrency := ""
 global StrahdChallenges := ""
 global StrahdRequires := ""
 global StrahdCosts := ""
+global StrahdUnlocked := false
+global StrahdChamps := ""
+global StrahdRequiresMet := false
+global StrahdChampsMet := false
+global StrahdCostsMet := false
 global ZarielVariants := ""
 global ZarielCompleted := ""
 global ZarielVariantTotal := ""
@@ -186,6 +233,11 @@ global ZarielFPCurrency := ""
 global ZarielChallenges := ""
 global ZarielRequires := ""
 global ZarielCosts := ""
+global ZarielUnlocked := false
+global ZarielChamps := ""
+global ZarielRequiresMet := false
+global ZarielChampsMet := false
+global ZarielCostsMet := false
 global ElminsterVariants := ""
 global ElminsterCompleted := ""
 global ElminsterVariantTotal := ""
@@ -193,6 +245,11 @@ global ElminsterFPCurrency := ""
 global ElminsterChallenges := ""
 global ElminsterRequires := ""
 global ElminsterCosts := ""
+global ElminsterUnlocked := false
+global ElminsterChamps := ""
+global ElminsterRequiresMet := false
+global ElminsterChampsMet := false
+global ElminsterCostsMet := false
 
 ;Event globals (main event from events_details.active_events)
 global EventID := ""
@@ -200,6 +257,7 @@ global EventName := ""
 global EventDesc := ""
 global EventTokenName := ""
 global EventTokens := ""
+global EventTime := ""
 global EventHeroIDs := ""
 global EventChestIDs := ""
 global EventHeroes := ""
@@ -213,6 +271,7 @@ global MiniEventDesc := ""
 global MiniEventTokens := ""
 global MiniEventHeroes := ""
 global MiniEventChests := ""
+global MiniEventTime := ""
 
 ;Web Tools globals
 global WebToolGithub := "https://github.com/djravine/idlecombos"
@@ -231,7 +290,7 @@ global hEditLog := 0
 global OutputStatus := "Welcome to IdleCombos v" VersionNumber
 global CurrentTime := ""
 global IsBusy := false
-global CrashProtectStatus := "Crash Protect: Disabled"
+global CrashProtectStatus := "Disabled"
 global CrashCount := 0
 global LastUpdated := "No data loaded"
 global LastBSChamp := ""
@@ -244,6 +303,14 @@ global LastBountyTnCount := ""
 global LastBountySmCount := ""
 global LastBountyMdCount := ""
 global LastBountyLgCount := ""
+global ChampPickerResult := ""  ; set by ChampPickerOK label
+global ChampPickerDone   := false  ; set by ChampPickerOK/Cancel labels
+global ChestPickerResult := ""  ; set by ChestPickerOK label
+global ChestPickerDone   := false  ; set by ChestPickerOK/Cancel labels
+global PatronPickerResult := -1  ; set by PatronPickerOK label (-1 = cancelled)
+global PatronPickerDone   := false  ; set by PatronPickerOK/Cancel labels
+global AdvPickerResult := ""   ; set by AdvPickerOK label
+global AdvPickerDone   := false  ; set by AdvPickerOK/Cancel labels
 global foundCodeString := ""
 global BgColour := "FFFFFF"
 
@@ -360,6 +427,8 @@ class MyGui {
 		Menu, FileSubmenu, Add, &Launch Game Client, LaunchGame
 		Menu, FileSubmenu, Add, &Update UserDetails, GetUserDetails
 		Menu, FileSubmenu, Add
+		Menu, FileSubmenu, Add, &Run Setup / Change Platform, FirstRun
+		Menu, FileSubmenu, Add
 		Menu, FileSubmenu, Add, Detect Game - Epic Games, detectGameInstallEpic
 		Menu, FileSubmenu, Add, Detect Game - Steam, detectGameInstallSteam
 		Menu, FileSubmenu, Add, Detect Game - Standalone, detectGameInstallStandalone
@@ -375,7 +444,6 @@ class MyGui {
 		Menu, ChestsSubmenu, Add, Open S&ilver, Open_Silver
 		Menu, ChestsSubmenu, Add, Open G&old, Open_Gold
 		Menu, ChestsSubmenu, Add, Open E&vent, Open_Event
-		Menu, ToolsSubmenu, Add, &Chests, :ChestsSubmenu
 
 		Menu, BlacksmithSubmenu, Add, Use &Tiny Contracts, Tiny_Blacksmith
 		Menu, BlacksmithSubmenu, Add, Use &Small Contracts, Sm_Blacksmith
@@ -383,24 +451,13 @@ class MyGui {
 		Menu, BlacksmithSubmenu, Add, Use &Large Contracts, Lg_Blacksmith
 		Menu, BlacksmithSubmenu, Add, Use &Huge Contracts, Hg_Blacksmith
 		Menu, BlacksmithSubmenu, Add, &Active Patron Feats, PatronFeats
-		Menu, ToolsSubmenu, Add, &Blacksmith, :BlacksmithSubmenu
 
 		Menu, BountySubmenu, Add, Use &Tiny Contracts, Tiny_Bounty
 		Menu, BountySubmenu, Add, Use &Small Contracts, Sm_Bounty
 		Menu, BountySubmenu, Add, Use &Medium Contracts, Med_Bounty
 		Menu, BountySubmenu, Add, Use &Large Contracts, Lg_Bounty
-		Menu, ToolsSubmenu, Add, B&ounty (Alpha Feature), :BountySubmenu
 
 		Menu, ToolsSubmenu, Add, &Redeem Codes, Open_Codes
-
-		Menu, AdvSubmenu, Add, &Load New Adv, LoadAdventure
-		Menu, AdvSubmenu, Add, &End Current Adv, EndAdventure
-		Menu, AdvSubmenu, Add, End Background Adv, EndBGAdventure
-		Menu, AdvSubmenu, Add, End Background2 Adv, EndBG2Adventure
-		Menu, AdvSubmenu, Add, End Background3 Adv, EndBG3Adventure
-		Menu, AdvSubmenu, Add, &Kleho Image, KlehoImage
-		Menu, AdvSubmenu, Add, Update Adventure List, AdventureList
-		Menu, ToolsSubmenu, Add, &Adventure Manager, :AdvSubmenu
 
 		Menu, ToolsSubmenu, Add, Briv &Stack Calculator, Briv_Calc
 
@@ -415,8 +472,6 @@ Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Form
 
 		Menu, IdleMenu, Add, &Tools, :ToolsSubmenu
 
-		Menu, HelpSubmenu, Add, &Run Setup, FirstRun
-		Menu, HelpSubmenu, Add
 		Menu, HelpSubmenu, Add, Clear &Log, Clear_Log
 		Menu, HelpSubmenu, Add, Clear Redeem Code H&istory, Redeem_Codes_History_Clear
 		Menu, HelpSubmenu, Add
@@ -457,34 +512,268 @@ Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Form
 		row_y := row_y + 25
 		row_y := row_y + 25
 
-		Gui, MyWindow:Add, Text, x710 y78 vCrashProtectStatus, % CrashProtectStatus
-		Gui, MyWindow:Add, Button, x710 y95 w135 hwndhbtoggle vBtnToggle gCrash_Toggle, Toggle
+		Gui, MyWindow:Add, GroupBox, x708 y60 w149 h45 vSidebarGBPlatform, Platform
+		Gui, MyWindow:Add, Text, x716 y78 w133 +Center vPlatformValue, Not Configured
 
-		Gui, MyWindow:Add, Text, x710 y160 w135 vLastUpdatedTitle, Data Timestamp:
-		Gui, MyWindow:Add, Text, x710 y180 w135 h30 vLastUpdated, % LastUpdated
-		Gui, MyWindow:Add, Button, x710 y212 w135 hwndhbrefresh vBtnUpdate gUpdate_Clicked, Update
+		Gui, MyWindow:Add, GroupBox, x708 y120 w149 h75 vSidebarGBCrash, Crash Protect
+		Gui, MyWindow:Add, Text, x716 y140 w133 h16 +Center vCrashProtectStatus cCC0000, Disabled
+		Gui, MyWindow:Add, Button, x716 y160 w133 hwndhbtoggle vBtnToggle gCrash_Toggle, Toggle
+
+		Gui, MyWindow:Add, GroupBox, x708 y200 w149 h95 vSidebarGBData, Data Timestamp
+		Gui, MyWindow:Add, Text, x716 y218 w133 h16 +Center vLastUpdated, % LastUpdated
+		Gui, MyWindow:Add, Button, x716 y260 w133 hwndhbrefresh vBtnUpdate gUpdate_Clicked, Update
+		Gui, MyWindow:Add, Text, x716 y238 w133 h16 +Center +BackgroundTrans vLastUpdatedTimer,
 
 		Gui, Tab, Summary
-		Gui, MyWindow:Add, ListView, x4 y35 w600 h506 vSummaryLV hwndSummaryHwnd +Grid +ReadOnly -Multi +NoSortHdr, Category|Stat|Value|Details
+		Gui, MyWindow:Add, GroupBox, x4 y35 w306 h506 vSummaryGBAccount, Account
+		Gui, MyWindow:Add, ListView, x8 y51 w298 h486 vSummaryAccountLV hwndSummaryAccountHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Stat|Value|Details
+		Gui, MyWindow:Add, GroupBox, x314 y35 w374 h506 vSummaryGBBless, Blessings
+		Gui, MyWindow:Add, ListView, x318 y51 w366 h486 vSummaryBlessLV hwndSummaryBlessHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200 -HScroll, Blessing|Multiplier|Source
 		LV_ModifyCol(1, 80)
 		LV_ModifyCol(2, 170)
 		LV_ModifyCol(3, 170)
 		LV_ModifyCol(4, 230)
 
 		Gui, Tab, Adventures
-		Gui, MyWindow:Add, ListView, x4 y35 w600 h506 vAdventuresLV hwndAdventuresHwnd +Grid +ReadOnly -Multi +NoSortHdr, Instance|Adventure|Patron|Area|Champions|Core|XP|Progress
+		Gui, MyWindow:Add, Button, x4 y34 w70 gLoadAdventure, Load New
+		Gui, MyWindow:Add, Button, x+4 yp w70 gEndAdventure, End FG
+		Gui, MyWindow:Add, Button, x+4 yp w65 gEndBGAdventure, End BG1
+		Gui, MyWindow:Add, Button, x+4 yp w65 gEndBG2Adventure, End BG2
+		Gui, MyWindow:Add, Button, x+4 yp w65 gEndBG3Adventure, End BG3
+		Gui, MyWindow:Add, Button, x+4 yp w55 gKlehoImage, Kleho
+		Gui, MyWindow:Add, Button, x+4 yp w80 gAdventureList, Update List
+		; ── Party slot GroupBoxes (2 cols × 3 rows) ──
+		; Col 1: x=4 w=335, Col 2: x=343 w=335 | Row gap=4 | Box h=110
+		; Row 1 y=58, Row 2 y=172, Row 3 y=286
+		; Inner: label w=50, val1 start=+54, mid-col offset=+235
+
+		Gui, MyWindow:Add, GroupBox, x4 y58 w340 h110 vAdvGB1, Foreground
+		Gui, MyWindow:Add, Text, x12 y74 w50, Adv:
+		Gui, MyWindow:Add, Text, x58 y74 w272 vAdv1Val, —
+		Gui, MyWindow:Add, Text, x12 y90 w50, Patron:
+		Gui, MyWindow:Add, Text, x58 y90 w130 vAdv1Patron, —
+		Gui, MyWindow:Add, Text, x238 y90 w35, Area:
+		Gui, MyWindow:Add, Text, x274 y90 w65 vAdv1Area, —
+		Gui, MyWindow:Add, Text, x12 y106 w50, Core:
+		Gui, MyWindow:Add, Text, x58 y106 w130 vAdv1Core, —
+		Gui, MyWindow:Add, Text, x238 y106 w35, Reset:
+		Gui, MyWindow:Add, Text, x273 y106 w57 vAdv1Reset, —
+		Gui, MyWindow:Add, Text, x12 y122 w50, Champs:
+		Gui, MyWindow:Add, Text, x58 y122 w40 vAdv1Champs, —
+		Gui, MyWindow:Add, Text, x110 y122 w22, XP:
+		Gui, MyWindow:Add, Text, x132 y122 w202 vAdv1XP, —
+		Gui, MyWindow:Add, Progress, x12 y140 w324 h16 Range0-100 vAdv1ProgBar, 0
+		Gui, MyWindow:Add, Text, x12 y141 w324 h14 +BackgroundTrans +Center vAdv1ProgText, —
+
+		Gui, MyWindow:Add, GroupBox, x348 y58 w340 h110 vAdvGB2, Background 1
+		Gui, MyWindow:Add, Text, x356 y74 w50, Adv:
+		Gui, MyWindow:Add, Text, x402 y74 w272 vAdv2Val, —
+		Gui, MyWindow:Add, Text, x356 y90 w50, Patron:
+		Gui, MyWindow:Add, Text, x402 y90 w130 vAdv2Patron, —
+		Gui, MyWindow:Add, Text, x574 y90 w35, Area:
+		Gui, MyWindow:Add, Text, x609 y90 w57 vAdv2Area, —
+		Gui, MyWindow:Add, Text, x356 y106 w50, Core:
+		Gui, MyWindow:Add, Text, x402 y106 w130 vAdv2Core, —
+		Gui, MyWindow:Add, Text, x574 y106 w35, Reset:
+		Gui, MyWindow:Add, Text, x609 y106 w57 vAdv2Reset, —
+		Gui, MyWindow:Add, Text, x356 y122 w50, Champs:
+		Gui, MyWindow:Add, Text, x402 y122 w40 vAdv2Champs, —
+		Gui, MyWindow:Add, Text, x454 y122 w22, XP:
+		Gui, MyWindow:Add, Text, x476 y122 w202 vAdv2XP, —
+		Gui, MyWindow:Add, Progress, x356 y140 w324 h16 Range0-100 vAdv2ProgBar, 0
+		Gui, MyWindow:Add, Text, x356 y141 w324 h14 +BackgroundTrans +Center vAdv2ProgText, —
+
+		Gui, MyWindow:Add, GroupBox, x4 y172 w340 h110 vAdvGB3, Background 2
+		Gui, MyWindow:Add, Text, x12 y188 w50, Adv:
+		Gui, MyWindow:Add, Text, x58 y188 w272 vAdv3Val, —
+		Gui, MyWindow:Add, Text, x12 y204 w50, Patron:
+		Gui, MyWindow:Add, Text, x58 y204 w130 vAdv3Patron, —
+		Gui, MyWindow:Add, Text, x238 y204 w35, Area:
+		Gui, MyWindow:Add, Text, x274 y204 w65 vAdv3Area, —
+		Gui, MyWindow:Add, Text, x12 y220 w50, Core:
+		Gui, MyWindow:Add, Text, x58 y220 w130 vAdv3Core, —
+		Gui, MyWindow:Add, Text, x238 y220 w35, Reset:
+		Gui, MyWindow:Add, Text, x273 y220 w57 vAdv3Reset, —
+		Gui, MyWindow:Add, Text, x12 y236 w50, Champs:
+		Gui, MyWindow:Add, Text, x58 y236 w40 vAdv3Champs, —
+		Gui, MyWindow:Add, Text, x110 y236 w22, XP:
+		Gui, MyWindow:Add, Text, x132 y236 w202 vAdv3XP, —
+		Gui, MyWindow:Add, Progress, x12 y254 w324 h16 Range0-100 vAdv3ProgBar, 0
+		Gui, MyWindow:Add, Text, x12 y255 w324 h14 +BackgroundTrans +Center vAdv3ProgText, —
+
+		Gui, MyWindow:Add, GroupBox, x348 y172 w340 h110 vAdvGB4, Background 3
+		Gui, MyWindow:Add, Text, x356 y188 w50, Adv:
+		Gui, MyWindow:Add, Text, x402 y188 w272 vAdv4Val, —
+		Gui, MyWindow:Add, Text, x356 y204 w50, Patron:
+		Gui, MyWindow:Add, Text, x402 y204 w130 vAdv4Patron, —
+		Gui, MyWindow:Add, Text, x574 y204 w35, Area:
+		Gui, MyWindow:Add, Text, x609 y204 w57 vAdv4Area, —
+		Gui, MyWindow:Add, Text, x356 y220 w50, Core:
+		Gui, MyWindow:Add, Text, x402 y220 w130 vAdv4Core, —
+		Gui, MyWindow:Add, Text, x574 y220 w35, Reset:
+		Gui, MyWindow:Add, Text, x609 y220 w57 vAdv4Reset, —
+		Gui, MyWindow:Add, Text, x356 y236 w50, Champs:
+		Gui, MyWindow:Add, Text, x402 y236 w40 vAdv4Champs, —
+		Gui, MyWindow:Add, Text, x454 y236 w22, XP:
+		Gui, MyWindow:Add, Text, x476 y236 w202 vAdv4XP, —
+		Gui, MyWindow:Add, Progress, x356 y254 w324 h16 Range0-100 vAdv4ProgBar, 0
+		Gui, MyWindow:Add, Text, x356 y255 w324 h14 +BackgroundTrans +Center vAdv4ProgText, —
+
+		Gui, MyWindow:Add, GroupBox, x4 y286 w340 h110 vAdvGB5, Background 5
+		Gui, MyWindow:Add, Text, x12 y302 w50, Adv:
+		Gui, MyWindow:Add, Text, x58 y302 w272 vAdv5Val, —
+		Gui, MyWindow:Add, Text, x12 y318 w50, Patron:
+		Gui, MyWindow:Add, Text, x58 y318 w130 vAdv5Patron, —
+		Gui, MyWindow:Add, Text, x238 y318 w35, Area:
+		Gui, MyWindow:Add, Text, x274 y318 w65 vAdv5Area, —
+		Gui, MyWindow:Add, Text, x12 y334 w50, Core:
+		Gui, MyWindow:Add, Text, x58 y334 w130 vAdv5Core, —
+		Gui, MyWindow:Add, Text, x238 y334 w35, Reset:
+		Gui, MyWindow:Add, Text, x273 y334 w57 vAdv5Reset, —
+		Gui, MyWindow:Add, Text, x12 y350 w50, Champs:
+		Gui, MyWindow:Add, Text, x58 y350 w40 vAdv5Champs, —
+		Gui, MyWindow:Add, Text, x110 y350 w22, XP:
+		Gui, MyWindow:Add, Text, x132 y350 w202 vAdv5XP, —
+		Gui, MyWindow:Add, Progress, x12 y368 w324 h16 Range0-100 vAdv5ProgBar, 0
+		Gui, MyWindow:Add, Text, x12 y369 w324 h14 +BackgroundTrans +Center vAdv5ProgText, —
+
+		Gui, MyWindow:Add, GroupBox, x348 y286 w340 h110 vAdvGB6, Background 6
+		Gui, MyWindow:Add, Text, x356 y302 w50, Adv:
+		Gui, MyWindow:Add, Text, x402 y302 w272 vAdv6Val, —
+		Gui, MyWindow:Add, Text, x356 y318 w50, Patron:
+		Gui, MyWindow:Add, Text, x402 y318 w130 vAdv6Patron, —
+		Gui, MyWindow:Add, Text, x574 y318 w35, Area:
+		Gui, MyWindow:Add, Text, x609 y318 w57 vAdv6Area, —
+		Gui, MyWindow:Add, Text, x356 y334 w50, Core:
+		Gui, MyWindow:Add, Text, x402 y334 w130 vAdv6Core, —
+		Gui, MyWindow:Add, Text, x574 y334 w35, Reset:
+		Gui, MyWindow:Add, Text, x609 y334 w57 vAdv6Reset, —
+		Gui, MyWindow:Add, Text, x356 y350 w50, Champs:
+		Gui, MyWindow:Add, Text, x402 y350 w40 vAdv6Champs, —
+		Gui, MyWindow:Add, Text, x454 y350 w22, XP:
+		Gui, MyWindow:Add, Text, x476 y350 w202 vAdv6XP, —
+		Gui, MyWindow:Add, Progress, x356 y368 w324 h16 Range0-100 vAdv6ProgBar, 0
+		Gui, MyWindow:Add, Text, x356 y369 w324 h14 +BackgroundTrans +Center vAdv6ProgText, —
 
 		Gui, Tab, Inventory
-		Gui, MyWindow:Add, ListView, x4 y35 w600 h506 vInventoryLV hwndInventoryHwnd +Grid +ReadOnly -Multi +NoSortHdr, Item|Count|Details
+		Gui, MyWindow:Add, Button, x4 y34 w80 gShowChestsMenu, Chests
+		Gui, MyWindow:Add, Button, x+4 yp w90 gShowBlacksmithMenu, Blacksmith
+		Gui, MyWindow:Add, Button, x+4 yp w100 gShowBountyMenu, Bounty (Alpha)
+		; 2×2 grid: top=Gems+Chests, bottom=Bounties+Blacksmith
+		Gui, MyWindow:Add, GroupBox, x4 y58 w340 h95 vInvGBGems, Gems
+		Gui, MyWindow:Add, ListView, x8 y74 w332 h75 vInvGemsLV hwndInvGemsHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Item|Count|Details
+		Gui, MyWindow:Add, GroupBox, x348 y58 w340 h95 vInvGBChests, Chests
+		Gui, MyWindow:Add, ListView, x352 y74 w332 h75 vInvChestsLV hwndInvChestsHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Chest|Count|Details
+		Gui, MyWindow:Add, GroupBox, x4 y158 w340 h384 vInvGBBounty, Bounty Contracts
+		Gui, MyWindow:Add, ListView, x8 y174 w332 h364 vInvBountyLV hwndInvBountyHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Contract|Count|Details
+		Gui, MyWindow:Add, GroupBox, x348 y158 w340 h384 vInvGBBS, Blacksmith Contracts
+		Gui, MyWindow:Add, ListView, x352 y174 w332 h364 vInvBSLV hwndInvBSHwnd +Grid +ReadOnly -Multi +NoSortHdr -E0x200, Contract|Count|Details
 
 		Gui, Tab, Patrons
-		Gui, MyWindow:Add, ListView, x4 y35 w600 h506 vPatronsLV hwndPatronsHwnd +Grid +ReadOnly -Multi +NoSortHdr, Patron|Variants|Completed|FP Currency|Challenges|Influence / Requires|Coins / Costs
+		; 2×3 contact card grid: portrait left, text right
+		; Col1 x=4 w=340, Col2 x=348 w=340 | Box h=110 | Portrait 80×80
+
+			Gui, MyWindow:Add, GroupBox, x4 y35 w340 h116 vPatronGB1, Mirt the Moneylender
+			Gui, MyWindow:Add, Picture, x12 y51 w80 h-1 vPat1Pic, %A_ScriptDir%\images\patron_1.png
+			Gui, MyWindow:Add, Text, x100 y51 w55 vPat1Lbl1, Variants:
+			Gui, MyWindow:Add, Text, x155 y51 w80 vPat1Variants, —
+			Gui, MyWindow:Add, Text, x240 y51 w50 vPat1Lbl2, Done:
+			Gui, MyWindow:Add, Text, x290 y51 w46 vPat1Completed, —
+			Gui, MyWindow:Add, Text, x100 y67 w55 vPat1Lbl3, FP:
+			Gui, MyWindow:Add, Text, x155 y67 w80 vPat1FP, —
+			Gui, MyWindow:Add, Text, x240 y67 w50 vPat1Lbl4, Challs:
+			Gui, MyWindow:Add, Text, x290 y67 w46 vPat1Challenges, —
+			Gui, MyWindow:Add, Text, x100 y83 w236 vPat1Lbl5, Influence:
+			Gui, MyWindow:Add, Text, x155 y83 w181 vPat1Requires, —
+			Gui, MyWindow:Add, Text, x100 y99 w236 vPat1Lbl6, Coins:
+			Gui, MyWindow:Add, Text, x155 y99 w181 vPat1Costs, —
+			Gui, MyWindow:Add, Text, x100 y115 w236 vPat1Row5,
+
+			Gui, MyWindow:Add, GroupBox, x348 y35 w340 h116 vPatronGB2, Vajra Safahr
+			Gui, MyWindow:Add, Picture, x356 y51 w80 h-1 vPat2Pic, %A_ScriptDir%\images\patron_2.png
+			Gui, MyWindow:Add, Text, x444 y51 w55 vPat2Lbl1, Variants:
+			Gui, MyWindow:Add, Text, x499 y51 w80 vPat2Variants, —
+			Gui, MyWindow:Add, Text, x584 y51 w50 vPat2Lbl2, Done:
+			Gui, MyWindow:Add, Text, x634 y51 w46 vPat2Completed, —
+			Gui, MyWindow:Add, Text, x444 y67 w55 vPat2Lbl3, FP:
+			Gui, MyWindow:Add, Text, x499 y67 w80 vPat2FP, —
+			Gui, MyWindow:Add, Text, x584 y67 w50 vPat2Lbl4, Challs:
+			Gui, MyWindow:Add, Text, x634 y67 w46 vPat2Challenges, —
+			Gui, MyWindow:Add, Text, x444 y83 w236 vPat2Lbl5, Influence:
+			Gui, MyWindow:Add, Text, x499 y83 w181 vPat2Requires, —
+			Gui, MyWindow:Add, Text, x444 y99 w236 vPat2Lbl6, Coins:
+			Gui, MyWindow:Add, Text, x499 y99 w181 vPat2Costs, —
+			Gui, MyWindow:Add, Text, x444 y115 w236 vPat2Row5,
+
+		Gui, MyWindow:Add, GroupBox, x4 y155 w340 h116 vPatronGB3, Strahd von Zarovich
+		Gui, MyWindow:Add, Picture, x12 y171 w80 h-1 vPat3Pic, %A_ScriptDir%\images\patron_3.png
+		Gui, MyWindow:Add, Text, x100 y171 w55 vPat3Lbl1, Variants:
+		Gui, MyWindow:Add, Text, x155 y171 w80 vPat3Variants, —
+		Gui, MyWindow:Add, Text, x240 y171 w50 vPat3Lbl2, Done:
+		Gui, MyWindow:Add, Text, x290 y171 w46 vPat3Completed, —
+		Gui, MyWindow:Add, Text, x100 y187 w55 vPat3Lbl3, FP:
+		Gui, MyWindow:Add, Text, x155 y187 w80 vPat3FP, —
+		Gui, MyWindow:Add, Text, x240 y187 w50 vPat3Lbl4, Challs:
+		Gui, MyWindow:Add, Text, x290 y187 w46 vPat3Challenges, —
+		Gui, MyWindow:Add, Text, x100 y203 w236 vPat3Lbl5, Influence:
+		Gui, MyWindow:Add, Text, x155 y203 w181 vPat3Requires, —
+		Gui, MyWindow:Add, Text, x100 y219 w236 vPat3Lbl6, Coins:
+		Gui, MyWindow:Add, Text, x155 y219 w181 vPat3Costs, —
+		Gui, MyWindow:Add, Text, x100 y235 w236 vPat3Row5,
+
+		Gui, MyWindow:Add, GroupBox, x348 y155 w340 h116 vPatronGB4, Zariel
+		Gui, MyWindow:Add, Picture, x356 y171 w80 h-1 vPat4Pic, %A_ScriptDir%\images\patron_4.png
+		Gui, MyWindow:Add, Text, x444 y171 w55 vPat4Lbl1, Variants:
+		Gui, MyWindow:Add, Text, x499 y171 w80 vPat4Variants, —
+		Gui, MyWindow:Add, Text, x584 y171 w50 vPat4Lbl2, Done:
+		Gui, MyWindow:Add, Text, x634 y171 w46 vPat4Completed, —
+		Gui, MyWindow:Add, Text, x444 y187 w55 vPat4Lbl3, FP:
+		Gui, MyWindow:Add, Text, x499 y187 w80 vPat4FP, —
+		Gui, MyWindow:Add, Text, x584 y187 w50 vPat4Lbl4, Challs:
+		Gui, MyWindow:Add, Text, x634 y187 w46 vPat4Challenges, —
+		Gui, MyWindow:Add, Text, x444 y203 w236 vPat4Lbl5, Influence:
+		Gui, MyWindow:Add, Text, x499 y203 w181 vPat4Requires, —
+		Gui, MyWindow:Add, Text, x444 y219 w236 vPat4Lbl6, Coins:
+		Gui, MyWindow:Add, Text, x499 y219 w181 vPat4Costs, —
+		Gui, MyWindow:Add, Text, x444 y235 w236 vPat4Row5,
+
+			Gui, MyWindow:Add, GroupBox, x4 y275 w340 h116 vPatronGB5, Elminster
+			Gui, MyWindow:Add, Picture, x12 y291 w80 h-1 vPat5Pic, %A_ScriptDir%\images\patron_5.png
+			Gui, MyWindow:Add, Text, x100 y291 w55 vPat5Lbl1, Variants:
+			Gui, MyWindow:Add, Text, x155 y291 w80 vPat5Variants, —
+			Gui, MyWindow:Add, Text, x240 y291 w50 vPat5Lbl2, Done:
+			Gui, MyWindow:Add, Text, x290 y291 w46 vPat5Completed, —
+			Gui, MyWindow:Add, Text, x100 y307 w55 vPat5Lbl3, FP:
+			Gui, MyWindow:Add, Text, x155 y307 w80 vPat5FP, —
+			Gui, MyWindow:Add, Text, x240 y307 w50 vPat5Lbl4, Challs:
+			Gui, MyWindow:Add, Text, x290 y307 w46 vPat5Challenges, —
+			Gui, MyWindow:Add, Text, x100 y323 w236 vPat5Lbl5, Influence:
+			Gui, MyWindow:Add, Text, x155 y323 w181 vPat5Requires, —
+			Gui, MyWindow:Add, Text, x100 y339 w236 vPat5Lbl6, Coins:
+			Gui, MyWindow:Add, Text, x155 y339 w181 vPat5Costs, —
+			Gui, MyWindow:Add, Text, x100 y355 w236 vPat5Row5,
+
+			Gui, MyWindow:Add, GroupBox, x348 y275 w340 h116 vPatronGB6, Patron 6
+			Gui, MyWindow:Add, Picture, x356 y291 w80 h-1 vPat6Pic, %A_ScriptDir%\images\patron_6.png
+			Gui, MyWindow:Add, Text, x444 y329 w200 vPat6Val c808080, Empty Slot
+			Gui, MyWindow:Add, Text, x444 y355 w236 vPat6Row5,
 
 		Gui, Tab, Champions
 		Gui, MyWindow:Add, ListView, x4 y35 w600 h506 vChampionsLV hwndChampionsHwnd +Grid +ReadOnly -Multi +NoSortHdr, Champion|Stat|Value
 
 		Gui, Tab, Pity Timers
-		Gui, MyWindow:Add, ListView, x4 y35 w600 h506 vPityLV hwndPityHwnd +Grid +ReadOnly -Multi +NoSortHdr, Chests Until Epic|Champions
+		; 2 columns × 5 rows, one GroupBox per chest count (1-10)
+		Loop, 10 {
+			col := Mod(A_Index - 1, 2)
+			row := Floor((A_Index - 1) / 2)
+			gx := 4 + col * 344
+			gy := 35 + row * 73
+			tx := gx + 8
+			ty := gy + 14
+			chestLabel := A_Index = 1 ? "1 Chest" : A_Index " Chests"
+			Gui, MyWindow:Add, GroupBox, x%gx% y%gy% w340 h70 vPityGB%A_Index%, %chestLabel% Until Epic
+			Gui, MyWindow:Add, Text, x%tx% y%ty% w324 h52 vPityText%A_Index%, —
+		}
 
 		Gui, Tab, Item Levels
 		Gui, MyWindow:Add, ListView, x4 y35 w600 h506 vItemLevelsLV hwndItemLevelsHwnd +Grid +ReadOnly -Multi +NoSortHdr, Category|Stat|Value
@@ -497,7 +786,31 @@ Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Form
 		Gui, MyWindow:Add, ListView, x4 y60 w600 h481 vVariantsLV hwndVariantsHwnd +Grid +ReadOnly -Multi +NoSortHdr, Campaign|Incomplete Adventure IDs
 
 		Gui, Tab, Event
-		Gui, MyWindow:Add, ListView, x4 y35 w600 h506 vEventLV hwndEventHwnd +Grid +ReadOnly -Multi +NoSortHdr, Detail|Value
+		Gui, MyWindow:Add, GroupBox, x4 y35 w681 h179 vEventGBMain, Main Event
+		Gui, MyWindow:Add, Text, x12 y53 w55, Event:
+		Gui, MyWindow:Add, Text, x67 y53 w280 vEvtMainName, —
+		Gui, MyWindow:Add, Text, x350 y53 w327 vEvtMainTime, —
+		Gui, MyWindow:Add, Text, x12 y69 w55, Desc:
+		Gui, MyWindow:Add, Text, x67 y69 w610 h56 vEvtMainDesc, —
+		Gui, MyWindow:Add, Text, x12 y129 w55, Tokens:
+		Gui, MyWindow:Add, Text, x67 y129 w610 vEvtMainTokens, —
+		Gui, MyWindow:Add, Text, x12 y145 w55, Heroes:
+		Gui, MyWindow:Add, Text, x67 y145 w610 h28 vEvtMainHeroes, —
+		Gui, MyWindow:Add, Text, x12 y177 w55, Chests:
+		Gui, MyWindow:Add, Text, x67 y177 w610 h14 vEvtMainChests, —
+
+		Gui, MyWindow:Add, GroupBox, x4 y213 w681 h179 vEventGBMini, Mini Event
+		Gui, MyWindow:Add, Text, x12 y233 w55, Event:
+		Gui, MyWindow:Add, Text, x67 y233 w280 vEvtMiniName, —
+		Gui, MyWindow:Add, Text, x350 y233 w327 vEvtMiniTime, —
+		Gui, MyWindow:Add, Text, x12 y249 w55, Desc:
+		Gui, MyWindow:Add, Text, x67 y249 w610 h56 vEvtMiniDesc, —
+		Gui, MyWindow:Add, Text, x12 y309 w55, Tokens:
+		Gui, MyWindow:Add, Text, x67 y309 w610 vEvtMiniTokens, —
+		Gui, MyWindow:Add, Text, x12 y325 w55, Heroes:
+		Gui, MyWindow:Add, Text, x67 y325 w610 h28 vEvtMiniHeroes, —
+		Gui, MyWindow:Add, Text, x12 y357 w55, Chests:
+		Gui, MyWindow:Add, Text, x67 y357 w610 h14 vEvtMiniChests, —
 
 		Gui, Tab, Settings
 		Gui, MyWindow:Add, Text, x15 y37 w85, Server Name:
@@ -635,6 +948,17 @@ Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Form
 		RedeemCodeHistorySkip := CurrentSettings.redeemcodehistoryskip
 		AutoRefreshMinutes := CurrentSettings.autorefreshminutes ? CurrentSettings.autorefreshminutes : 0
 		ShowAPIMessages := CurrentSettings.showapimessages
+		LastBSChamp      := CurrentSettings.lastbschamp
+		LastBSTnCount    := CurrentSettings.lastbstncount
+		LastBSSmCount    := CurrentSettings.lastbssmcount
+		LastBSMdCount    := CurrentSettings.lastbsmdcount
+		LastBSLgCount    := CurrentSettings.lastbslgcount
+		LastBSHgCount    := CurrentSettings.lastbshgcount
+		LastBountyTnCount := CurrentSettings.lastbountytncount
+		LastBountySmCount := CurrentSettings.lastbountysmcount
+		LastBountyMdCount := CurrentSettings.lastbountymdcount
+		LastBountyLgCount := CurrentSettings.lastbountylgcount
+		lastadv := CurrentSettings.lastadvid ? CurrentSettings.lastadvid : 0
 		if (AutoRefreshMinutes > 0) {
 			SetTimer, AutoRefreshTimer, % AutoRefreshMinutes * 60000
 		} else {
@@ -758,109 +1082,218 @@ Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Form
 			DllCall("SendMessage", "Ptr", hEditLog, "UInt", 0xB7, "Ptr", 0, "Ptr", 0)  ; EM_SCROLLCARET — scroll to caret
 		}
 		GuiControl, MyWindow:, CrashProtectStatus, % CrashProtectStatus, w250 h210
-		; Relative time is updated by TimestampTickTimer (1s tick)
+		; Platform info
+		platformText := GamePlatform != "" ? GamePlatform : "Not Configured"
+		GuiControl, MyWindow:, PlatformValue, % platformText
+		; Timestamp + timer — force h16 after content change to prevent auto-resize covering timer
 		GuiControl, MyWindow:, LastUpdated, % LastUpdated
+		GuiControl, Move, LastUpdated, h16
 
-		;Summary
+		;Summary — Account
 		Gui, MyWindow:Default
-		Gui, ListView, SummaryLV
+		Gui, ListView, SummaryAccountLV
 		LV_Delete()
 		if (!UserID || UserID == 0) {
-			LV_Add("", "", "Setup Required", "Use File → Run Setup", "Configure your game client to get started")
+			LV_Add("", "Setup Required", "Use File → Run Setup", "Configure your game client")
 		} else if (!SummaryDataLoaded) {
 			if (GetDetailsonStart == "1")
-				LV_Add("", "", "Loading", "Fetching user data...", "Please wait")
+				LV_Add("", "Loading", "Fetching user data...", "Please wait")
 			else
-				LV_Add("", "", "Ready", "User ID & Hash configured", "Press Update to load user data")
+				LV_Add("", "Ready", "User ID & Hash configured", "Press Update to load")
 		} else {
-			LV_Add("", "Account", "Highest Gear Level", UserDetails.details.stats.highest_level_gear, AchievementGearChamp)
-			LV_Add("", "Account", "Champions Unlocked", ChampionsUnlockedCount, "")
-			LV_Add("", "Account", "Champions Active", ChampionsActiveCount, "Across all instances")
-			LV_Add("", "Account", "Familiars", FamiliarsUnlockedCount, "")
-			LV_Add("", "Account", "Costumes", CostumesUnlockedCount, "")
-			LV_Add("", "Account", "Epic Gear", EpicGearCount, "")
+			LV_Add("", "Highest Gear Level", UserDetails.details.stats.highest_level_gear, AchievementGearChamp)
+			LV_Add("", "Champions Unlocked", ChampionsUnlockedCount, "")
+			LV_Add("", "Champions Active", ChampionsActiveCount, "Across all instances")
+			LV_Add("", "Fully Equipped", UserDetails.details.stats.champions_fully_equipped, "of " ChampionsUnlockedCount " unlocked")
+			LV_Add("", "Familiars", FamiliarsUnlockedCount, "")
+			LV_Add("", "Costumes", CostumesUnlockedCount, "")
+			LV_Add("", "Epic Gear", EpicGearCount, "")
+			LV_Add("", "Total Hero Levels", FormatMagnitude(UserDetails.details.stats.total_hero_levels), "")
+			LV_Add("", "Unique Adventures", UserDetails.details.stats.unique_adventures_completed, "")
+			LV_Add("", "Free Plays", FormatMagnitude(UserDetails.details.stats.free_plays_completed), "")
+			LV_Add("", "Boss Defeats (Resets)", FormatMagnitude(UserDetails.details.stats.boss_defeats), "")
+			LV_Add("", "Monster Kills", FormatMagnitude(UserDetails.details.stats.monster_kills), "")
 			if (AchievementNeeds != "") {
-				LV_Add("", "────────", "───────────────────", "─────────", "───────────────")
 				Loop, Parse, AchievementNeeds, `n
 				{
 					if (A_LoopField != "")
-						LV_Add("", "Todo", A_LoopField, "", "Incomplete")
+						LV_Add("", A_LoopField, "", "Incomplete")
 				}
 			}
-			LV_Add("", "────────", "───────────────────", "─────────", "───────────────")
-			if (EpicGearCount && UserDetails.details.reset_upgrade_levels.44)
-				LV_Add("", "Blessing", "Slow and Steady (Helm)", "x" Round((1.02 ** EpicGearCount), 2), EpicGearCount " epics")
-			if (ChampionsUnlockedCount && UserDetails.details.reset_upgrade_levels.72)
-				LV_Add("", "Blessing", "Familiar Faces (Helm)", "x" Round((1.02 ** ChampionsUnlockedCount), 2), ChampionsUnlockedCount " champions")
-			if (ChampionsActiveCount && UserDetails.details.reset_upgrade_levels.76)
-				LV_Add("", "Blessing", "Splitting the Party (Helm)", "x" Round((1.02 ** ChampionsActiveCount), 2), ChampionsActiveCount " active")
-			if (UserDetails.details.reset_upgrade_levels.56) {
-				vetAdvs := UserDetails.details.stats.completed_adventures_variants_and_patron_variants_c22
-				LV_Add("", "Blessing", "Veterans of Avernus (Tiamat)", "x" Round(1 + (0.1 * vetAdvs), 2), vetAdvs " adventures")
-			}
-			if (CostumesUnlockedCount && UserDetails.details.reset_upgrade_levels.88)
-				LV_Add("", "Blessing", "Costume Party (Auril)", "x" Round((1.20 ** CostumesUnlockedCount), 2), CostumesUnlockedCount " skins")
-			if (FamiliarsUnlockedCount && UserDetails.details.reset_upgrade_levels.108)
-				LV_Add("", "Blessing", "Familiar Stakes (Corellon)", "x" Round((1.20 ** FamiliarsUnlockedCount), 2), FamiliarsUnlockedCount " familiars")
 		}
 		Loop % LV_GetCount("Col")
 			LV_ModifyCol(A_Index, "AutoHdr")
 
-		;Adventures
-		Gui, MyWindow:Default
-		Gui, ListView, AdventuresLV
+		;Summary — Blessings
+		Gui, ListView, SummaryBlessLV
 		LV_Delete()
-		LV_Add("", "Foreground",    CurrentAdventure,     CurrentPatron,     CurrentArea,     CurrentChampions,     FGCoreName,  FGCoreXP,  FGCoreProgress)
-		LV_Add("", "Background 1",  BackgroundAdventure,  BackgroundPatron,  BackgroundArea,  BackgroundChampions,  BGCoreName,  BGCoreXP,  BGCoreProgress)
-		LV_Add("", "Background 2",  Background2Adventure, Background2Patron, Background2Area, Background2Champions, BG2CoreName, BG2CoreXP, BG2CoreProgress)
-		LV_Add("", "Background 3",  Background3Adventure, Background3Patron, Background3Area, Background3Champions, BG3CoreName, BG3CoreXP, BG3CoreProgress)
+		if (SummaryDataLoaded) {
+			if (EpicGearCount && UserDetails.details.reset_upgrade_levels.44)
+				LV_Add("", "Slow and Steady (Helm)", "x" Round((1.02 ** EpicGearCount), 2), EpicGearCount " epics")
+			if (ChampionsUnlockedCount && UserDetails.details.reset_upgrade_levels.72)
+				LV_Add("", "Familiar Faces (Helm)", "x" Round((1.02 ** ChampionsUnlockedCount), 2), ChampionsUnlockedCount " champions")
+			if (ChampionsActiveCount && UserDetails.details.reset_upgrade_levels.76)
+				LV_Add("", "Splitting the Party (Helm)", "x" Round((1.02 ** ChampionsActiveCount), 2), ChampionsActiveCount " active")
+			if (UserDetails.details.reset_upgrade_levels.56) {
+				vetAdvs := UserDetails.details.stats.completed_adventures_variants_and_patron_variants_c22
+				LV_Add("", "Veterans of Avernus (Tiamat)", "x" Round(1 + (0.1 * vetAdvs), 2), vetAdvs " adventures")
+			}
+			if (CostumesUnlockedCount && UserDetails.details.reset_upgrade_levels.88)
+				LV_Add("", "Costume Party (Auril)", "x" Round((1.20 ** CostumesUnlockedCount), 2), CostumesUnlockedCount " skins")
+			if (FamiliarsUnlockedCount && UserDetails.details.reset_upgrade_levels.108)
+				LV_Add("", "Familiar Stakes (Corellon)", "x" Round((1.20 ** FamiliarsUnlockedCount), 2), FamiliarsUnlockedCount " familiars")
+		}
+		LV_ModifyCol(1, 160)
+		LV_ModifyCol(2, "AutoHdr")
+		LV_ModifyCol(3, "AutoHdr")
+
+		;Adventures — update GroupBox cards
+		fgTitle := FGCustomName != "" ? "Foreground - " FGCustomName : "Foreground"
+		bg1Title := BGCustomName != "" ? "Background 1 - " BGCustomName : "Background 1"
+		bg2Title := BG2CustomName != "" ? "Background 2 - " BG2CustomName : "Background 2"
+		bg3Title := BG3CustomName != "" ? "Background 3 - " BG3CustomName : "Background 3"
+		GuiControl, MyWindow:, AdvGB1, % fgTitle
+		GuiControl, MyWindow:, AdvGB2, % bg1Title
+		GuiControl, MyWindow:, AdvGB3, % bg2Title
+		GuiControl, MyWindow:, AdvGB4, % bg3Title
+
+		GuiControl, MyWindow:, Adv1Val, % AdvFromID(FGAdventure) " (" FGAdventure ")"
+		GuiControl, MyWindow:, Adv1Patron, % FGPatron
+		GuiControl, MyWindow:, Adv1Core, % FGCoreName
+		GuiControl, MyWindow:, Adv1Area, % FGArea
+		GuiControl, MyWindow:, Adv1Reset, % FGCoreReset
+		GuiControl, MyWindow:, Adv1Champs, % FGChampions
+		GuiControl, MyWindow:, Adv1XP, % FGCoreXP
+		GuiControl, , Adv1ProgBar, % FGCoreProgressPct
+		GuiControl, MyWindow:, Adv1ProgText, % FGCoreProgress
+
+		GuiControl, MyWindow:, Adv2Val, % AdvFromID(BGAdventure) " (" BGAdventure ")"
+		GuiControl, MyWindow:, Adv2Patron, % BGPatron
+		GuiControl, MyWindow:, Adv2Core, % BGCoreName
+		GuiControl, MyWindow:, Adv2Area, % BGArea
+		GuiControl, MyWindow:, Adv2Reset, % BGCoreReset
+		GuiControl, MyWindow:, Adv2Champs, % BGChampions
+		GuiControl, MyWindow:, Adv2XP, % BGCoreXP
+		GuiControl, , Adv2ProgBar, % BGCoreProgressPct
+		GuiControl, MyWindow:, Adv2ProgText, % BGCoreProgress
+
+		GuiControl, MyWindow:, Adv3Val, % AdvFromID(BG2Adventure) " (" BG2Adventure ")"
+		GuiControl, MyWindow:, Adv3Patron, % BG2Patron
+		GuiControl, MyWindow:, Adv3Core, % BG2CoreName
+		GuiControl, MyWindow:, Adv3Area, % BG2Area
+		GuiControl, MyWindow:, Adv3Reset, % BG2CoreReset
+		GuiControl, MyWindow:, Adv3Champs, % BG2Champions
+		GuiControl, MyWindow:, Adv3XP, % BG2CoreXP
+		GuiControl, , Adv3ProgBar, % BG2CoreProgressPct
+		GuiControl, MyWindow:, Adv3ProgText, % BG2CoreProgress
+
+		GuiControl, MyWindow:, Adv4Val, % AdvFromID(BG3Adventure) " (" BG3Adventure ")"
+		GuiControl, MyWindow:, Adv4Patron, % BG3Patron
+		GuiControl, MyWindow:, Adv4Core, % BG3CoreName
+		GuiControl, MyWindow:, Adv4Area, % BG3Area
+		GuiControl, MyWindow:, Adv4Reset, % BG3CoreReset
+		GuiControl, MyWindow:, Adv4Champs, % BG3Champions
+		GuiControl, MyWindow:, Adv4XP, % BG3CoreXP
+		GuiControl, , Adv4ProgBar, % BG3CoreProgressPct
+		GuiControl, MyWindow:, Adv4ProgText, % BG3CoreProgress
+
+		;Inventory — Gems
+		Gui, MyWindow:Default
+		Gui, ListView, InvGemsLV
+		LV_Delete()
+		LV_Add("", "Gems", CurrentGems, Floor(CurrentGems/50) " Silver or " Floor(CurrentGems/500) " Gold")
+		LV_Add("", "Spent Gems", FormatMagnitude(SpentGems), "")
 		Loop % LV_GetCount("Col")
 			LV_ModifyCol(A_Index, "AutoHdr")
 
-;Inventory
-Gui, MyWindow:Default
-Gui, ListView, InventoryLV
-LV_Delete()
-; Currency
-LV_Add("", "Gems",              CurrentGems,         Floor(CurrentGems/50) " Silver or " Floor(CurrentGems/500) " Gold")
-LV_Add("", "Spent Gems",        SpentGems,           "")
-LV_Add("", "───────────",       "─────",             "───────────────────────────")
-; Chests
-LV_Add("", "Gold Chests",       CurrentGolds,        GoldPity)
-LV_Add("", "Silver Chests",     CurrentSilvers,      "")
-LV_Add("", "Time Gate Pieces",  CurrentTGPs,         Floor(CurrentTGPs/6) " Time Gates | Next: " NextTGPDrop)
-LV_Add("", "───────────",       "─────",             "───────────────────────────")
-; Bounty Contracts — labels and multipliers from shared BountyContracts constant
-tokencount := 0
-for _, bc in BountyContracts {
-	varName := bc.var
-	LV_Add("", bc.name " Bounties", %varName%, bc.mult " " bc.unit " Each")
-	tokencount += %varName% * bc.mult
-}
-LV_Add("", "Total Bounty Tokens", tokencount, Round(tokencount/2500, 2) " Free Plays")
-LV_Add("", "───────────",       "─────",             "───────────────────────────")
-; Blacksmith Contracts — labels and multipliers from shared BlacksmithContracts constant
-bsLevels := 0
-for _, bs in BlacksmithContracts {
-	varName := bs.var
-	LV_Add("", bs.name " Blacksmiths", %varName%, bs.mult " " bs.unit " Each")
-	bsLevels += %varName% * bs.mult
-}
-LV_Add("", "Total Item Levels", bsLevels, "")
-Loop % LV_GetCount("Col")
-	LV_ModifyCol(A_Index, "AutoHdr")
+		;Inventory — Chests
+		Gui, ListView, InvChestsLV
+		LV_Delete()
+		LV_Add("", "Gold Chests", CurrentGolds, GoldPity)
+		LV_Add("", "Silver Chests", CurrentSilvers, "")
+		LV_Add("", "Time Gate Pieces", CurrentTGPs, Floor(CurrentTGPs/6) " Time Gates | Next: " NextTGPDrop)
+		Loop % LV_GetCount("Col")
+			LV_ModifyCol(A_Index, "AutoHdr")
 
-;Patrons — display names from dict, variable data via short-name prefix
-Gui, MyWindow:Default
-Gui, ListView, PatronsLV
-LV_Delete()
-for _, pid in PatronIDs {
-	pShort := PatronShortNames[pid]
-	pDisplay := PatronFromID(pid)
-	LV_Add("", pDisplay, %pShort%Variants, %pShort%Completed, %pShort%FPCurrency, %pShort%Challenges, %pShort%Requires, %pShort%Costs)
-}
-Loop % LV_GetCount("Col")
-	LV_ModifyCol(A_Index, "AutoHdr")
+		;Inventory — Bounty Contracts
+		Gui, ListView, InvBountyLV
+		LV_Delete()
+		tokencount := 0
+		for _, bc in BountyContracts {
+			varName := bc.var
+			LV_Add("", bc.name " Bounties", %varName%, bc.mult " " bc.unit " Each")
+			tokencount += %varName% * bc.mult
+		}
+		LV_Add("", "Total Bounty Tokens", tokencount, Round(tokencount/2500, 2) " Free Plays")
+		Loop % LV_GetCount("Col")
+			LV_ModifyCol(A_Index, "AutoHdr")
+
+		;Inventory — Blacksmith Contracts
+		Gui, ListView, InvBSLV
+		LV_Delete()
+		bsLevels := 0
+		for _, bs in BlacksmithContracts {
+			varName := bs.var
+			LV_Add("", bs.name " Blacksmiths", %varName%, bs.mult " " bs.unit " Each")
+			bsLevels += %varName% * bs.mult
+		}
+		LV_Add("", "Total Item Levels", bsLevels, "")
+		Loop % LV_GetCount("Col")
+			LV_ModifyCol(A_Index, "AutoHdr")
+
+		;Patrons — update GroupBox cards
+		Gui, MyWindow:Default
+		patIdx := 0
+		for _, pid in PatronIDs {
+			patIdx += 1
+			pShort := PatronShortNames[pid]
+			pDisplay := PatronFromID(pid)
+			pUnlockedVar := pShort "Unlocked"
+			isUnlocked := %pUnlockedVar%
+			GuiControl, MyWindow:, PatronGB%patIdx%, % pDisplay
+			if (isUnlocked) {
+				GuiControl, MyWindow:, Pat%patIdx%Lbl1, Variants:
+				GuiControl, MyWindow:, Pat%patIdx%Variants, % %pShort%Variants
+				GuiControl, MyWindow:, Pat%patIdx%Lbl2, Done:
+				GuiControl, MyWindow:, Pat%patIdx%Completed, % %pShort%Completed
+				GuiControl, MyWindow:, Pat%patIdx%Lbl3, FP:
+				GuiControl, MyWindow:, Pat%patIdx%FP, % %pShort%FPCurrency
+				GuiControl, MyWindow:, Pat%patIdx%Lbl4, Challs:
+				GuiControl, MyWindow:, Pat%patIdx%Challenges, % %pShort%Challenges
+				GuiControl, MyWindow:, Pat%patIdx%Lbl5, Influence:
+				GuiControl, +c000000, Pat%patIdx%Requires
+				GuiControl, MyWindow:, Pat%patIdx%Requires, % %pShort%Requires
+				GuiControl, MyWindow:, Pat%patIdx%Lbl6, Coins:
+				GuiControl, +c000000, Pat%patIdx%Costs
+				GuiControl, MyWindow:, Pat%patIdx%Costs, % %pShort%Costs
+				GuiControl, +c000000, Pat%patIdx%Row5
+				GuiControl, MyWindow:, Pat%patIdx%Row5,
+			} else {
+				pChampsVar := pShort "Champs"
+				pReqMetVar := pShort "RequiresMet"
+				pChampsMetVar := pShort "ChampsMet"
+				pCostsMetVar := pShort "CostsMet"
+				GuiControl, MyWindow:, Pat%patIdx%Lbl1, Status:
+				GuiControl, MyWindow:, Pat%patIdx%Variants, Locked
+				GuiControl, MyWindow:, Pat%patIdx%Lbl2,
+				GuiControl, MyWindow:, Pat%patIdx%Completed,
+				GuiControl, MyWindow:, Pat%patIdx%Lbl3, Requires:
+				GuiControl, MyWindow:, Pat%patIdx%FP,
+				GuiControl, MyWindow:, Pat%patIdx%Lbl4,
+				GuiControl, MyWindow:, Pat%patIdx%Challenges,
+				costsColor := %pCostsMetVar% ? "009900" : "CC0000"
+				GuiControl, +c%costsColor%, Pat%patIdx%Requires
+				GuiControl, MyWindow:, Pat%patIdx%Lbl5, Costs:
+				GuiControl, MyWindow:, Pat%patIdx%Requires, % %pShort%Costs
+				champsColor := %pChampsMetVar% ? "009900" : "CC0000"
+				GuiControl, +c%champsColor%, Pat%patIdx%Costs
+				GuiControl, MyWindow:, Pat%patIdx%Lbl6, Champs:
+				GuiControl, MyWindow:, Pat%patIdx%Costs, % %pChampsVar%
+				reqColor := %pReqMetVar% ? "009900" : "CC0000"
+				GuiControl, +c%reqColor%, Pat%patIdx%Row5
+				GuiControl, MyWindow:, Pat%patIdx%Row5, % %pShort%Requires
+			}
+		}
 
 ;Champions
 Gui, MyWindow:Default
@@ -902,8 +1335,6 @@ Loop % LV_GetCount("Col")
 
 		;Pity Timers
 		Gui, MyWindow:Default
-		Gui, ListView, PityLV
-		LV_Delete()
 		if (SummaryDataLoaded && UserDetails.details.stats) {
 			pityjsonoutput := "{"
 			jsoncount := 0
@@ -942,15 +1373,13 @@ Loop % LV_GetCount("Col")
 						default: currentchamp += 1
 					}
 				}
-				if (champlist != "") {
+				if (champlist != "")
 					StringTrimRight, champlist, champlist, 2
-					LV_Add("", chestsforepic, champlist)
-				}
+				displayText := champlist != "" ? champlist : "—"
+				GuiControl, MyWindow:, PityText%chestsforepic%, % displayText
 				chestsforepic += 1
 			}
 		}
-		Loop % LV_GetCount("Col")
-			LV_ModifyCol(A_Index, "AutoHdr")
 
 		;Item Levels
 		Gui, MyWindow:Default
@@ -1036,98 +1465,39 @@ Loop % LV_GetCount("Col")
 		Loop % LV_GetCount("Col")
 			LV_ModifyCol(A_Index, "AutoHdr")
 
-		;Event
+		;Event — update GroupBoxes
 		Gui, MyWindow:Default
-		Gui, ListView, EventLV
-		LV_Delete()
-		if (EventID != 0 && MiniEventID != 0 && EventID != MiniEventID) {
-			; ── Both main event and mini-event active ──
-			mainName := EventName != "" ? EventName : "Event " EventID
-			LV_Add("", "Type", "Main Event")
-			LV_Add("", "Event", mainName)
-			LV_Add("", "Event ID", EventID)
-			LV_Add("", EventTokenName, EventTokens)
-			LV_Add("", "───────────", "───────────────────────────")
-			Loop, Parse, EventHeroes, `,
-			{
-				hero := Trim(A_LoopField)
-				if (hero != "")
-					LV_Add("", "Hero", hero)
-			}
-			LV_Add("", "───────────", "───────────────────────────")
-			Loop, Parse, EventChests, `,
-			{
-				chest := Trim(A_LoopField)
-				if (chest != "")
-					LV_Add("", "Chest", chest)
-			}
-			LV_Add("", "═══════════", "═══════════════════════════")
-			LV_Add("", "Type", "Mini Event")
-			LV_Add("", "Event", MiniEventName)
-			LV_Add("", "Event ID", MiniEventID)
-			LV_Add("", "Description", MiniEventDesc)
-			LV_Add("", "Mini Tokens", MiniEventTokens)
-			LV_Add("", "───────────", "───────────────────────────")
-			Loop, Parse, MiniEventHeroes, `,
-			{
-				hero := Trim(A_LoopField)
-				if (hero != "")
-					LV_Add("", "Hero", hero)
-			}
-			LV_Add("", "───────────", "───────────────────────────")
-			Loop, Parse, MiniEventChests, `,
-			{
-				chest := Trim(A_LoopField)
-				if (chest != "")
-					LV_Add("", "Chest", chest)
-			}
-		} else if (MiniEventID != 0) {
-			; ── Mini-event only (or mini promoted to primary) ──
-			LV_Add("", "Type", "Mini Event")
-			LV_Add("", "Event", MiniEventName)
-			LV_Add("", "Event ID", MiniEventID)
-			LV_Add("", "Description", MiniEventDesc)
-			LV_Add("", "Mini Tokens", MiniEventTokens)
-			LV_Add("", "───────────", "───────────────────────────")
-			Loop, Parse, MiniEventHeroes, `,
-			{
-				hero := Trim(A_LoopField)
-				if (hero != "")
-					LV_Add("", "Hero", hero)
-			}
-			LV_Add("", "───────────", "───────────────────────────")
-			Loop, Parse, MiniEventChests, `,
-			{
-				chest := Trim(A_LoopField)
-				if (chest != "")
-					LV_Add("", "Chest", chest)
-			}
-		} else if (EventID != 0) {
-			; ── Main event only (no mini-event) ──
-			mainName := EventName != "" ? EventName : "Event " EventID
-			LV_Add("", "Type", "Main Event")
-			LV_Add("", "Event", mainName)
-			LV_Add("", "Event ID", EventID)
-			LV_Add("", EventTokenName, EventTokens)
-			LV_Add("", "───────────", "───────────────────────────")
-			Loop, Parse, EventHeroes, `,
-			{
-				hero := Trim(A_LoopField)
-				if (hero != "")
-					LV_Add("", "Hero", hero)
-			}
-			LV_Add("", "───────────", "───────────────────────────")
-			Loop, Parse, EventChests, `,
-			{
-				chest := Trim(A_LoopField)
-				if (chest != "")
-					LV_Add("", "Chest", chest)
-			}
+		if (EventID != 0) {
+			mainName := EventName != "" ? EventName " (" EventID ")" : "Event " EventID
+			GuiControl, MyWindow:, EvtMainName, % mainName
+			GuiControl, MyWindow:, EvtMainTime, % EventTime
+			GuiControl, MyWindow:, EvtMainDesc, % EventDesc
+			GuiControl, MyWindow:, EvtMainTokens, % EventTokens " " EventTokenName
+			GuiControl, MyWindow:, EvtMainHeroes, % EventHeroes
+			GuiControl, MyWindow:, EvtMainChests, % EventChests
 		} else {
-			LV_Add("", "Status", EventDesc)
+			GuiControl, MyWindow:, EvtMainName, No Event Active
+			GuiControl, MyWindow:, EvtMainTime, —
+			GuiControl, MyWindow:, EvtMainDesc, —
+			GuiControl, MyWindow:, EvtMainTokens, —
+			GuiControl, MyWindow:, EvtMainHeroes, —
+			GuiControl, MyWindow:, EvtMainChests, —
 		}
-		Loop % LV_GetCount("Col")
-			LV_ModifyCol(A_Index, "AutoHdr")
+		if (MiniEventID != 0) {
+			GuiControl, MyWindow:, EvtMiniName, % MiniEventName " (" MiniEventID ")"
+			GuiControl, MyWindow:, EvtMiniTime, % MiniEventTime
+			GuiControl, MyWindow:, EvtMiniDesc, % MiniEventDesc
+			GuiControl, MyWindow:, EvtMiniTokens, % MiniEventTokens " Tokens"
+			GuiControl, MyWindow:, EvtMiniHeroes, % MiniEventHeroes
+			GuiControl, MyWindow:, EvtMiniChests, % MiniEventChests
+		} else {
+			GuiControl, MyWindow:, EvtMiniName, No Mini Event Active
+			GuiControl, MyWindow:, EvtMiniTime, —
+			GuiControl, MyWindow:, EvtMiniDesc, —
+			GuiControl, MyWindow:, EvtMiniTokens, —
+			GuiControl, MyWindow:, EvtMiniHeroes, —
+			GuiControl, MyWindow:, EvtMiniChests, —
+		}
 
 		;Refresh active tab column fill
 
@@ -1178,27 +1548,52 @@ MyWindowGuiSize(GuiHwnd, EventInfo, Width, Height) {
 
 	tabW := Width - 161
 	tabH := Height - 59
-	GuiControl, MoveDraw, SummaryLV, % "w" . tabW . " h" . tabH
+	acctW := Floor(tabW * 0.45)
+	blessW := tabW - acctW - 4
+	blessX := acctW + 8
+	GuiControl, MoveDraw, SummaryGBAccount,  % "w" . acctW . " h" . tabH
+	GuiControl, MoveDraw, SummaryAccountLV,  % "w" . (acctW - 8) . " h" . (tabH - 20)
+	GuiControl, MoveDraw, SummaryGBBless,    % "x" . blessX . " w" . blessW . " h" . tabH
+	GuiControl, MoveDraw, SummaryBlessLV,    % "x" . (blessX + 4) . " w" . (blessW - 8) . " h" . (tabH - 20)
 
-	GuiControl, MoveDraw, AdventuresLV, % "w" . tabW . " h" . tabH
-	GuiControl, MoveDraw, PatronsLV,    % "w" . tabW . " h" . tabH
-	GuiControl, MoveDraw, InventoryLV,  % "w" . tabW . " h" . tabH
+
+
+	; Inventory — 2×2 GroupBox grid
+	invHalfW := Floor(tabW / 2) - 4
+	invTopY := 35
+	invTopH := 130
+	invBotH := tabH - invTopH - 9
+	invBotY := invTopY + invTopH + 5
+	invCol2X := invHalfW + 8
+	GuiControl, MoveDraw, InvGBGems,    % "x4 y" . invTopY . " w" . invHalfW . " h" . invTopH
+	GuiControl, MoveDraw, InvGemsLV,    % "x8 y" . (invTopY + 16) . " w" . (invHalfW - 8) . " h" . (invTopH - 20)
+	GuiControl, MoveDraw, InvGBChests,  % "x" . invCol2X . " y" . invTopY . " w" . invHalfW . " h" . invTopH
+	GuiControl, MoveDraw, InvChestsLV,  % "x" . (invCol2X + 4) . " y" . (invTopY + 16) . " w" . (invHalfW - 8) . " h" . (invTopH - 20)
+	GuiControl, MoveDraw, InvGBBounty,  % "y" . invBotY . " w" . invHalfW . " h" . invBotH
+	GuiControl, MoveDraw, InvBountyLV,  % "y" . (invBotY + 16) . " w" . (invHalfW - 8) . " h" . (invBotH - 22)
+	GuiControl, MoveDraw, InvGBBS,      % "x" . invCol2X . " y" . invBotY . " w" . invHalfW . " h" . invBotH
+	GuiControl, MoveDraw, InvBSLV,      % "x" . (invCol2X + 4) . " y" . (invBotY + 16) . " w" . (invHalfW - 8) . " h" . (invBotH - 22)
+
 	GuiControl, MoveDraw, ChampionsLV,  % "w" . tabW . " h" . tabH
-	GuiControl, MoveDraw, PityLV,       % "w" . tabW . " h" . tabH
 	GuiControl, MoveDraw, ItemLevelsLV, % "w" . tabW . " h" . tabH
 	GuiControl, MoveDraw, VariantsLV,   % "w" . tabW . " h" . (tabH - 25)
-	GuiControl, MoveDraw, EventLV,      % "w" . tabW . " h" . tabH
 
 	GuiControl, MoveDraw, OutputText, % "x4" . " w" . tabW . " h" . (Height - 65)
 
 	GuiControl, MoveDraw, Group1, % "x" . (Width - 155) . " h" . (Height - 25)
 	GuiControl, MoveDraw, BtnReload, % "x" . (Width - 145)
 	GuiControl, MoveDraw, BtnExit, % "x" . (Width - 75)
-	GuiControl, MoveDraw, CrashProtectStatus, % "x" . (Width - 145)
-	GuiControl, MoveDraw, BtnToggle, % "x" . (Width - 145)
-	GuiControl, MoveDraw, LastUpdatedTitle, % "x" . (Width - 145)
-	GuiControl, MoveDraw, LastUpdated, % "x" . (Width - 145)
-	GuiControl, MoveDraw, BtnUpdate, % "x" . (Width - 145)
+	sideX := Width - 152
+	sideInX := Width - 144
+	GuiControl, MoveDraw, SidebarGBPlatform, % "x" . sideX
+	GuiControl, MoveDraw, PlatformValue, % "x" . sideInX
+	GuiControl, MoveDraw, SidebarGBCrash, % "x" . sideX
+	GuiControl, MoveDraw, CrashProtectStatus, % "x" . sideInX
+	GuiControl, MoveDraw, BtnToggle, % "x" . sideInX
+	GuiControl, MoveDraw, SidebarGBData, % "x" . sideX
+	GuiControl, MoveDraw, LastUpdated, % "x" . sideInX
+	GuiControl, MoveDraw, LastUpdatedTimer, % "x" . sideInX
+	GuiControl, MoveDraw, BtnUpdate, % "x" . sideInX
 	
 	SB_SetParts(Width - 155)
 	GuiControl, MoveDraw, StatusBar
@@ -1356,41 +1751,110 @@ Exit_Clicked:
 		return
 	}
 
+; Labels: show submenu popups from Inventory tab buttons
+ShowChestsMenu:
+	Menu, ChestsSubmenu, Show
+	return
+
+ShowBlacksmithMenu:
+	Menu, BlacksmithSubmenu, Show
+	return
+
+ShowBountyMenu:
+	Menu, BountySubmenu, Show
+	return
+
+; Labels: Setup platform picker buttons
+SetupPickEpic:
+	SetupPlatformChoice := "epic"
+	SetupDone := true
+	return
+SetupPickSteam:
+	SetupPlatformChoice := "steam"
+	SetupDone := true
+	return
+SetupPickStandalone:
+	SetupPlatformChoice := "standalone"
+	SetupDone := true
+	return
+SetupPickConsole:
+	SetupPlatformChoice := "console"
+	SetupDone := true
+	return
+SetupPickCancel:
+SetupPickerGuiClose:
+	SetupPlatformChoice := ""
+	SetupDone := true
+	return
+
 ; Label: toggle crash protection monitoring on/off
 Crash_Toggle:
 	{
-		msgbox, % CrashProtectStatus
 		switch CrashProtectStatus {
-			case "Crash Protect: Disabled": {
-				CrashProtectStatus := "Crash Protect: Enabled"
+			case "Disabled": {
+				CrashProtectStatus := "Enabled"
+				GuiControl, +c009900, CrashProtectStatus
 				oMyGUI.Update()
 				SB_SetText("✅ Crash Protect has been enabled!")
-				CrashProtect()
+				SetTimer, CrashProtectStart, -1
 			}
-			case "Crash Protect: Enabled": {
-				CrashProtectStatus := "Crash Protect: Disabled"
+			case "Enabled": {
+				CrashProtectStatus := "Disabled"
+				GuiControl, +cCC0000, CrashProtectStatus
 				CrashCount := 0
 				oMyGUI.Update()
 				SB_SetText("✅ Crash Protect has been disabled")
 			}
 		}
-		return
 	}
+	return
+
+CrashProtectStart:
+	CrashProtect()
+	return
 
 ; Monitor game process and restart on crash (Steam only). Runs on a timer.
+; Uses WinWait with timeout instead of fixed sleep to avoid launching multiple
+; copies when the game is slow to start. Gives up after 3 consecutive failures.
 CrashProtect() {
+	cooldownSec := 120
+	maxAttempts := 3
+	attempts := 0
 	loop {
-		if (CrashProtectStatus == "Crash Protect: Disabled") {
+		if (CrashProtectStatus == "Disabled")
+			return
+		if (WinExist("ahk_exe IdleDragons.exe")) {
+			; Game is running — reset attempt counter
+			attempts := 0
+			Sleep 5000
+			continue
+		}
+		; Game not running — attempt restart
+		attempts += 1
+		if (attempts > maxAttempts) {
+			CrashProtectStatus := "Disabled"
+			SB_SetText("❌ Crash Protect: gave up after " maxAttempts " failed attempts")
+			LogFile("Crash Protect: stopped after " maxAttempts " consecutive restart failures")
+			GuiControl, +cCC0000, CrashProtectStatus
+			GuiControl, MyWindow:, CrashProtectStatus, % CrashProtectStatus
 			return
 		}
-		While(Not WinExist("ahk_exe IdleDragons.exe")) {
-			Sleep 2500
-			Run, %GameClient%
-			++CrashCount
+		++CrashCount
+		LogFile("Crash Protect: restarting client (attempt " attempts "/" maxAttempts ", total restarts: " CrashCount ")")
+		SB_SetText("⌛ Crash Protect: restarting (attempt " attempts "/" maxAttempts ")...")
+		Run, %GameClient%, %GameInstallDir%
+		; Wait for game window to appear (up to cooldown period)
+		WinWait, ahk_exe IdleDragons.exe, , %cooldownSec%
+		if (ErrorLevel) {
+			; Game didn't start within cooldown — log and retry on next loop
+			LogFile("Crash Protect: game not detected within " cooldownSec "s")
+			SB_SetText("⚠️ Crash Protect: game not detected after " cooldownSec "s, retrying...")
+		} else {
+			; Game started successfully
 			SB_SetText("✅ Crash Protect has restarted your client")
 			oMyGUI.Update()
 			LogFile("Restarts since enabling Crash Protect: " CrashCount)
-			Sleep 10000
+			attempts := 0
 		}
 	}
 	return
@@ -1585,7 +2049,7 @@ TimestampTickTimer:
 			relTime := Floor(diff / 3600) "h " Floor(Mod(diff, 3600) / 60) "m ago"
 		else
 			relTime := Floor(diff / 86400) "d " Floor(Mod(diff, 86400) / 3600) "h ago"
-		GuiControl, MyWindow:, LastUpdated, % LastUpdated "`n(" relTime ")"
+		GuiControl, MyWindow:, LastUpdatedTimer, % "(" relTime ")"
 	}
 	return
 
@@ -1631,12 +2095,12 @@ Buy_Gold:
 
 BuyEvent()
 	{
-		InputBox, chestid, Opening Chests, % "Enter Chest ID?`n", , 200, 150
-		if ErrorLevel
+		chestid := ShowChestPicker("Buy Event Chests", CurrentSettings.lastchestid)
+		if !(chestid > 0)
 			return
-		if (chestid) {
-			Buy_Chests(chestid)
-		}
+		CurrentSettings.lastchestid := chestid + 0
+		PersistSettings()
+		Buy_Chests(chestid)
 		return
 	}
 
@@ -1684,12 +2148,12 @@ Open_Gold:
 
 OpenEvent()
 	{
-		InputBox, chestid, Opening Chests, % "Enter Chest ID?`n", , 200, 150
-		if ErrorLevel
+		chestid := ShowChestPicker("Open Event Chests", CurrentSettings.lastchestid)
+		if !(chestid > 0)
 			return
-		if (chestid) {
-			OpenChestIfGameClosed(chestid)
-		}
+		CurrentSettings.lastchestid := chestid + 0
+		PersistSettings()
+		OpenChestIfGameClosed(chestid)
 		return
 	}
 
@@ -1699,6 +2163,33 @@ Open_Event:
 		OpenEvent()
 		return
 	}
+
+; Show a ComboBox chest picker GUI; returns the selected/typed chest ID (number > 0), or 0/empty on cancel.
+; defaultID: optional pre-selected chest ID (0 = no pre-selection)
+ShowChestPicker(windowTitle, defaultID=0) {
+	global ChestPickerResult, ChestPickerDone
+	chestDDL := BuildChestDropdownList()
+	ChestPickerResult := ""
+	ChestPickerDone := false
+	Gui, ChestPicker:Destroy
+	Gui, ChestPicker:Add, Text, w265, % "Select a chest or type a chest ID:"
+	Gui, ChestPicker:Add, ComboBox, vChestPickerChoice w265, %chestDDL%
+	if (defaultID + 0 > 0) {
+		Loop, Parse, chestDDL, |
+		{
+			if (RegExMatch(A_LoopField, "\(" (defaultID + 0) "\)$")) {
+				GuiControl, ChooseString, ChestPickerChoice, % A_LoopField
+				break
+			}
+		}
+	}
+	Gui, ChestPicker:Add, Button, gChestPickerOK w125, OK
+	Gui, ChestPicker:Add, Button, x+10 gChestPickerCancel w125, Cancel
+	Gui, ChestPicker:Show, w290, % windowTitle
+	while !ChestPickerDone
+		Sleep, 100
+	return ChestPickerResult
+}
 
 ; Label: open redeem codes window with paste/autoload/submit controls
 Open_Codes:
@@ -2131,23 +2622,81 @@ Clear_Log:
 ; Shared helpers for guarded batch operations (#14, #15)
 ;-----------------------------------------------------------------------------
 
-; PromptCount - Shared InputBox + validation for batch operations
+; PromptCount - Custom GUI with slider + number validation for batch operations
 ; Returns: positive integer on success, -1 on cancel/invalid
-PromptCount(title, prompt, width, height, defaultVal) {
-	InputBox, count, %title%, %prompt%, , %width%, %height%, , , , , %defaultVal%
-	if ErrorLevel
-		return -1
-	if count is not integer
-	{
-		MsgBox, Please enter a valid whole number.
+PromptCount(title, prompt, defaultVal, maxVal) {
+	global PCSlider, PCEdit, PCMax, PCDone, PCResult, PCMaxVal
+	
+	if (maxVal < 1) {
+		MsgBox, 48, %title%, You don't have enough resources to do this.
 		return -1
 	}
-	if (count < 1) {
-		MsgBox, Please enter a number greater than 0.
-		return -1
+	
+	if (defaultVal > maxVal)
+		defaultVal := maxVal
+	if (defaultVal < 1)
+		defaultVal := 1
+	
+	PCMaxVal := maxVal
+	PCDone := false
+	PCResult := -1
+	
+	Gui, PromptCount:New, +AlwaysOnTop +ToolWindow -MinimizeBox -MaximizeBox, %title%
+	Gui, PromptCount:Add, Text, w280, %prompt%
+	Gui, PromptCount:Add, Slider, vPCSlider Range1-%maxVal% ToolTip AltSubmit gPCSliderChanged w280, %defaultVal%
+	Gui, PromptCount:Add, Edit, vPCEdit Number w80 gPCEditChanged, %defaultVal%
+	Gui, PromptCount:Add, UpDown, Range1-%maxVal% +0x80, %defaultVal%
+	Gui, PromptCount:Add, Button, vPCMax gPCMaxClicked w50 x+10 yp, Max
+	Gui, PromptCount:Add, Button, gPromptCountButtonOK w80 x130 y+20 Default, OK
+	Gui, PromptCount:Add, Button, gPromptCountButtonCancel w80 x+10 yp, Cancel
+	
+	Gui, PromptCount:Show, AutoSize Center
+	
+	while (!PCDone) {
+		Sleep, 50
 	}
-	return count
+	
+	Gui, PromptCount:Destroy
+	return PCResult
 }
+
+PCSliderChanged:
+	GuiControlGet, PCSlider, PromptCount:
+	GuiControl, PromptCount:, PCEdit, %PCSlider%
+return
+
+PCEditChanged:
+	GuiControlGet, PCEdit, PromptCount:
+	StringReplace, PCEdit, PCEdit, `,, , All
+	PCEdit := PCEdit + 0
+	if (PCEdit > PCMaxVal) {
+		PCEdit := PCMaxVal
+		GuiControl, PromptCount:, PCEdit, %PCEdit%
+	}
+	GuiControl, PromptCount:, PCSlider, %PCEdit%
+return
+
+PCMaxClicked:
+	GuiControl, PromptCount:, PCSlider, %PCMaxVal%
+	GuiControl, PromptCount:, PCEdit, %PCMaxVal%
+return
+
+PromptCountButtonOK:
+	GuiControlGet, PCEdit, PromptCount:
+	if (PCEdit < 1 || PCEdit > PCMaxVal) {
+		MsgBox, 48, Error, Please enter a valid number between 1 and %PCMaxVal%.
+		return
+	}
+	PCResult := PCEdit
+	PCDone := true
+return
+
+PromptCountButtonCancel:
+PromptCountGuiEscape:
+PromptCountGuiClose:
+	PCResult := -1
+	PCDone := true
+return
 
 ; EnsureCredentials - Check UserID is set, prompt setup if not
 ; Returns: true if credentials available, false if user cancelled/missing
@@ -2233,7 +2782,7 @@ _Buy_Chests_Inner(chestid) {
 	switch true {
 		case (chestid = 1): {
 			maxbuy := Floor(CurrentGems/50)
-			count := PromptCount("Buying Chests", "How many Silver Chests?`n(Gems: " CurrentGems " | Cost: 50 each)`n(Max: " maxbuy ")", 280, 180, maxbuy)
+			count := PromptCount("Buying Chests", "How many Silver Chests?`n(Gems: " CurrentGems " | Cost: 50 each)`n(Max: " maxbuy ")", maxbuy, maxbuy)
 			if (count = -1)
 				return
 			if (count > maxbuy) {
@@ -2246,7 +2795,7 @@ _Buy_Chests_Inner(chestid) {
 		}
 		case (chestid = 2): {
 			maxbuy := Floor(CurrentGems/500)
-			count := PromptCount("Buying Chests", "How many Gold Chests?`n(Gems: " CurrentGems " | Cost: 500 each)`n(Max: " maxbuy ")", 280, 180, maxbuy)
+			count := PromptCount("Buying Chests", "How many Gold Chests?`n(Gems: " CurrentGems " | Cost: 500 each)`n(Max: " maxbuy ")", maxbuy, maxbuy)
 			if (count = -1)
 				return
 			if (count = "alpha5") {
@@ -2276,7 +2825,7 @@ _Buy_Chests_Inner(chestid) {
 		}
 		case (chestid > 3 and chestid <= MaxChestID): {
 			maxbuy := Floor(EventTokens/10000)
-			count := PromptCount("Buying Chests", "How many " ChestFromID(chestid) "?`n(" EventTokenName ": " EventTokens ")`n(Max: " maxbuy ")", 250, 180, maxbuy)
+			count := PromptCount("Buying Chests", "How many " ChestFromID(chestid) "?`n(" EventTokenName ": " EventTokens ")`n(Max: " maxbuy ")", maxbuy, maxbuy)
 			if (count = -1)
 				return
 			if (count = "alpha5") {
@@ -2365,7 +2914,7 @@ _Open_Chests_Inner(chestid) {
 	}
 	switch true {
 		case (chestid = 1): {
-			count := PromptCount("Opening Chests", "How many Silver Chests?`n(Owned: " CurrentSilvers ")`n(Max: " (CurrentSilvers + Floor(CurrentGems/50)) ")", 200, 180, CurrentSilvers)
+			count := PromptCount("Opening Chests", "How many Silver Chests?`n(Owned: " CurrentSilvers ")`n(Max: " (CurrentSilvers + Floor(CurrentGems/50)) ")", CurrentSilvers, (CurrentSilvers + Floor(CurrentGems/50)))
 			if (count = -1)
 				return
 			if (count > CurrentSilvers) {
@@ -2380,7 +2929,7 @@ _Open_Chests_Inner(chestid) {
 			}
 		}
 		case (chestid = 2): {
-			count := PromptCount("Opening Chests", "How many Gold Chests?`n(Owned: " CurrentGolds ")`n(Max: " (CurrentGolds + Floor(CurrentGems/500)) ")`n`n(Feats earned using this app do not`ncount towards the related achievement.)", 360, 240, CurrentGolds)
+			count := PromptCount("Opening Chests", "How many Gold Chests?`n(Owned: " CurrentGolds ")`n(Max: " (CurrentGolds + Floor(CurrentGems/500)) ")`n`n(Feats earned using this app do not`ncount towards the related achievement.)", CurrentGolds, (CurrentGolds + Floor(CurrentGems/500)))
 			if (count = -1)
 				return
 			if (count > CurrentGolds) {
@@ -2405,7 +2954,7 @@ _Open_Chests_Inner(chestid) {
 			if(CurrentChestsLookup) {
 				CurrentChests := CurrentChestsLookup
 			}
-			count := PromptCount("Opening Chests", "How many '" ChestFromID(chestid) "' Chests?`n(" EventTokenName ": " EventTokens ")`n(Owned: " CurrentChests ")`n(Max: " (CurrentChests + Floor(EventTokens/10000)) ")`n`n(Feats earned using this app do not`ncount towards the related achievement.)", 360, 240, CurrentChests)
+			count := PromptCount("Opening Chests", "How many '" ChestFromID(chestid) "' Chests?`n(" EventTokenName ": " EventTokens ")`n(Owned: " CurrentChests ")`n(Max: " (CurrentChests + Floor(EventTokens/10000)) ")`n`n(Feats earned using this app do not`ncount towards the related achievement.)", CurrentChests, (CurrentChests + Floor(EventTokens/10000)))
 			if (count = -1)
 				return
 			if (count > CurrentChests) {
@@ -2631,7 +3180,7 @@ _UseBlacksmith_Inner(buffid) {
 				GetUserDetails()
 			}
 	}
-	count := PromptCount("Blacksmithing", "How many " contractname " Blacksmith Contracts?`n(Max: " currentcontracts ")", 200, 180, lastcontracts)
+	count := PromptCount("Blacksmithing", "How many " contractname " Blacksmith Contracts?`n(Max: " currentcontracts ")", lastcontracts, currentcontracts)
 	if (count = -1)
 		return
 	if (count > currentcontracts) {
@@ -2641,15 +3190,34 @@ _UseBlacksmith_Inner(buffid) {
 			return
 		}
 	}
-	heroid := "error"
-	InputBox, heroid, Blacksmithing, % "Use " contractname " Blacksmith Contracts on which Champ? (Enter ID)", , 200, 180, , , , , %LastBSChamp%
-	if ErrorLevel
-		return
-	while !((heroid is number) OR ((heroid > 0) && (heroid < 107)) OR ((heroid > 112) && (heroid < 130))) {
-		InputBox, heroid, Blacksmithing, % "Please enter a valid Champ ID number", , 200, 180, , , , , %LastBSChamp%
-		if ErrorLevel
-			return
+	heroid := ""
+	; Build sorted champion dropdown
+	champDDL := BuildChampDropdownList()
+	champPickPos := 1
+	if (LastBSChamp + 0 > 0) {
+		Loop, Parse, champDDL, |
+		{
+			RegExMatch(A_LoopField, "\((\d+)\)$", _cpM)
+			if (_cpM1 + 0 = LastBSChamp + 0) {
+				champPickPos := A_Index
+				break
+			}
+		}
 	}
+	global ChampPickerResult, ChampPickerDone
+	ChampPickerResult := ""
+	ChampPickerDone := false
+	Gui, ChampPicker:Destroy
+	Gui, ChampPicker:Add, Text, w265, % "Use " contractname " Blacksmith Contracts on which Champion?"
+	Gui, ChampPicker:Add, ComboBox, vChampPickerChoice w265 Choose%champPickPos%, %champDDL%
+	Gui, ChampPicker:Add, Button, gChampPickerOK w125, OK
+	Gui, ChampPicker:Add, Button, x+10 gChampPickerCancel w125, Cancel
+	Gui, ChampPicker:Show, w290, Select Champion
+	while !ChampPickerDone
+		Sleep, 100
+	if (ChampPickerResult = "")
+		return
+	heroid := ChampPickerResult
 	MsgBox, 4, , % "Use " count " " contractname " Blacksmith Contracts on " ChampFromID(heroid) "?"
 	IfMsgBox, No
 	{
@@ -2662,7 +3230,17 @@ _UseBlacksmith_Inner(buffid) {
 		case 33: LastBSMdCount := count
 		case 34: LastBSLgCount := count
 		case 1797: LastBSHgCount := count
-	}	
+	}
+	; Persist last-used blacksmith values to settings
+	CurrentSettings.lastbschamp := heroid + 0
+	switch buffid {
+		case 31: CurrentSettings.lastbstncount := count
+		case 32: CurrentSettings.lastbssmcount := count
+		case 33: CurrentSettings.lastbsmdcount := count
+		case 34: CurrentSettings.lastbslgcount := count
+		case 1797: CurrentSettings.lastbshgcount := count
+	}
+	PersistSettings()
 	bscontractparams := "&user_id=" UserID "&hash=" UserHash "&instance_id=" InstanceID "&buff_id=" buffid "&hero_id=" heroid "&num_uses="
 	tempsavesetting := 0
 	slot1lvs := 0
@@ -2728,6 +3306,96 @@ _UseBlacksmith_Inner(buffid) {
 		GetUserDetails()
 	}
 	SB_SetText("✅ " contractname " Blacksmith Contracts use completed")
+	return
+}
+
+; Label: Champion picker OK button — saves selection and signals the wait loop
+ChampPickerOK:
+{
+	global ChampPickerResult, ChampPickerDone
+	Gui, ChampPicker:Submit, NoHide
+	ChampPickerResult := PickerExtractID(ChampPickerChoice)
+	Gui, ChampPicker:Destroy
+	ChampPickerDone := true
+	return
+}
+
+; Label: Champion picker Cancel button / window close — signals wait loop with empty result
+ChampPickerCancel:
+ChampPickerGuiClose:
+{
+	global ChampPickerResult, ChampPickerDone
+	ChampPickerResult := ""
+	Gui, ChampPicker:Destroy
+	ChampPickerDone := true
+	return
+}
+
+; Label: Chest picker OK button — extracts ID and signals the wait loop
+ChestPickerOK:
+{
+	global ChestPickerResult, ChestPickerDone
+	Gui, ChestPicker:Submit, NoHide
+	ChestPickerResult := PickerExtractID(ChestPickerChoice)
+	Gui, ChestPicker:Destroy
+	ChestPickerDone := true
+	return
+}
+
+; Label: Chest picker Cancel button / window close — signals wait loop with empty result
+ChestPickerCancel:
+ChestPickerGuiClose:
+{
+	global ChestPickerResult, ChestPickerDone
+	ChestPickerResult := ""
+	Gui, ChestPicker:Destroy
+	ChestPickerDone := true
+	return
+}
+
+; Label: Patron picker OK button — extracts ID and signals the wait loop
+PatronPickerOK:
+{
+	global PatronPickerResult, PatronPickerDone
+	Gui, PatronPicker:Submit, NoHide
+	pid := PickerExtractID(PatronPickerChoice)
+	PatronPickerResult := (pid . "" != "") ? pid : -1
+	Gui, PatronPicker:Destroy
+	PatronPickerDone := true
+	return
+}
+
+; Label: Patron picker Cancel button / window close — signals wait loop with sentinel -1
+PatronPickerCancel:
+PatronPickerGuiClose:
+{
+	global PatronPickerResult, PatronPickerDone
+	PatronPickerResult := -1
+	Gui, PatronPicker:Destroy
+	PatronPickerDone := true
+	return
+}
+
+; Label: Adventure picker OK button — extracts ID and signals the wait loop
+AdvPickerOK:
+{
+	global AdvPickerResult, AdvPickerDone
+	Gui, AdvPicker:Submit, NoHide
+	id := PickerExtractID(AdvPickerChoice)
+	AdvPickerResult := (id . "" != "" && id + 0 > 0) ? id + 0 : 0
+	Gui, AdvPicker:Destroy
+	AdvPickerDone := true
+	return
+}
+
+; Label: Adventure picker Cancel button / window close — signals wait loop with 0
+AdvPickerCancel:
+AdvPickerGuiClose:
+{
+	global AdvPickerResult, AdvPickerDone
+	AdvPickerResult := 0
+	Gui, AdvPicker:Destroy
+	AdvPickerDone := true
 	return
 }
 
@@ -2823,7 +3491,7 @@ UseBounty(buffid) {
 				GetUserDetails()
 			}
 	}
-	count := PromptCount("Bounties", "How many " contractname " Bounty Contracts?`n(Max: " currentcontracts ")", 200, 180, lastcontracts)
+	count := PromptCount("Bounties", "How many " contractname " Bounty Contracts?`n(Max: " currentcontracts ")", lastcontracts, currentcontracts)
 	if (count = -1)
 		return
 	if (count > currentcontracts) {
@@ -2838,6 +3506,22 @@ UseBounty(buffid) {
 	{
 		return
 	}
+	; Persist last-used bounty count for this contract type
+	switch buffid {
+		case 17:
+			LastBountyTnCount := count
+			CurrentSettings.lastbountytncount := count
+		case 18:
+			LastBountySmCount := count
+			CurrentSettings.lastbountysmcount := count
+		case 19:
+			LastBountyMdCount := count
+			CurrentSettings.lastbountymdcount := count
+		case 20:
+			LastBountyLgCount := count
+			CurrentSettings.lastbountylgcount := count
+	}
+	PersistSettings()
 	FileAppend, [PROCESS START] %contractname% Bounty Contracts to use: %count%`n, %BountyLogFile%
 	;bounty cancel
 	UseBountyClick("BOUNTY CANCEL", "bounty_cancel", 5, 5, 500)
@@ -2909,32 +3593,32 @@ global lastadv := 0			;fmagdi - to be used to save ended adventureid for use as 
 
 ; Load a new adventure by ID with optional patron selection
 LoadAdventure() {
+	global CurrentSettings
 	GetUserDetails()
-	while !(CurrentAdventure == "Map" || CurrentAdventure == "-1") {
+	while !(FGAdventure == "Map" || FGAdventure == "-1") {
 		MsgBox, 5, , Please end your current adventure first.
 		IfMsgBox, Cancel
 		{
 			return
 		}
 	}
-	advtoload := lastadv		;fmagdi - defaults to last ended adventure id, or to variable default in globals
-	patrontoload := 0
-	InputBox, advtoload, Adventure to Load, Please enter the adventure_id`nyou would like to load., , 250, 150, , , , , %advtoload%
-	if (ErrorLevel=1) {
+	advtoload := ShowAdvPicker(lastadv)
+	if !(advtoload > 0)
 		return
-	}
 	if !((advtoload > 0) && (advtoload < 9999)) {
 		MsgBox % "Invalid adventure_id: " advtoload
 		return
 	}
-	InputBox, patrontoload, Patron to Load, Please enter the patron_id`nyou would like to load., , 250, 150, , , , , %patrontoload%
-	if (ErrorLevel=1) {
+	patrontoload := ShowPatronPicker(CurrentSettings.lastpatronid)
+	if (patrontoload < 0)
 		return
-	}
-	if !((patrontoload > -1) && (patrontoload < 5)) {
+	if !((patrontoload >= 0) && (patrontoload <= 5)) {
 		MsgBox % "Invalid patron_id: " patrontoload
 		return
 	}
+	CurrentSettings.lastadvid := advtoload + 0
+	CurrentSettings.lastpatronid := patrontoload + 0
+	PersistSettings()
 	advparams := BuildAuthParams() "&patron_tier=0&game_instance_id=" ActiveInstance "&adventure_id=" advtoload "&patron_id=" patrontoload
 	sResult := ServerCall("setcurrentobjective", advparams)
 	GetUserDetails()
@@ -2942,15 +3626,78 @@ LoadAdventure() {
 	return
 }
 
+; Show a ComboBox patron picker GUI; returns patron ID (0-5) on OK, or -1 on cancel/invalid.
+; defaultID: optional pre-selected patron ID (-1 or "" = no pre-selection)
+ShowPatronPicker(defaultID="") {
+	global PatronPickerResult, PatronPickerDone
+	patronDDL := BuildPatronPickerList()
+	PatronPickerResult := -1
+	PatronPickerDone := false
+	Gui, PatronPicker:Destroy
+	Gui, PatronPicker:Add, Text, w265, % "Select a patron or type a patron ID:"
+	Gui, PatronPicker:Add, ComboBox, vPatronPickerChoice w265, %patronDDL%
+	if (defaultID . "" != "" && defaultID + 0 >= 0) {
+		Loop, Parse, patronDDL, |
+		{
+			if (RegExMatch(A_LoopField, "\(" (defaultID + 0) "\)$")) {
+				GuiControl, ChooseString, PatronPickerChoice, % A_LoopField
+				break
+			}
+		}
+	}
+	Gui, PatronPicker:Add, Button, gPatronPickerOK w125, OK
+	Gui, PatronPicker:Add, Button, x+10 gPatronPickerCancel w125, Cancel
+	Gui, PatronPicker:Show, w290, Select Patron
+	while !PatronPickerDone
+		Sleep, 100
+	return PatronPickerResult
+}
+
+; Show a ComboBox adventure picker GUI; returns adventure ID on OK, or 0 on cancel/invalid.
+; Falls back to plain InputBox if advdefs.json does not exist.
+; defaultID: optional pre-selected adventure ID (0 or "" = no pre-selection)
+ShowAdvPicker(defaultID=0) {
+	global AdvPickerResult, AdvPickerDone
+	advDDL := BuildAdvDropdownList()
+	if (advDDL = "") {
+		; advdefs.json absent — fall back to InputBox
+		defval := (defaultID + 0 > 0) ? defaultID : ""
+		InputBox, inputAdv, Adventure to Load, Please enter the adventure_id`nyou would like to load., , 250, 150, , , , , %defval%
+		if (ErrorLevel = 1)
+			return 0
+		return inputAdv + 0
+	}
+	AdvPickerResult := ""
+	AdvPickerDone := false
+	Gui, AdvPicker:Destroy
+	Gui, AdvPicker:Add, Text, w265, % "Select an adventure or type an adventure ID:"
+	Gui, AdvPicker:Add, ComboBox, vAdvPickerChoice w265, %advDDL%
+	if (defaultID + 0 > 0) {
+		Loop, Parse, advDDL, |
+		{
+			if (RegExMatch(A_LoopField, "\(" (defaultID + 0) "\)$")) {
+				GuiControl, ChooseString, AdvPickerChoice, % A_LoopField
+				break
+			}
+		}
+	}
+	Gui, AdvPicker:Add, Button, gAdvPickerOK w125, OK
+	Gui, AdvPicker:Add, Button, x+10 gAdvPickerCancel w125, Cancel
+	Gui, AdvPicker:Show, w290, Select Adventure
+	while !AdvPickerDone
+		Sleep, 100
+	return AdvPickerResult
+}
+
 ; End current foreground adventure
 EndAdventure() {
 	GetUserDetails()				;fmagdi - updates info before ending an adventure to be sure you are ending the correct one
-	if (CurrentAdventure == "Map" || CurrentAdventure == "-1") {
+	if (FGAdventure == "Map" || FGAdventure == "-1") {
 		MsgBox, No current adventure active.
 		return
 	}
-	lastadv := CurrentAdventure	;fmagdi - saves ended adventure id for use as default when loading next adventure
-	EndAdventureInstance("Current", CurrentAdventure, CurrentPatron, ActiveInstance)
+	lastadv := FGAdventure	;fmagdi - saves ended adventure id for use as default when loading next adventure
+	EndAdventureInstance("Current", FGAdventure, FGPatron, ActiveInstance)
 }
 
 ; End background party 1 adventure
@@ -2960,11 +3707,11 @@ EndBGAdventure() {
 	} else {
 		bginstance := 1
 	}
-	if (BackgroundAdventure == "-1" or BackgroundAdventure == "") {
+	if (BGAdventure == "-1" or BGAdventure == "") {
 		MsgBox, No background adventure active.
 		return
 	}
-	EndAdventureInstance("Background", BackgroundAdventure, BackgroundPatron, bginstance)
+	EndAdventureInstance("Background", BGAdventure, BGPatron, bginstance)
 }
 
 ; End background party 2 adventure
@@ -2974,11 +3721,11 @@ EndBG2Adventure() {
 	} else {
 		bginstance := 3
 	}
-	if (Background2Adventure == "-1" or Background2Adventure == "") {
+	if (BG2Adventure == "-1" or BG2Adventure == "") {
 		MsgBox, No background2 adventure active.
 		return
 	}
-	EndAdventureInstance("Background2", Background2Adventure, Background2Patron, bginstance)
+	EndAdventureInstance("Background2", BG2Adventure, BG2Patron, bginstance)
 }
 
 ; End background party 3 adventure
@@ -2988,11 +3735,11 @@ EndBG3Adventure() {
 	} else {
 		bginstance := 4
 	}
-	if (Background3Adventure == "-1" or Background3Adventure == "") {
+	if (BG3Adventure == "-1" or BG3Adventure == "") {
 		MsgBox, No background3 adventure active.
 		return
 	}
-	EndAdventureInstance("Background3", Background3Adventure, Background3Patron, bginstance)
+	EndAdventureInstance("Background3", BG3Adventure, BG3Patron, bginstance)
 }
 
 ; Generic adventure end handler — confirms and sends softreset API call
@@ -3015,6 +3762,80 @@ SetIcon() {
 	if FileExist(IconFile) {
 		Menu, Tray, Icon, %IconFile%
 	}
+}
+
+; Prompt user for user_id and hash in a single dialog.
+; Returns true if both entered, false if cancelled.
+PromptCredentials() {
+	global UserID, UserHash, CredPromptDone, CredPromptOK
+	CredPromptDone := false
+	CredPromptOK := false
+	Gui, CredPrompt:New, +AlwaysOnTop +ToolWindow, Enter Credentials
+	Gui, CredPrompt:Add, Text, w360, Enter your user_id and hash values.
+	Gui, CredPrompt:Add, Text, w360 y+10, How to find these (Console / Mobile):
+	Gui, CredPrompt:Add, Text, w360, % "  1. Open Idle Champions on your device"
+	Gui, CredPrompt:Add, Text, w360, % "  2. Go to Settings > Combinations"
+	Gui, CredPrompt:Add, Text, w360, % "  3. Your user_id and hash are shown there"
+	Gui, CredPrompt:Add, Text, w360 y+10, How to find these (PC with webRequestLog):
+	Gui, CredPrompt:Add, Text, w360, % "  1. Launch the game and play for a minute"
+	Gui, CredPrompt:Add, Text, w360, % "  2. Open webRequestLog.txt from your game folder:"
+	Gui, CredPrompt:Add, Text, w360 c808080, % "     ...\IdleDragons_Data\StreamingAssets\downloaded_files\"
+	Gui, CredPrompt:Add, Text, w360, % "  3. Search for 'user_id=' and 'hash=' in the URL"
+	Gui, CredPrompt:Add, Text, w60 y+15, user_id:
+	Gui, CredPrompt:Add, Edit, vCredUserID x+5 yp w290, % UserID
+	Gui, CredPrompt:Add, Text, x10 w60 y+10, hash:
+	Gui, CredPrompt:Add, Edit, vCredHash x+5 yp w290 +Password, % UserHash
+	Gui, CredPrompt:Add, Button, x170 y+15 w70 Default gCredPromptOK, OK
+	Gui, CredPrompt:Add, Button, x+10 yp w70 gCredPromptCancel, Cancel
+	Gui, CredPrompt:Show, AutoSize Center
+	while (!CredPromptDone)
+		Sleep, 50
+	Gui, CredPrompt:Destroy
+	return CredPromptOK
+}
+
+CredPromptOK:
+	Gui, CredPrompt:Submit, NoHide
+	UserID := CredUserID
+	UserHash := CredHash
+	CredPromptOK := true
+	CredPromptDone := true
+	return
+CredPromptCancel:
+CredPromptGuiClose:
+	CredPromptOK := false
+	CredPromptDone := true
+	return
+
+; Extract credentials from WRL (or prompt manually) and save settings.
+; Used by menu-driven detection to avoid re-running the full FirstRun wizard.
+detectCredentialsAndSave() {
+	if (WRLFile != "" && FileExist(WRLFile)) {
+		GetIdFromWRL()
+		LogFile("Platform: " GamePlatform)
+		LogFile("User ID: " UserID " & Hash: [REDACTED] detected in WRL")
+		GetPlayServerFromWRL()
+	} else {
+		MsgBox, 4, , Could not find webRequestLog.txt automatically.`nEnter credentials manually?
+		IfMsgBox, Yes
+		{
+			if (!PromptCredentials())
+				return
+			LogFile("User ID: " UserID " & Hash: [REDACTED] manually entered")
+		}
+		IfMsgBox, No
+			return
+	}
+	CurrentSettings.user_id := UserID
+	CurrentSettings.user_id_epic := UserIDEpic
+	CurrentSettings.user_id_steam := UserIDSteam
+	CurrentSettings.hash := DPAPIEncrypt(UserHash)
+	CurrentSettings.loadgameclient := LoadGameClient
+	CurrentSettings.wrlpath := WRLFile
+	CurrentSettings.firstrun := 1
+	PersistSettings()
+	LogFile("Game detection completed for " GamePlatform)
+	GetUserDetails()
 }
 
 ; Shared platform detection engine — scans for game install using platform descriptor
@@ -3042,15 +3863,27 @@ tryDetectPlatform(desc, manual) {
 					applyGameInstall(epicInstallDir, GameClientEpicLauncher, desc.platformName, epicInstallDir WRLFilePath, desc.loadClientId)
 					if manual {
 						MsgBox, % desc.foundMsg
-						FirstRun()
-						GetUserDetails()
+						detectCredentialsAndSave()
 					}
 					return true
 				}
 			}
 		}
-		if manual
-			MsgBox, % desc.notFoundMsg
+		if manual {
+			MsgBox, 4, IdleCombos Setup, % desc.notFoundMsg "`n`nWould you like to locate IdleDragons.exe manually?"
+			IfMsgBox, Yes
+			{
+				FileSelectFile, selectedExe, 1, , Locate IdleDragons.exe, IdleDragons.exe (IdleDragons.exe)
+				if (!ErrorLevel && selectedExe != "") {
+					SplitPath, selectedExe, , selectedDir
+					selectedDir .= "\"
+					applyGameInstall(selectedDir, GameClientEpicLauncher, desc.platformName, selectedDir WRLFilePath, desc.loadClientId)
+					MsgBox, % desc.platformName " install set to:`n" GameInstallDir
+					detectCredentialsAndSave()
+					return true
+				}
+			}
+		}
 		return false
 	}
 
@@ -3064,14 +3897,29 @@ tryDetectPlatform(desc, manual) {
 		if manual {
 			MsgBox, % desc.foundMsg
 			if (!desc.skipCallback) {
-				FirstRun()
-				GetUserDetails()
+				detectCredentialsAndSave()
 			}
 		}
 		return true
 	}
-	if manual
-		MsgBox, % desc.notFoundMsg
+	if manual {
+		MsgBox, 4, IdleCombos Setup, % desc.notFoundMsg "`n`nWould you like to locate IdleDragons.exe manually?"
+		IfMsgBox, Yes
+		{
+			FileSelectFile, selectedExe, 1, , Locate IdleDragons.exe, IdleDragons.exe (IdleDragons.exe)
+			if (!ErrorLevel && selectedExe != "") {
+				SplitPath, selectedExe, , selectedDir
+				selectedDir .= "\"
+				wrlPath := selectedDir . WRLFilePath
+				applyGameInstall(selectedDir, selectedExe, desc.platformName, wrlPath, desc.loadClientId)
+				MsgBox, % desc.platformName " install set to:`n" GameInstallDir
+				if (!desc.skipCallback) {
+					detectCredentialsAndSave()
+				}
+				return true
+			}
+		}
+	}
 	return false
 }
 
@@ -3200,110 +4048,64 @@ setGameInstallConsole( manual = false) {
 
 ; Initial setup wizard — detect game, extract credentials from WRL or manual input
 FirstRun() {
-	; Step 1: Ask which platform the game is installed on
-	if (LoadGameClient == 4) {
-		; Already set to console — skip platform selection
-	} else {
-		MsgBox, 3, IdleCombos Setup, % "Detect game install from Epic Games?`n`n(Click Yes for Epic, No to try other platforms, Cancel to enter credentials manually)"
-		IfMsgBox, Yes
-		{
-			if (setGameInstallEpic(false)) {
-				MsgBox, % "Epic Games install found at:`n" GameInstallDir
-			} else {
-				MsgBox, Epic Games install not found. You can enter credentials manually.
-			}
-		}
-		IfMsgBox, No
-		{
-			MsgBox, 3, IdleCombos Setup, % "Detect game install from Steam?`n`n(Click Yes for Steam, No to try Standalone)"
-			IfMsgBox, Yes
-			{
-				if (setGameInstallSteam(false)) {
-					MsgBox, % "Steam install found at:`n" GameInstallDir
-				} else {
-					MsgBox, Steam install not found. You can enter credentials manually.
-				}
-			}
-			IfMsgBox, No
-			{
-				MsgBox, 4, IdleCombos Setup, % "Detect Standalone install?"
-				IfMsgBox, Yes
-				{
-					if (setGameInstallStandalone(false)) {
-						MsgBox, % "Standalone install found at:`n" GameInstallDir
-					} else {
-						MsgBox, Standalone install not found. You can enter credentials manually.
-					}
-				}
-				IfMsgBox, No
-				{
-					; Console / manual entry path
-					LoadGameClient := 4
-				}
-			}
-		}
-		IfMsgBox, Cancel
-		{
-			; Skip to manual credential entry below
+	; Reset platform so detection runs fresh
+	LoadGameClient := 0
+
+	; Step 1: Platform picker GUI
+	global SetupPlatformChoice, SetupDone
+	SetupPlatformChoice := ""
+	SetupDone := false
+
+	Gui, SetupPicker:New, +AlwaysOnTop +ToolWindow, IdleCombos Setup
+	Gui, SetupPicker:Add, Text, w280, Select your game platform:
+	Gui, SetupPicker:Add, Button, w280 h30 gSetupPickEpic, Epic Games
+	Gui, SetupPicker:Add, Button, w280 h30 gSetupPickSteam, Steam
+	Gui, SetupPicker:Add, Button, w280 h30 gSetupPickStandalone, Standalone
+	Gui, SetupPicker:Add, Button, w280 h30 gSetupPickConsole, Console / Manual Entry
+	Gui, SetupPicker:Add, Button, w280 h30 gSetupPickCancel, Cancel
+	Gui, SetupPicker:Show, AutoSize Center
+	while (!SetupDone)
+		Sleep, 50
+	Gui, SetupPicker:Destroy
+
+	if (SetupPlatformChoice = "")
+		return
+
+	; Step 1b: Run detection for chosen platform
+	; For Epic/Steam/Standalone, detectCredentialsAndSave() handles credentials + save + fetch.
+	; For Console, fall through to manual credential entry below.
+	switch SetupPlatformChoice {
+		case "epic":
+			setGameInstallEpic(true)
+			return
+		case "steam":
+			setGameInstallSteam(true)
+			return
+		case "standalone":
+			setGameInstallStandalone(true)
+			return
+		case "console":
 			LoadGameClient := 4
-		}
 	}
 
-	; Step 2: Get credentials
-	if (LoadGameClient == 4) {
-		; Console or manual: prompt for user_id and hash directly
-		InputBox, UserID, user_id, Please enter your "user_id" value., , 250, 125
-		if ErrorLevel
-			return
-		InputBox, UserHash, hash, Please enter your "hash" value., , 250, 125
-		if ErrorLevel
-			return
-		LogFile("User ID: " UserID " & Hash: [REDACTED] manually entered")
-	} else {
-		; Platform detected — try reading credentials from WRL
-		if (WRLFile != "" && FileExist(WRLFile)) {
-			GetIdFromWRL()
-			LogFile("Platform: " GamePlatform)
-			LogFile("User ID: " UserID " & Hash: [REDACTED] detected in WRL")
-			GetPlayServerFromWRL()
-		} else {
-			MsgBox, 4, , Could not find webRequestLog.txt automatically.`nChoose install directory manually?
-			IfMsgBox, Yes
-			{
-				FileSelectFile, WRLFile, 1, webRequestLog.txt, Select webRequestLog file, webRequestLog.txt
-				if ErrorLevel
-					return
-				GetIdFromWRL()
-				GameInstallDir := SubStr(WRLFile, 1, -67)
-				GameClient := GameInstallDir "IdleDragons.exe"
-			} else {
-				InputBox, UserID, user_id, Please enter your "user_id" value., , 250, 125
-				if ErrorLevel
-					return
-				InputBox, UserHash, hash, Please enter your "hash" value., , 250, 125
-				if ErrorLevel
-					return
-				LogFile("User ID: " UserID " & Hash: [REDACTED] manually entered")
-			}
-		}
-	}
-
-	; Step 3: Save credentials
+	; Console / manual entry — prompt for credentials directly
+	if (!PromptCredentials())
+		return
+	LogFile("User ID: " UserID " & Hash: [REDACTED] manually entered")
 	CurrentSettings.user_id := UserID
 	CurrentSettings.user_id_epic := UserIDEpic
 	CurrentSettings.user_id_steam := UserIDSteam
-	; Encrypt hash for storage (falls back to plaintext if DPAPI unavailable)
 	CurrentSettings.hash := DPAPIEncrypt(UserHash)
 	if (!DPAPIAvailable && UserHash != "" && UserHash != "0") {
 		LogFile("WARNING: DPAPI unavailable — hash stored as plaintext")
 		SB_SetText("⚠️ DPAPI unavailable — hash stored without encryption")
 	}
 	CurrentSettings.firstrun := 1
+	CurrentSettings.loadgameclient := LoadGameClient
 	CurrentSettings.wrlpath := WRLFile
 	PersistSettings()
 	LogFile("IdleCombos Setup Completed")
 	SB_SetText("✅ User ID & Hash Ready")
-	; Flag for Load() to auto-fetch after all initialization completes
 	global FirstRunFetchPending := true
 }
 
@@ -3472,34 +4274,46 @@ GetUserDetails(newservername = "") {
 ParseAdventureData() {
 	APIStatus("⌛ Parsing Data - Adventures... Please wait...")
 	result := ParseAdventureDataFromDetails(UserDetails.details, ActiveInstance)
-	CurrentAdventure     := result.fg.adventure
-	CurrentArea          := result.fg.area
-	CurrentPatron        := result.fg.patron
+	FGAdventure     := result.fg.adventure
+	FGArea          := result.fg.area
+	FGPatron        := result.fg.patron
+	FGCustomName         := result.fg.customName
 	FGCoreName           := result.fg.coreName
+	FGCoreReset          := result.fg.coreReset
 	FGCoreXP             := result.fg.coreXP
 	FGCoreProgress       := result.fg.coreProgress
-	CurrentChampions     := result.fg.champCount
-	BackgroundAdventure  := result.bg1.adventure
-	BackgroundArea       := result.bg1.area
-	BackgroundPatron     := result.bg1.patron
+	FGCoreProgressPct    := result.fg.coreProgressPct
+	FGChampions     := result.fg.champCount
+	BGAdventure  := result.bg1.adventure
+	BGArea       := result.bg1.area
+	BGPatron     := result.bg1.patron
+	BGCustomName         := result.bg1.customName
 	BGCoreName           := result.bg1.coreName
+	BGCoreReset          := result.bg1.coreReset
 	BGCoreXP             := result.bg1.coreXP
 	BGCoreProgress       := result.bg1.coreProgress
-	BackgroundChampions  := result.bg1.champCount
-	Background2Adventure := result.bg2.adventure
-	Background2Area      := result.bg2.area
-	Background2Patron    := result.bg2.patron
+	BGCoreProgressPct    := result.bg1.coreProgressPct
+	BGChampions  := result.bg1.champCount
+	BG2Adventure := result.bg2.adventure
+	BG2Area      := result.bg2.area
+	BG2Patron    := result.bg2.patron
+	BG2CustomName        := result.bg2.customName
 	BG2CoreName          := result.bg2.coreName
+	BG2CoreReset         := result.bg2.coreReset
 	BG2CoreXP            := result.bg2.coreXP
 	BG2CoreProgress      := result.bg2.coreProgress
-	Background2Champions := result.bg2.champCount
-	Background3Adventure := result.bg3.adventure
-	Background3Area      := result.bg3.area
-	Background3Patron    := result.bg3.patron
+	BG2CoreProgressPct   := result.bg2.coreProgressPct
+	BG2Champions := result.bg2.champCount
+	BG3Adventure := result.bg3.adventure
+	BG3Area      := result.bg3.area
+	BG3Patron    := result.bg3.patron
+	BG3CustomName        := result.bg3.customName
 	BG3CoreName          := result.bg3.coreName
+	BG3CoreReset         := result.bg3.coreReset
 	BG3CoreXP            := result.bg3.coreXP
 	BG3CoreProgress      := result.bg3.coreProgress
-	Background3Champions := result.bg3.champCount
+	BG3CoreProgressPct   := result.bg3.coreProgressPct
+	BG3Champions := result.bg3.champCount
 	ChampionsActiveCount := result.champsActiveCount
 }
 
@@ -3557,6 +4371,11 @@ ParsePatronData() {
 		pCostsVar      := pName "Costs"
 		pCompletedVar  := pName "Completed"
 		pVarTotalVar   := pName "VariantTotal"
+		pUnlockedVar   := pName "Unlocked"
+		pChampsVar     := pName "Champs"
+		pReqMetVar     := pName "RequiresMet"
+		pChampsMetVar  := pName "ChampsMet"
+		pCostsMetVar   := pName "CostsMet"
 		%pVariantsVar%   := pData.variants
 		%pFPVar%         := pData.fp
 		%pChallengesVar% := pData.challenges
@@ -3564,6 +4383,11 @@ ParsePatronData() {
 		%pCostsVar%      := pData.costs
 		%pCompletedVar%  := pData.completed
 		%pVarTotalVar%   := pData.total
+		%pUnlockedVar%   := pData.unlocked
+		%pChampsVar%     := pData.champs
+		%pReqMetVar%     := pData.requiresMet
+		%pChampsMetVar%  := pData.champsMet
+		%pCostsMetVar%   := pData.costsMet
 	}
 }
 
@@ -3611,10 +4435,12 @@ ColorPatronProgress(name, variants, fpCurrency, challenges, completed, variantTo
 
 ; Extract and display achievement requirements in the Summary tab
 CheckAchievements() {
+	global SummaryDataLoaded
 	APIStatus("⌛ Parsing Data - Achievements... Please wait...")
+	SummaryDataLoaded := true
 	AchievementNeeds := ""
 	AchievementGearChamp := ""
-	; Skip if data appears empty/unloaded (prevents misleading Todo items from zero-data)
+	; Skip achievement parsing if data appears empty/unloaded
 	if (!UserDetails.details.stats.highest_level_gear)
 		return
 	; Find which champion holds the highest gear
@@ -3684,7 +4510,6 @@ CheckAchievements() {
 		if (needs != "")
 			AchievementNeeds .= "Krydle needs:" needs "`n"
 	}
-	SummaryDataLoaded := true
 }
 
 ; Placeholder for blessing data (now handled in Update)
@@ -3724,6 +4549,9 @@ CheckEvents() {
 		if (IsObject(evd.active_events)) {
 			for i, ae in evd.active_events {
 				EventID := ae.event_id + 0
+				; Build event time string
+				totalTime := (ae.time_since_start + 0) + (ae.time_until_end + 0)
+				EventTime := FormatDuration(totalTime) " (remaining: " FormatDuration(ae.time_until_end) ")"
 				; Look up event name and token name from defines
 				if (IsObject(UserDetails.defines) && IsObject(UserDetails.defines.event_v2_defines)) {
 					for di, def in UserDetails.defines.event_v2_defines {
@@ -3793,6 +4621,7 @@ CheckEvents() {
 			MiniEventName := ed.name
 			MiniEventDesc := ed.description
 			MiniEventTokens := ed.user_data.event_tokens + 0
+			MiniEventTime := FormatDuration(ed.total_duration) " (remaining: " FormatDuration(ed.end_purchases_in) ")"
 			; Heroes
 			heroCount := 0
 			MiniEventHeroes := ""
@@ -4390,8 +5219,16 @@ List_ChestIDs:
 
 ; Display game client localSettings.json contents in a dialog
 ViewICSettings() {
+	if !FileExist(ICSettingsFile) {
+		MsgBox, 48, IC Settings, % "localSettings.json not found at:`n" ICSettingsFile "`n`nThe game may not have created this file yet or it has been deprecated."
+		return
+	}
 	rawicsettings := ""
 	FileRead, rawicsettings, %ICSettingsFile%
+	if (rawicsettings = "") {
+		MsgBox, 48, IC Settings, localSettings.json is empty.
+		return
+	}
 	Try {
 		CurrentICSettings := JSON.parse(rawicsettings)
 	} catch e {
@@ -4488,7 +5325,7 @@ KlehoImage() {
 	}
 	StringTrimRight, kleholink, kleholink, 1
 	kleholink := kleholink ".png"
-	InputBox, dummyvar, Kleho Image, % "Copy link for formation sharing.`n`nSave image to the following file?`nformationimages\Patron-" CurrentPatron "\AdvID-" CurrentAdventure "\Area-" CurrentArea ".png", , , , , , , , % kleholink
+	InputBox, dummyvar, Kleho Image, % "Copy link for formation sharing.`n`nSave image to the following file?`nformationimages\Patron-" FGPatron "\AdvID-" FGAdventure "\Area-" FGArea ".png", , , , , , , , % kleholink
 	if ErrorLevel {
 		dummyvar := ""
 		return
@@ -4496,13 +5333,13 @@ KlehoImage() {
 	if !(FileExist("\formationimages\")) {
 		FileCreateDir, formationimages
 	}
-	if !(FileExist("\formationimages\Patron-" CurrentPatron)) {
-		FileCreateDir, % "formationimages\Patron-" CurrentPatron
+	if !(FileExist("\formationimages\Patron-" FGPatron)) {
+		FileCreateDir, % "formationimages\Patron-" FGPatron
 	}
-	if !(FileExist("\formationimages\Patron-" CurrentPatron "\AdvID-" CurrentAdventure)) {
-		FileCreateDir, % "formationimages\Patron-" CurrentPatron "\AdvID-" CurrentAdventure
+	if !(FileExist("\formationimages\Patron-" FGPatron "\AdvID-" FGAdventure)) {
+		FileCreateDir, % "formationimages\Patron-" FGPatron "\AdvID-" FGAdventure
 	}
-	UrlDownloadToFile, %kleholink%, % "formationimages\Patron-" CurrentPatron "\AdvID-" CurrentAdventure "\Area-" CurrentArea ".png"
+	UrlDownloadToFile, %kleholink%, % "formationimages\Patron-" FGPatron "\AdvID-" FGAdventure "\Area-" FGArea ".png"
 	dummyvar := ""
 	return
 }

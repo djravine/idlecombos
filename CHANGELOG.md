@@ -6,6 +6,35 @@ To all the Idle Dragoneers who inspired and assisted me!
 
 ------
 
+## 3.82
+
+* Redesign Adventures tab — replace ListView with 2×3 grid of GroupBox cards showing adventure name, patron, area, core, reset, champions, XP, and progress bar per party slot; custom party names in titles; BG5/BG6 placeholders for future slots
+* Redesign Summary tab — split into Account and Blessings GroupBoxes with separate ListViews; add Fully Equipped, Total Hero Levels, Unique Adventures, Free Plays, Boss Defeats, Monster Kills stats
+* Redesign Inventory tab — split into 4 GroupBoxes (Gems, Chests, Bounty Contracts, Blacksmith Contracts) in a 2×2 grid layout; format Spent Gems with magnitude suffix
+* Redesign Patrons tab — GroupBox contact cards with portrait images; conditional locked/unlocked display with color-coded requirements (green=met, red=unmet); adventure names in unlock requirements; 5 rows for locked patrons (Status, Requires, Costs, Champs, adventure stat)
+* Redesign Event tab — split into Main Event and Mini Event GroupBoxes; event name with ID, description (4 lines), time display with remaining duration, token count with currency name, heroes and chests as comma-separated values; add `FormatDuration()` helper
+* Sidebar — GroupBoxes for Platform, Crash Protect (color-coded green/red toggle via SetTimer), and Data Timestamp with live timer
+* Redesign Pity Timers tab — replace ListView with 2×5 GroupBox grid showing champion names per chest count
+* Fix Summary tab not loading — add explicit `global SummaryDataLoaded` in `CheckAchievements()`, set before early return
+* Fix double-encoded UTF-8 in `idledict.json` — Môrgæn, Faerûn, Corazón (4 entries)
+* Add folder browser fallback (locate IdleDragons.exe) when game auto-detection fails
+* Replace setup wizard with platform picker GUI; support platform switching; move Run Setup to File menu
+* Merge credential prompts into single dialog with platform-specific instructions
+* Move Adventure Manager actions from Tools menu to button bar in Adventures tab
+* Move Chests, Blacksmith, and Bounty submenus from Tools menu to popup buttons in Inventory tab
+* Redesign `PromptCount()` — replace plain `InputBox` with slider, synced number spinbox, and Max button for all bulk operations
+* Fix PromptCount slider not matching initial value — UpDown thousands separator caused desync
+* Fix Crash Protect launching multiple game copies — `WinWait` with 120s timeout, gives up after 3 failures
+* Persist blacksmith last champion and counts across sessions
+* Persist bounty last counts across sessions
+* Replace all ID `InputBox` prompts with `ComboBox` pickers (champion, chest, patron, adventure) — supports both dropdown selection and typed IDs
+* Persist last-used adventure, patron, and chest IDs across sessions
+* Add `AdvFromID()`, `BuildChestDropdownList()`, `BuildAdvDropdownList()`, `BuildPatronPickerList()`, `PickerExtractID()` helpers
+* Standardize adventure globals to `FG*`/`BG*`/`BG2*`/`BG3*`/`BG4*`/`BG5*` prefix
+* Fix `ViewICSettings` showing empty dialog when `localSettings.json` not found
+* Add BOM preservation instructions to AGENTS.md
+* Bump `SettingsCheckValue` to 38 with 13 new settings keys
+
 ## 3.81
 
 * Fix Event tab not showing data — `CheckEvents()` iterated `event_details` as array but API returns single object; now reads `events_details.active_events` (main event) and `event_details` (mini-event) correctly

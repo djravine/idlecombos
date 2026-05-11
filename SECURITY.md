@@ -17,7 +17,7 @@ IdleCombos stores the following credentials locally in `idlecombosettings.json`:
 The `hash` field is encrypted using Windows Data Protection API (`CryptProtectData`) before being written to `idlecombosettings.json`. The encrypted value is stored as a hex string with a `DPAPI:` prefix. Only the same Windows user account on the same machine can decrypt it.
 
 * **Automatic migration**: Existing users with plaintext hashes are migrated transparently on first load — the plaintext is decrypted as-is, then re-encrypted and saved.
-* **Portability**: If settings are copied to a different machine or Windows user, DPAPI decryption will fail. The hash is cleared and the user is prompted to re-enter it via Help → Run Setup.
+* **Portability**: If settings are copied to a different machine or Windows user, DPAPI decryption will fail. The hash is cleared and the user is prompted to re-enter it via File → Run Setup / Change Platform.
 * **In-memory**: The hash is decrypted into memory (`UserHash` global) at load time and used in plaintext for API calls. It is never written to disk in plaintext after migration.
 
 ### Why not full encryption?
