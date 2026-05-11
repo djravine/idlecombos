@@ -3686,6 +3686,48 @@ SetIcon() {
 	}
 }
 
+; Prompt user for user_id and hash in a single dialog.
+; Returns true if both entered, false if cancelled.
+PromptCredentials() {
+	global UserID, UserHash, CredPromptDone, CredPromptOK
+	CredPromptDone := false
+	CredPromptOK := false
+	Gui, CredPrompt:New, +AlwaysOnTop +ToolWindow, Enter Credentials
+	Gui, CredPrompt:Add, Text, w360, Enter your user_id and hash values.
+	Gui, CredPrompt:Add, Text, w360 y+10, How to find these (Console / Mobile):
+	Gui, CredPrompt:Add, Text, w360, % "  1. Open Idle Champions on your device"
+	Gui, CredPrompt:Add, Text, w360, % "  2. Go to Settings > Combinations"
+	Gui, CredPrompt:Add, Text, w360, % "  3. Your user_id and hash are shown there"
+	Gui, CredPrompt:Add, Text, w360 y+10, How to find these (PC with webRequestLog):
+	Gui, CredPrompt:Add, Text, w360, % "  1. Launch the game and play for a minute"
+	Gui, CredPrompt:Add, Text, w360, % "  2. Open webRequestLog.txt from the game folder"
+	Gui, CredPrompt:Add, Text, w360, % "  3. Search for 'user_id=' and 'hash=' in the URL"
+	Gui, CredPrompt:Add, Text, w60 y+15, user_id:
+	Gui, CredPrompt:Add, Edit, vCredUserID x+5 yp w290, % UserID
+	Gui, CredPrompt:Add, Text, x10 w60 y+10, hash:
+	Gui, CredPrompt:Add, Edit, vCredHash x+5 yp w290 +Password, % UserHash
+	Gui, CredPrompt:Add, Button, x170 y+15 w70 Default gCredPromptOK, OK
+	Gui, CredPrompt:Add, Button, x+10 yp w70 gCredPromptCancel, Cancel
+	Gui, CredPrompt:Show, AutoSize Center
+	while (!CredPromptDone)
+		Sleep, 50
+	Gui, CredPrompt:Destroy
+	return CredPromptOK
+}
+
+CredPromptOK:
+	Gui, CredPrompt:Submit, NoHide
+	UserID := CredUserID
+	UserHash := CredHash
+	CredPromptOK := true
+	CredPromptDone := true
+	return
+CredPromptCancel:
+CredPromptGuiClose:
+	CredPromptOK := false
+	CredPromptDone := true
+	return
+
 ; Extract credentials from WRL (or prompt manually) and save settings.
 ; Used by menu-driven detection to avoid re-running the full FirstRun wizard.
 detectCredentialsAndSave() {
@@ -3698,11 +3740,7 @@ detectCredentialsAndSave() {
 		MsgBox, 4, , Could not find webRequestLog.txt automatically.`nEnter credentials manually?
 		IfMsgBox, Yes
 		{
-			InputBox, UserID, user_id, Please enter your "user_id" value., , 250, 125
-			if ErrorLevel
-				return
-			InputBox, UserHash, hash, Please enter your "hash" value., , 250, 125
-			if ErrorLevel
+			if (!PromptCredentials())
 				return
 			LogFile("User ID: " UserID " & Hash: [REDACTED] manually entered")
 		}
@@ -3973,11 +4011,7 @@ FirstRun() {
 	}
 
 	; Console / manual entry — prompt for credentials directly
-	InputBox, UserID, user_id, Please enter your "user_id" value., , 250, 125
-	if ErrorLevel
-		return
-	InputBox, UserHash, hash, Please enter your "hash" value., , 250, 125
-	if ErrorLevel
+	if (!PromptCredentials())
 		return
 	LogFile("User ID: " UserID " & Hash: [REDACTED] manually entered")
 	CurrentSettings.user_id := UserID
