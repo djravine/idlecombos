@@ -8,24 +8,23 @@ To all the Idle Dragoneers who inspired and assisted me!
 
 ## 3.82
 
-* Move Adventure Manager actions (Load, End FG/BG, Kleho, Update List) from Tools menu to button bar in Adventures tab
-* Move Chests, Blacksmith, and Bounty submenus from Tools menu to popup buttons in Inventory tab header
-
-* Redesign `PromptCount()` - replace plain `InputBox` with a modern custom GUI featuring a slider, synced number spinbox, and "Max" button for all bulk chest/contract operations
-
-* Fix Crash Protect launching multiple game copies — replaced tight `Sleep 10s` loop with `WinWait` (120s timeout) so it waits for the game to actually start before retrying; gives up after 3 consecutive failures instead of looping forever
-* Persist blacksmith last champion and last counts (Tiny/Small/Medium/Large/Huge) across sessions — stored in settings, restored on load
-* Persist bounty last counts (Tiny/Small/Medium/Large) across sessions — stored in settings, restored on load
-* Replace blacksmith hero ID `InputBox` with a sorted champion `ComboBox` populated from `idledict.json` — pre-selects last-used champion; format is "Name (ID)"; also accepts typed champion IDs
-* Replace Buy/Open Event chest `InputBox` prompts with a sorted chest `ComboBox` picker populated from `idledict.json` — format is "Name (ID)"; also accepts typed chest IDs
-* Replace Load Adventure patron `InputBox` with a patron `ComboBox` picker — shows "None (0)" through all five patrons with IDs; also accepts typed patron IDs; fixes validation range (was `< 5`, now `<= 5` to include Elminster)
-* Add `BuildChestDropdownList()`, `BuildPatronPickerList()`, and `PickerExtractID()` helpers to `IdleCombosLib.ahk`
-* Bump `SettingsCheckValue` to 26 with 10 new settings keys: `lastbschamp`, `lastbstncount`, `lastbssmcount`, `lastbsmdcount`, `lastbslgcount`, `lastbshgcount`, `lastbountytncount`, `lastbountysmcount`, `lastbountymdcount`, `lastbountylgcount`
-* Replace Load Adventure `InputBox` with a sorted adventure `ComboBox` picker (`ShowAdvPicker()`) populated from `advdefs.json` — pre-selects last-used adventure; falls back to plain `InputBox` if `advdefs.json` does not yet exist; format is "Name (ID)"; also accepts typed adventure IDs
-* Add `BuildAdvDropdownList()` helper to `IdleCombosLib.ahk` — reads `advdefs.json`, builds sorted "Name (ID)" list, returns `""` gracefully on first run before API sync
-* Persist last-used adventure ID, patron ID, and event chest ID across sessions — stored in settings, pre-filled in respective pickers on next use
-* Patron picker now pre-selects the last-used patron; chest picker now pre-selects the last-used event chest
-* Bump `SettingsCheckValue` to 27 with 3 new settings keys: `lastadvid`, `lastpatronid`, `lastchestid`
+* Redesign Adventures tab — replace ListView with 2×3 grid of GroupBox cards showing adventure name, patron, area, core, reset, champions, XP, and progress bar per party slot; custom party names in titles; BG5/BG6 placeholders for future slots
+* Redesign Summary tab — split into Account and Blessings GroupBoxes with separate ListViews; add Fully Equipped, Total Hero Levels, Unique Adventures, Free Plays, Boss Defeats, Monster Kills stats
+* Redesign Inventory tab — split into 4 GroupBoxes (Gems, Chests, Bounty Contracts, Blacksmith Contracts) in a 2×2 grid layout; format Spent Gems with magnitude suffix
+* Move Adventure Manager actions from Tools menu to button bar in Adventures tab
+* Move Chests, Blacksmith, and Bounty submenus from Tools menu to popup buttons in Inventory tab
+* Redesign `PromptCount()` — replace plain `InputBox` with slider, synced number spinbox, and Max button for all bulk operations
+* Fix PromptCount slider not matching initial value — UpDown thousands separator caused desync
+* Fix Crash Protect launching multiple game copies — `WinWait` with 120s timeout, gives up after 3 failures
+* Persist blacksmith last champion and counts across sessions
+* Persist bounty last counts across sessions
+* Replace all ID `InputBox` prompts with `ComboBox` pickers (champion, chest, patron, adventure) — supports both dropdown selection and typed IDs
+* Persist last-used adventure, patron, and chest IDs across sessions
+* Add `AdvFromID()`, `BuildChestDropdownList()`, `BuildAdvDropdownList()`, `BuildPatronPickerList()`, `PickerExtractID()` helpers
+* Standardize adventure globals to `FG*`/`BG*`/`BG2*`/`BG3*`/`BG4*`/`BG5*` prefix
+* Fix `ViewICSettings` showing empty dialog when `localSettings.json` not found
+* Add BOM preservation instructions to AGENTS.md
+* Bump `SettingsCheckValue` to 38 with 13 new settings keys
 
 ## 3.81
 
