@@ -3785,8 +3785,7 @@ tryDetectPlatform(desc, manual) {
 					applyGameInstall(epicInstallDir, GameClientEpicLauncher, desc.platformName, epicInstallDir WRLFilePath, desc.loadClientId)
 					if manual {
 						MsgBox, % desc.foundMsg
-						FirstRun()
-						GetUserDetails()
+						detectCredentialsAndSave()
 					}
 					return true
 				}
