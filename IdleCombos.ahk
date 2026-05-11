@@ -3878,8 +3878,9 @@ setGameInstallConsole( manual = false) {
 ; Initial setup wizard — detect game, extract credentials from WRL or manual input
 FirstRun() {
 	; Step 1: Ask which platform the game is installed on
-	if (LoadGameClient == 4) {
-		; Already set to console — skip platform selection
+	; Skip if platform already detected (1=Epic, 2=Steam, 3=Standalone, 4=Console)
+	if (LoadGameClient >= 1 && LoadGameClient <= 4) {
+		; Platform already set — skip to credentials
 	} else {
 		MsgBox, 3, IdleCombos Setup, % "Detect game install from Epic Games?`n`n(Click Yes for Epic, No to try other platforms, Cancel to enter credentials manually)"
 		IfMsgBox, Yes
