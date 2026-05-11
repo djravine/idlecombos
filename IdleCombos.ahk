@@ -2227,7 +2227,7 @@ PromptCount(title, prompt, defaultVal, maxVal) {
 	Gui, PromptCount:Add, Text, w280, %prompt%
 	Gui, PromptCount:Add, Slider, vPCSlider Range1-%maxVal% ToolTip AltSubmit gPCSliderChanged w280, %defaultVal%
 	Gui, PromptCount:Add, Edit, vPCEdit Number w80 gPCEditChanged, %defaultVal%
-	Gui, PromptCount:Add, UpDown, Range1-%maxVal%, %defaultVal%
+	Gui, PromptCount:Add, UpDown, Range1-%maxVal% +0x80, %defaultVal%
 	Gui, PromptCount:Add, Button, vPCMax gPCMaxClicked w50 x+10 yp, Max
 	Gui, PromptCount:Add, Button, gPromptCountButtonOK w80 x130 y+20 Default, OK
 	Gui, PromptCount:Add, Button, gPromptCountButtonCancel w80 x+10 yp, Cancel
@@ -2249,6 +2249,8 @@ return
 
 PCEditChanged:
 	GuiControlGet, PCEdit, PromptCount:
+	StringReplace, PCEdit, PCEdit, `,, , All
+	PCEdit := PCEdit + 0
 	if (PCEdit > PCMaxVal) {
 		PCEdit := PCMaxVal
 		GuiControl, PromptCount:, PCEdit, %PCEdit%
