@@ -400,6 +400,8 @@ class MyGui {
 		Menu, FileSubmenu, Add, &Launch Game Client, LaunchGame
 		Menu, FileSubmenu, Add, &Update UserDetails, GetUserDetails
 		Menu, FileSubmenu, Add
+		Menu, FileSubmenu, Add, &Run Setup / Change Platform, FirstRun
+		Menu, FileSubmenu, Add
 		Menu, FileSubmenu, Add, Detect Game - Epic Games, detectGameInstallEpic
 		Menu, FileSubmenu, Add, Detect Game - Steam, detectGameInstallSteam
 		Menu, FileSubmenu, Add, Detect Game - Standalone, detectGameInstallStandalone
@@ -443,8 +445,6 @@ Menu, WebToolsSubmenu, Add, Utilities - &Formation Calc, Open_Web_Utilities_Form
 
 		Menu, IdleMenu, Add, &Tools, :ToolsSubmenu
 
-		Menu, HelpSubmenu, Add, &Run Setup / Change Platform, FirstRun
-		Menu, HelpSubmenu, Add
 		Menu, HelpSubmenu, Add, Clear &Log, Clear_Log
 		Menu, HelpSubmenu, Add, Clear Redeem Code H&istory, Redeem_Codes_History_Clear
 		Menu, HelpSubmenu, Add
@@ -3956,41 +3956,33 @@ FirstRun() {
 		return
 
 	; Step 1b: Run detection for chosen platform
+	; For Epic/Steam/Standalone, detectCredentialsAndSave() handles credentials + save + fetch.
+	; For Console, fall through to manual credential entry below.
 	switch SetupPlatformChoice {
 		case "epic":
-			if (!setGameInstallEpic(true))
-				return
+			setGameInstallEpic(true)
+			return
 		case "steam":
-			if (!setGameInstallSteam(true))
-				return
+			setGameInstallSteam(true)
+			return
 		case "standalone":
-			if (!setGameInstallStandalone(true))
-				return
+			setGameInstallStandalone(true)
+			return
 		case "console":
 			LoadGameClient := 4
 	}
 
-	; Step 2: Get credentials
-	if (LoadGameClient == 4) {
-		; Console or manual: prompt for user_id and hash directly
-		InputBox, UserID, user_id, Please enter your "user_id" value., , 250, 125
-		if ErrorLevel
-			return
-		InputBox, UserHash, hash, Please enter your "hash" value., , 250, 125
-		if ErrorLevel
-			return
-		LogFile("User ID: " UserID " & Hash: [REDACTED] manually entered")
-	} else if (LoadGameClient == 0) {
-		; Detection failed / cancelled
+	; Console / manual entry — prompt for credentials directly
+	InputBox, UserID, user_id, Please enter your "user_id" value., , 250, 125
+	if ErrorLevel
 		return
-	}
-	; If platform detected (1-3), credentials handled by detectCredentialsAndSave in tryDetectPlatform
-
-	; Step 3: Save credentials
+	InputBox, UserHash, hash, Please enter your "hash" value., , 250, 125
+	if ErrorLevel
+		return
+	LogFile("User ID: " UserID " & Hash: [REDACTED] manually entered")
 	CurrentSettings.user_id := UserID
 	CurrentSettings.user_id_epic := UserIDEpic
 	CurrentSettings.user_id_steam := UserIDSteam
-	; Encrypt hash for storage (falls back to plaintext if DPAPI unavailable)
 	CurrentSettings.hash := DPAPIEncrypt(UserHash)
 	if (!DPAPIAvailable && UserHash != "" && UserHash != "0") {
 		LogFile("WARNING: DPAPI unavailable — hash stored as plaintext")
@@ -4002,7 +3994,6 @@ FirstRun() {
 	PersistSettings()
 	LogFile("IdleCombos Setup Completed")
 	SB_SetText("✅ User ID & Hash Ready")
-	; Flag for Load() to auto-fetch after all initialization completes
 	global FirstRunFetchPending := true
 }
 
