@@ -2204,23 +2204,79 @@ Clear_Log:
 ; Shared helpers for guarded batch operations (#14, #15)
 ;-----------------------------------------------------------------------------
 
-; PromptCount - Shared InputBox + validation for batch operations
+; PromptCount - Custom GUI with slider + number validation for batch operations
 ; Returns: positive integer on success, -1 on cancel/invalid
-PromptCount(title, prompt, width, height, defaultVal) {
-	InputBox, count, %title%, %prompt%, , %width%, %height%, , , , , %defaultVal%
-	if ErrorLevel
-		return -1
-	if count is not integer
-	{
-		MsgBox, Please enter a valid whole number.
+PromptCount(title, prompt, defaultVal, maxVal) {
+	global PCSlider, PCEdit, PCMax, PCDone, PCResult, PCMaxVal
+	
+	if (maxVal < 1) {
+		MsgBox, 48, %title%, You don't have enough resources to do this.
 		return -1
 	}
-	if (count < 1) {
-		MsgBox, Please enter a number greater than 0.
-		return -1
+	
+	if (defaultVal > maxVal)
+		defaultVal := maxVal
+	if (defaultVal < 1)
+		defaultVal := 1
+	
+	PCMaxVal := maxVal
+	PCDone := false
+	PCResult := -1
+	
+	Gui, PromptCount:New, +AlwaysOnTop +ToolWindow -MinimizeBox -MaximizeBox, %title%
+	Gui, PromptCount:Add, Text, w280, %prompt%
+	Gui, PromptCount:Add, Slider, vPCSlider Range1-%maxVal% ToolTip AltSubmit gPCSliderChanged w280, %defaultVal%
+	Gui, PromptCount:Add, Edit, vPCEdit Number w80 gPCEditChanged, %defaultVal%
+	Gui, PromptCount:Add, UpDown, Range1-%maxVal%, %defaultVal%
+	Gui, PromptCount:Add, Button, vPCMax gPCMaxClicked w50 x+10 yp, Max
+	Gui, PromptCount:Add, Button, gPromptCountButtonOK w80 x130 y+20 Default, OK
+	Gui, PromptCount:Add, Button, gPromptCountButtonCancel w80 x+10 yp, Cancel
+	
+	Gui, PromptCount:Show, AutoSize Center
+	
+	while (!PCDone) {
+		Sleep, 50
 	}
-	return count
+	
+	Gui, PromptCount:Destroy
+	return PCResult
 }
+
+PCSliderChanged:
+	GuiControlGet, PCSlider, PromptCount:
+	GuiControl, PromptCount:, PCEdit, %PCSlider%
+return
+
+PCEditChanged:
+	GuiControlGet, PCEdit, PromptCount:
+	if (PCEdit > PCMaxVal) {
+		PCEdit := PCMaxVal
+		GuiControl, PromptCount:, PCEdit, %PCEdit%
+	}
+	GuiControl, PromptCount:, PCSlider, %PCEdit%
+return
+
+PCMaxClicked:
+	GuiControl, PromptCount:, PCSlider, %PCMaxVal%
+	GuiControl, PromptCount:, PCEdit, %PCMaxVal%
+return
+
+PromptCountButtonOK:
+	GuiControlGet, PCEdit, PromptCount:
+	if (PCEdit < 1 || PCEdit > PCMaxVal) {
+		MsgBox, 48, Error, Please enter a valid number between 1 and %PCMaxVal%.
+		return
+	}
+	PCResult := PCEdit
+	PCDone := true
+return
+
+PromptCountButtonCancel:
+PromptCountGuiEscape:
+PromptCountGuiClose:
+	PCResult := -1
+	PCDone := true
+return
 
 ; EnsureCredentials - Check UserID is set, prompt setup if not
 ; Returns: true if credentials available, false if user cancelled/missing
@@ -2306,7 +2362,7 @@ _Buy_Chests_Inner(chestid) {
 	switch true {
 		case (chestid = 1): {
 			maxbuy := Floor(CurrentGems/50)
-			count := PromptCount("Buying Chests", "How many Silver Chests?`n(Gems: " CurrentGems " | Cost: 50 each)`n(Max: " maxbuy ")", 280, 180, maxbuy)
+			count := PromptCount("Buying Chests", "How many Silver Chests?`n(Gems: " CurrentGems " | Cost: 50 each)`n(Max: " maxbuy ")", maxbuy, maxbuy)
 			if (count = -1)
 				return
 			if (count > maxbuy) {
@@ -2319,7 +2375,7 @@ _Buy_Chests_Inner(chestid) {
 		}
 		case (chestid = 2): {
 			maxbuy := Floor(CurrentGems/500)
-			count := PromptCount("Buying Chests", "How many Gold Chests?`n(Gems: " CurrentGems " | Cost: 500 each)`n(Max: " maxbuy ")", 280, 180, maxbuy)
+			count := PromptCount("Buying Chests", "How many Gold Chests?`n(Gems: " CurrentGems " | Cost: 500 each)`n(Max: " maxbuy ")", maxbuy, maxbuy)
 			if (count = -1)
 				return
 			if (count = "alpha5") {
@@ -2349,7 +2405,7 @@ _Buy_Chests_Inner(chestid) {
 		}
 		case (chestid > 3 and chestid <= MaxChestID): {
 			maxbuy := Floor(EventTokens/10000)
-			count := PromptCount("Buying Chests", "How many " ChestFromID(chestid) "?`n(" EventTokenName ": " EventTokens ")`n(Max: " maxbuy ")", 250, 180, maxbuy)
+			count := PromptCount("Buying Chests", "How many " ChestFromID(chestid) "?`n(" EventTokenName ": " EventTokens ")`n(Max: " maxbuy ")", maxbuy, maxbuy)
 			if (count = -1)
 				return
 			if (count = "alpha5") {
@@ -2438,7 +2494,7 @@ _Open_Chests_Inner(chestid) {
 	}
 	switch true {
 		case (chestid = 1): {
-			count := PromptCount("Opening Chests", "How many Silver Chests?`n(Owned: " CurrentSilvers ")`n(Max: " (CurrentSilvers + Floor(CurrentGems/50)) ")", 200, 180, CurrentSilvers)
+			count := PromptCount("Opening Chests", "How many Silver Chests?`n(Owned: " CurrentSilvers ")`n(Max: " (CurrentSilvers + Floor(CurrentGems/50)) ")", CurrentSilvers, (CurrentSilvers + Floor(CurrentGems/50)))
 			if (count = -1)
 				return
 			if (count > CurrentSilvers) {
@@ -2453,7 +2509,7 @@ _Open_Chests_Inner(chestid) {
 			}
 		}
 		case (chestid = 2): {
-			count := PromptCount("Opening Chests", "How many Gold Chests?`n(Owned: " CurrentGolds ")`n(Max: " (CurrentGolds + Floor(CurrentGems/500)) ")`n`n(Feats earned using this app do not`ncount towards the related achievement.)", 360, 240, CurrentGolds)
+			count := PromptCount("Opening Chests", "How many Gold Chests?`n(Owned: " CurrentGolds ")`n(Max: " (CurrentGolds + Floor(CurrentGems/500)) ")`n`n(Feats earned using this app do not`ncount towards the related achievement.)", CurrentGolds, (CurrentGolds + Floor(CurrentGems/500)))
 			if (count = -1)
 				return
 			if (count > CurrentGolds) {
@@ -2478,7 +2534,7 @@ _Open_Chests_Inner(chestid) {
 			if(CurrentChestsLookup) {
 				CurrentChests := CurrentChestsLookup
 			}
-			count := PromptCount("Opening Chests", "How many '" ChestFromID(chestid) "' Chests?`n(" EventTokenName ": " EventTokens ")`n(Owned: " CurrentChests ")`n(Max: " (CurrentChests + Floor(EventTokens/10000)) ")`n`n(Feats earned using this app do not`ncount towards the related achievement.)", 360, 240, CurrentChests)
+			count := PromptCount("Opening Chests", "How many '" ChestFromID(chestid) "' Chests?`n(" EventTokenName ": " EventTokens ")`n(Owned: " CurrentChests ")`n(Max: " (CurrentChests + Floor(EventTokens/10000)) ")`n`n(Feats earned using this app do not`ncount towards the related achievement.)", CurrentChests, (CurrentChests + Floor(EventTokens/10000)))
 			if (count = -1)
 				return
 			if (count > CurrentChests) {
@@ -2704,7 +2760,7 @@ _UseBlacksmith_Inner(buffid) {
 				GetUserDetails()
 			}
 	}
-	count := PromptCount("Blacksmithing", "How many " contractname " Blacksmith Contracts?`n(Max: " currentcontracts ")", 200, 180, lastcontracts)
+	count := PromptCount("Blacksmithing", "How many " contractname " Blacksmith Contracts?`n(Max: " currentcontracts ")", lastcontracts, currentcontracts)
 	if (count = -1)
 		return
 	if (count > currentcontracts) {
@@ -3015,7 +3071,7 @@ UseBounty(buffid) {
 				GetUserDetails()
 			}
 	}
-	count := PromptCount("Bounties", "How many " contractname " Bounty Contracts?`n(Max: " currentcontracts ")", 200, 180, lastcontracts)
+	count := PromptCount("Bounties", "How many " contractname " Bounty Contracts?`n(Max: " currentcontracts ")", lastcontracts, currentcontracts)
 	if (count = -1)
 		return
 	if (count > currentcontracts) {

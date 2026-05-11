@@ -8,6 +8,8 @@ To all the Idle Dragoneers who inspired and assisted me!
 
 ## 3.82
 
+* Redesign `PromptCount()` - replace plain `InputBox` with a modern custom GUI featuring a slider, synced number spinbox, and "Max" button for all bulk chest/contract operations
+
 * Fix Crash Protect launching multiple game copies — replaced tight `Sleep 10s` loop with `WinWait` (120s timeout) so it waits for the game to actually start before retrying; gives up after 3 consecutive failures instead of looping forever
 * Persist blacksmith last champion and last counts (Tiny/Small/Medium/Large/Huge) across sessions — stored in settings, restored on load
 * Persist bounty last counts (Tiny/Small/Medium/Large) across sessions — stored in settings, restored on load
