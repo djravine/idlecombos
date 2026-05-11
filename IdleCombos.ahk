@@ -4717,8 +4717,16 @@ List_ChestIDs:
 
 ; Display game client localSettings.json contents in a dialog
 ViewICSettings() {
+	if !FileExist(ICSettingsFile) {
+		MsgBox, 48, IC Settings, % "localSettings.json not found at:`n" ICSettingsFile "`n`nThe game may not be installed or has not created this file yet."
+		return
+	}
 	rawicsettings := ""
 	FileRead, rawicsettings, %ICSettingsFile%
+	if (rawicsettings = "") {
+		MsgBox, 48, IC Settings, localSettings.json is empty.
+		return
+	}
 	Try {
 		CurrentICSettings := JSON.parse(rawicsettings)
 	} catch e {
