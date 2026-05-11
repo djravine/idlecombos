@@ -3736,7 +3736,7 @@ tryDetectPlatform(desc, manual) {
 			{
 				FileSelectFolder, selectedDir, , 3, % "Select your Idle Champions install folder (" desc.platformName ")"
 				if (!ErrorLevel && selectedDir != "") {
-					if !InStr(selectedDir, "\", false, 0)
+					if (SubStr(selectedDir, 0) != "\")
 						selectedDir .= "\"
 					applyGameInstall(selectedDir, GameClientEpicLauncher, desc.platformName, selectedDir WRLFilePath, desc.loadClientId)
 					MsgBox, % desc.platformName " install set to:`n" GameInstallDir
@@ -3769,7 +3769,7 @@ tryDetectPlatform(desc, manual) {
 		{
 			FileSelectFolder, selectedDir, , 3, % "Select your Idle Champions install folder (" desc.platformName ")"
 			if (!ErrorLevel && selectedDir != "") {
-				if !InStr(selectedDir, "\", false, 0)
+				if (SubStr(selectedDir, 0) != "\")
 					selectedDir .= "\"
 				wrlPath := selectedDir . WRLFilePath
 				applyGameInstall(selectedDir, desc.clientExe, desc.platformName, wrlPath, desc.loadClientId)
